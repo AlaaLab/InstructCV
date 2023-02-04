@@ -1,0 +1,22 @@
+# paths for all datasets involved in the experiments
+# .................................................
+
+maze:
+    root: data/maze/
+    train: train_root/
+    val: val_root/
+    test: test_root/ 
+    tasks:
+        path_finding_3x3: maze_3x3/
+        path_finding_4x4: maze_4x4/
+        path_finding_5x5: maze_5x5/
+        path_finding_6x6: maze_6x6/
+        path_finding_7x7: maze_7x7/
+        path_finding_8x8: maze_8x8/
+        path_finding_9x9: maze_9x9/
+        path_finding_10x10: maze_10x10/
+        path_finding_11x11: maze_11x11/
+        path_finding_12x12: maze_12x12/
+        path_finding_13x13: maze_13x13/
+
+    
