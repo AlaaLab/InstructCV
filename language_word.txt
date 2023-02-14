@@ -1,0 +1,9 @@
+is 1
+this 2
+a 3
+photo 4
+of 5
+cat 6
+? 7
+segment 8
+detect 9

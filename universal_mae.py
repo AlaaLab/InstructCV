@@ -44,6 +44,8 @@ from universal_mae_helpers import load_model, get_cuda_devices, get_out_dir, ini
 from universal_mae_trainer import train
 from util.datasets import * 
 
+from models_language import VisualCue
+
 # plotting and other general imports
 
 from matplotlib import pyplot as plt
@@ -79,6 +81,9 @@ def get_args_parser():
     # Model parameters
     parser.add_argument('--model', default='base', type=str, help='ViT model to train (base/large/huge)')
     parser.add_argument('--image_size', default=224, type=int, help='Dimensions of the inpu image')
+
+    # language
+    #parser.add_argument('--language_word_file', default='language_word.txt', type=str, help='language word file')
 
     # Optimizer parameters
     parser.add_argument('--lr', type=float, default=1e-2, help='learning rate (absolute lr)')
@@ -157,17 +162,19 @@ def main(args):
     #train_loader, val_loader = tuple([make_dataset[multi_task](**dataset_params, split=split) for split in ["train", "val"]]) 
     #val_loader               = make_dataset[multi_task](dataset_name=args.dataset_name, task=selected_tasks, batch_size=1, split="val")
 
-    # data_test              = iter(make_dataset["single_task"](dataset_name="oxford-pets", task="detection", batch_size=16, split="test"))
+    #data_test              = iter(make_dataset["single_task"](dataset_name="oxford-pets", task="detection", batch_size=16, split="test"))
+    #data_test  = iter(make_dataset["single_task"](dataset_name="oxford-pets", task=["multi-task"], batch_size=16, split="test"))
 
-    # data_batch             = next(data_test)
 
+    #data_batch            = next(data_test)
+   
   
     print('dataset_params:{}'.format(dataset_params))
     train_loader, val_loader = build_dataset(**dataset_params, split="trainval")
 
-    print("Number of training samples: ", len(train_loader.dataset))
-    print("Number of validation samples: ", len(val_loader.dataset))
-    
+    print("Number of training samples: ", len(train_loader.dataset) if num_tasks==1 else len(train_loader[0].dataset))
+    print("Number of validation samples: ", len(val_loader.dataset) if num_tasks==1 else len(val_loader[0].dataset))
+
     # make_dataset
     
     # load the MAE model pre-trained on ImageNet-1K
@@ -182,14 +189,16 @@ def main(args):
     print("Loading pre-trained MAE-ViT model and initializing the visual cue...")
     
     model, patch_size        = load_model(ViT_mode=args.model, prompt=True)
-    visual_cue               = initialize_visual_cue(num_tasks, args.image_size)
 
-    # Resume training
-    visula_cue_path = out_dir_params['prompt_path']+'/'+model_params['model_type']+'.p'
+
+    visual_model = VisualCue(args.image_size)
+    #visual_cue               = initialize_visual_cue(num_tasks, args.image_size)
+
+    visula_cue_path = out_dir_params['prompt_path']+'/'+model_params['model_type']+'.pth'
     if os.path.exists(visula_cue_path):
-        file                   = open(visula_cue_path, "rb")
-        visual_cue             = pickle.load(file)
-        print('load visual_cue file success!, path:{}'.format(visula_cue_path))
+        state = torch.load(visula_cue_path)
+        visual_model.load_state_dict(state)
+        print('load visual_cue checkpoint success!, path:{}'.format(visula_cue_path))
 
     chkpt_dir = out_dir_params['model_path']+'/'+model_params['model_type']+'.pth'
     print('chkpt_dir:{}'.format(chkpt_dir))
@@ -197,11 +206,11 @@ def main(args):
         state = torch.load(chkpt_dir)
         model.load_state_dict(state)
         print('load checkpoint success! ckpt:{}'.format(chkpt_dir))
-    print('visual_cue:{}'.format(visual_cue.shape))
+
     
     
     model.to(device)
-    visual_cue.to(device)
+    visual_model.to(device)
     
     model_params.update(dict({"patch_size": patch_size}))
     
@@ -210,16 +219,14 @@ def main(args):
     # TODO: fix lard optimizer 
     # .........................................
     
-    optimizer                = get_optimizer(model=model, visual_cue=visual_cue, **training_params, **optimizer_params)
+    optimizer                = get_optimizer(model=model, visual_cue=visual_model, **training_params, **optimizer_params)
     
     # Finetune the MAE model
     # ......................
     
-    model, visual_cue, loss_train, loss_val = train(model, visual_cue, optimizer, train_loader, val_loader,
+    model, visual_cue, loss_train, loss_val = train(model, visual_model, optimizer, train_loader, val_loader, args.multi_task,
                                                     **training_params, **logger_params, **model_params, **out_dir_params)
     
-
-
 if __name__ == '__main__':
     
     args = get_args_parser()

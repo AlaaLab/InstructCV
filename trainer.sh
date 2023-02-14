@@ -1,7 +1,10 @@
 #!/bin/sh
 
 
-python universal_mae.py --batch_size 128 --epochs 50 --model large --lr 0.01 --finetune False --dataset_name oxford-pets --task segmentation
+#python universal_mae.py --batch_size 128 --epochs 50 --model large --lr 0.01 --finetune False --dataset_name oxford-pets --task segmentation
+#python universal_mae.py --batch_size 128 --epochs 50 --model large --lr 0.01 --finetune False --dataset_name oxford-pets --task detection
+#python universal_mae.py --batch_size 128 --epochs 50 --model large --lr 0.01 --finetune False --dataset_name oxford-pets --task classification
+python universal_mae.py --batch_size 4 --epochs 50 --model large --lr 0.01 --finetune False --dataset_name oxford-pets --task_list 'classification' 'segmentation' 'detection' --multi_task True
 
 #python universal_mae.py --batch_size 128 --epochs 50 --model large --lr 0.000015 --finetune True --dataset_name voc --task segmentation
 

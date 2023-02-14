@@ -62,6 +62,8 @@ class MaskedAutoencoderViT(nn.Module):
 
         self.initialize_weights()
 
+
+
     def initialize_weights(self):
         # initialization
         # initialize (and freeze) pos_embed by sin-cos embedding
@@ -153,6 +155,7 @@ class MaskedAutoencoderViT(nn.Module):
 
         # add pos embed w/o cls token
         x = x + self.pos_embed[:, 1:, :]
+
 
         # masking: length -> length * mask_ratio
         x, mask, ids_restore = self.random_masking(x, mask_ratio)

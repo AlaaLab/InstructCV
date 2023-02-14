@@ -47,7 +47,7 @@ def get_cuda_devices():
 device        = get_cuda_devices()
 
 
-def stitch_visual_collage(train_batch, visual_cue, batch_size, out_shape="nchw"):
+def stitch_visual_collage(train_batch, visual_cue, batch_size, multi_task, out_shape="nchw"):
     
     if type(train_batch) is list:
         
@@ -55,7 +55,7 @@ def stitch_visual_collage(train_batch, visual_cue, batch_size, out_shape="nchw")
         print('concat_train_batch:{}'.format(concat_train_batch.shape))
         train_batch = [concat_train_batch]
                    
-    if visual_cue.shape[0]==1:
+    if multi_task==False:
         #print('visual_cue.shape[0]=1, train_batch:{}'.format(train_batch[0].shape))
     
         train = torch.cat([torch.einsum("nchw->nhwc", train_batch[0]), visual_cue[0, :, :, :].unsqueeze(0).repeat(batch_size, 1, 1, 1)], dim=2) 
@@ -63,8 +63,10 @@ def stitch_visual_collage(train_batch, visual_cue, batch_size, out_shape="nchw")
     
     else:
 
-        data_batch, label_batch = train_batch
-        train                   = torch.cat([torch.einsum("nchw->nhwc", data_batch[0]), visual_cue[label_batch, :, :, :]], dim=2) 
+        data_batch, lan_batch = train_batch
+        visual_cue = visual_cue(lan_batch)
+        print('visual_cue:{}'.format(visual_cue.shape))
+        train                   = torch.cat([torch.einsum("nchw->nhwc", data_batch[0]), visual_cue], dim=2) 
     
     
     if out_shape=="nchw":
@@ -121,11 +123,12 @@ def get_optimizer(model, visual_cue, learning_rate, weight_decay, layer_decay, b
         #param_groups = lrd.param_groups_lrd(model.module.module, weight_decay=weight_decay, layer_decay=layer_decay) # no_weight_decay_list=model_without_ddp.no_weight_decay()
         #optimizer    = torch.optim.AdamW([visual_cue] + list(param_groups), lr=learning_rate)
         
-        optimizer   = torch.optim.Adam([visual_cue] + list(model.parameters()), lr=learning_rate)
+        #optimizer   = torch.optim.Adam([visual_cue] + list(model.parameters()), lr=learning_rate)
+        optimizer   = torch.optim.Adam(list(visual_cue.parameters()) + list(model.parameters()), lr=learning_rate)
         
     else:    
         
-        optimizer    = torch.optim.AdamW([visual_cue], lr=learning_rate)
+        optimizer    = torch.optim.AdamW(list(visual_cue.parameters()), lr=learning_rate)
 
     return optimizer
 
@@ -140,7 +143,7 @@ def initialize_visual_cue(num_tasks, image_size):
 def show_image(image, title=''):
     # image is [H, W, 3]
     assert image.shape[2] == 3
-    plt.imshow(torch.clamp((image * imagenet_std + imagenet_mean) * 255, 0, 255).int())
+    plt.imshow(torch.clip((image * imagenet_std + imagenet_mean) * 255, 0, 255).int())
     plt.title(title, fontsize=16)
     plt.axis('off')
     return
