@@ -6,6 +6,7 @@ device             = "cuda"
 redweb_images_dir  = "data/ReDWeb_V1/Imgs/"
 redweb_label_dir   = "data/ReDWeb_V1/RDs/"
 
+oxford_data_path   = "data/oxford-pets"
 oxford_images_dir  = "data/oxford-pets/images/"
 oxford_label_dir   = "data/oxford-pets/annotations/trimaps/"
 
@@ -24,6 +25,7 @@ oxford_params    = dict({"IMG_SIZE": 112,
                            "label_ext": ".png",
                            "img_dir": oxford_images_dir,
                            "label_dir": oxford_label_dir,
+                           "data_path": oxford_data_path,
                            "label_rgb": False})
 
 dataset_params     = dict({"RedWeb_V1": redwebv1_params, 

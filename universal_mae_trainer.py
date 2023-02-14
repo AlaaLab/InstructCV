@@ -125,8 +125,10 @@ def train_epoch(model, visual_cue, optimizer, data_loader, device, print_freq=10
 
         # create a visual collage and apply forward pass
 
+        #print('train_batch:{}, {}'.format(train_batch[0].shape, train_batch[1].shape))
+        #print('train_batch:{}, {}'.format(train_batch[0], train_batch[1]))
         visual_collage = stitch_visual_collage(train_batch, visual_cue, batch_size).to(device)   
-        loss, y, mask  = model(visual_collage)
+        loss, y, mask  = model(visual_collage, mask_ratio=0.25)
         
             
         # Clear gradients
@@ -298,6 +300,12 @@ def train(model, visual_cue, optimizer, train_data_loader, val_data_loader, devi
     image_size      = visual_cue.shape[1]
     best_v_cue      = visual_cue.detach().clone()
 
+    print('train begin...')
+    print('begin to save to {}...'.format(model_path + "/" + model_type + ".pth"))
+    torch.save(model.state_dict(), model_path + "/" + model_type + ".pth")
+    print('begin to save to {}...'.format(prompt_path + "/" + model_type + ".p"))
+    pickle.dump(visual_cue, open(prompt_path + "/" + model_type + ".p", "wb" ))
+
     for epoch in range(num_epochs): 
 
         print_training_progress(epoch, num_epochs)
@@ -324,27 +332,17 @@ def train(model, visual_cue, optimizer, train_data_loader, val_data_loader, devi
     torch.cuda.empty_cache()
     
     if finetune:
-        
         torch.save(model.state_dict(), model_path + "/" + model_type + ".pth")
     
     else:
-
         visual_cue   = best_v_cue 
     
     
+    print('train finished...')
+    torch.save(model.state_dict(), model_path + "/" + model_type + ".pth")
     pickle.dump(visual_cue, open(prompt_path + "/" + model_type + ".p", "wb" ))
     
     return model, visual_cue, epoch_loss, val_loss
-
-
-
-
-
-
-
-
-
-
 
 
 

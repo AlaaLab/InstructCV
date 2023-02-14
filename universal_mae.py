@@ -40,10 +40,9 @@ assert timm.__version__ == "0.4.5"
 # local imports and utils
 
 import models_mae
-from universal_mae_helpers import *
-from universal_mae_trainer import *
+from universal_mae_helpers import load_model, get_cuda_devices, get_out_dir, initialize_visual_cue, get_optimizer
+from universal_mae_trainer import train
 from util.datasets import * 
-import config
 
 # plotting and other general imports
 
@@ -89,8 +88,8 @@ def get_args_parser():
     parser.add_argument('--min_lr', type=float, default=1e-6, metavar='LR', help='lower lr bound for cyclic schedulers that hit 0')
     parser.add_argument('--warmup_epochs', type=int, default=5, metavar='N', help='epochs to warmup LR')
     
-    # Dataset, task and prompt parameters
-    parser.add_argument('--dataset_name', default='maze', type=str, nargs='*', help='Name of the source dataset')
+    # Dataset, task and prompt parameters  nargs='*'
+    parser.add_argument('--dataset_name', default='maze', type=str, help='Name of the source dataset')
     parser.add_argument('--multi_task', type=strtobool, default="False", help='Finetune for multiple tasks') 
     parser.add_argument('--task_list', default=['path_finding_5x5', 'path_finding_6x6'], type=str, nargs='*', help='Description of the vision tasks (only read if multi-task flag is True)')
     parser.add_argument('--task', default='path_finding_5x5', type=str, help='Description of the vision task (discarded if multi-task)')
@@ -101,6 +100,17 @@ def get_args_parser():
     parser.add_argument('--enable_comet_logger', type=strtobool, default="False", help='Keep track of training progress via online comet logger') 
     parser.add_argument('--log_dir', default='./logs', help='path for logger outputd')
     
+    # * Random Erase params
+    parser.add_argument('--reprob', type=float, default=0.25, metavar='PCT',
+                        help='Random erase prob (default: 0.25)')
+    parser.add_argument('--remode', type=str, default='pixel',
+                        help='Random erase mode (default: "pixel")')
+    parser.add_argument('--recount', type=int, default=1,
+                        help='Random erase count (default: 1)')
+    parser.add_argument('--resplit', action='store_true', default=False,
+                        help='Do not random erase first (clean) augmentation split')
+
+
     return parser
 
 
@@ -124,20 +134,21 @@ def main(args):
     fine_tune, multi_task    = args.finetune==1, "multiple_tasks" if args.multi_task==1 else "single_task"
     num_tasks                = len(args.task_list) if args.multi_task==1 else 1
     experiment               = get_comet_experiment() if args.enable_comet_logger==1 else None 
-    experiment_name          = args.dataset_name[0] + "_" + args.task + "_ViT-" + args.model 
-    model_pth, prompt_pth    = get_out_dir(args.dataset_name[0], args.task, args.model, fine_tune)
+    experiment_name          = args.dataset_name + "_" + args.task + "_ViT-" + args.model 
+    model_pth, prompt_pth    = get_out_dir(args.dataset_name, args.task, args.model, fine_tune)
     selected_tasks           = args.task_list if args.multi_task==1 else args.task
-    
+
     if experiment is not None:
         
         experiment.set_name(experiment_name)
+
 
     model_params             = dict({"model_type": args.model})
     optimizer_params         = dict({"learning_rate": args.lr, "weight_decay": args.weight_decay, "layer_decay": args.layer_decay})
     training_params          = dict({"finetune": fine_tune, "device": device, "batch_size": args.batch_size, "num_epochs": args.epochs})
     logger_params            = dict({"experiment": experiment, "print_freq": 10})    
     out_dir_params           = dict({"model_path": model_pth, "prompt_path": prompt_pth})
-    dataset_params           = dict({"dataset_name": args.dataset_name[0], "task": selected_tasks, "batch_size": args.batch_size})
+    dataset_params           = dict({"dataset_name": args.dataset_name, "task": selected_tasks, "batch_size": args.batch_size})
     
     # build the training & validation datasets
     # ........................................
@@ -145,9 +156,15 @@ def main(args):
     
     #train_loader, val_loader = tuple([make_dataset[multi_task](**dataset_params, split=split) for split in ["train", "val"]]) 
     #val_loader               = make_dataset[multi_task](dataset_name=args.dataset_name, task=selected_tasks, batch_size=1, split="val")
-    
+
+    # data_test              = iter(make_dataset["single_task"](dataset_name="oxford-pets", task="detection", batch_size=16, split="test"))
+
+    # data_batch             = next(data_test)
+
+  
+    print('dataset_params:{}'.format(dataset_params))
     train_loader, val_loader = build_dataset(**dataset_params, split="trainval")
-    
+
     print("Number of training samples: ", len(train_loader.dataset))
     print("Number of validation samples: ", len(val_loader.dataset))
     
@@ -166,6 +183,21 @@ def main(args):
     
     model, patch_size        = load_model(ViT_mode=args.model, prompt=True)
     visual_cue               = initialize_visual_cue(num_tasks, args.image_size)
+
+    # Resume training
+    visula_cue_path = out_dir_params['prompt_path']+'/'+model_params['model_type']+'.p'
+    if os.path.exists(visula_cue_path):
+        file                   = open(visula_cue_path, "rb")
+        visual_cue             = pickle.load(file)
+        print('load visual_cue file success!, path:{}'.format(visula_cue_path))
+
+    chkpt_dir = out_dir_params['model_path']+'/'+model_params['model_type']+'.pth'
+    print('chkpt_dir:{}'.format(chkpt_dir))
+    if os.path.exists(chkpt_dir):
+        state = torch.load(chkpt_dir)
+        model.load_state_dict(state)
+        print('load checkpoint success! ckpt:{}'.format(chkpt_dir))
+    print('visual_cue:{}'.format(visual_cue.shape))
     
     
     model.to(device)

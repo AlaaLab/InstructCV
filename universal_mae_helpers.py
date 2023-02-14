@@ -14,27 +14,52 @@ import config
 import yaml
 from comet_ml import Experiment
 
-from promptification import *
-from util.data_processors import *
+from promptification import promptify
+#from util.data_processors import *
 import util.lr_decay as lrd
 
 # remove these
 
 imagenet_mean = np.array([0.485, 0.456, 0.406])
 imagenet_std  = np.array([0.229, 0.224, 0.225])
-device        = "cuda"
+
+def get_cuda_devices():
+    
+    if torch.cuda.is_available():
+    
+        print("GPU(s) available: ", torch.cuda.get_device_name())
+    
+        # remove any device which doesn't exists
+        deviceIds = [int(d) for d in range(torch.cuda.device_count())] 
+    
+        # set args.deviceIds[0] (the master node) as the current device
+        torch.cuda.set_device(deviceIds[0])
+    
+        device    = torch.device("cuda")
+
+    else:
+    
+        device    = torch.device('cpu')
+        deviceIds = None
+
+    return device
+ 
+device        = get_cuda_devices()
 
 
 def stitch_visual_collage(train_batch, visual_cue, batch_size, out_shape="nchw"):
     
     if type(train_batch) is list:
         
-        train_batch = [torch.cat([train_batch[0], train_batch[1]], dim=2)]
-    
+        concat_train_batch = torch.cat([train_batch[0], train_batch[1]], dim=2)
+        print('concat_train_batch:{}'.format(concat_train_batch.shape))
+        train_batch = [concat_train_batch]
                    
     if visual_cue.shape[0]==1:
+        #print('visual_cue.shape[0]=1, train_batch:{}'.format(train_batch[0].shape))
     
         train = torch.cat([torch.einsum("nchw->nhwc", train_batch[0]), visual_cue[0, :, :, :].unsqueeze(0).repeat(batch_size, 1, 1, 1)], dim=2) 
+        #print('after cat, train:{}'.format(train.shape))
     
     else:
 
@@ -45,6 +70,7 @@ def stitch_visual_collage(train_batch, visual_cue, batch_size, out_shape="nchw")
     if out_shape=="nchw":
         
         train = torch.einsum("nhwc->nchw", (train - torch.tensor(imagenet_mean)) / torch.tensor(imagenet_std)).float()
+        #print('out_shape is "nchw", train:{}'.format(train.shape))
     
     elif out_shape=="nhwc":
         
@@ -71,29 +97,7 @@ def get_out_dir(dataset_name, task, model_type, finetuned):
     create_dir(prompt_path)
     
     return model_path, prompt_path
-
-
-def get_cuda_devices():
-    
-    if torch.cuda.is_available():
-    
-        print("GPU(s) available: ", torch.cuda.get_device_name())
-    
-        # remove any device which doesn't exists
-        deviceIds = [int(d) for d in range(torch.cuda.device_count())] 
-    
-        # set args.deviceIds[0] (the master node) as the current device
-        torch.cuda.set_device(deviceIds[0])
-    
-        device    = torch.device("cuda")
-
-    else:
-    
-        device    = torch.device('cpu')
-        deviceIds = None
-
-    return device
-    
+  
     
     
 def get_comet_experiment(config_path="comet_config.yml"):
@@ -136,7 +140,7 @@ def initialize_visual_cue(num_tasks, image_size):
 def show_image(image, title=''):
     # image is [H, W, 3]
     assert image.shape[2] == 3
-    plt.imshow(torch.clip((image * imagenet_std + imagenet_mean) * 255, 0, 255).int())
+    plt.imshow(torch.clamp((image * imagenet_std + imagenet_mean) * 255, 0, 255).int())
     plt.title(title, fontsize=16)
     plt.axis('off')
     return
@@ -146,7 +150,8 @@ def prepare_model(chkpt_dir=None, arch='mae_vit_large_patch16'):
     # build model
     model = getattr(models_mae, arch)()
     
-    model.cuda()
+    if torch.cuda.device_count() > 1:
+        model.cuda()
     
     # load model
     
@@ -238,7 +243,8 @@ def load_model(ViT_mode="base", prompt=True):
     
     if ViT_mode=="huge":
         
-        os.system("wget -nc https://dl.fbaipublicfiles.com/mae/visualize/mae_visualize_vit_huge.pth")  
+        if os.path.exists('mae_visualize_vit_huge.pth') == False:
+            os.system("wget -nc https://dl.fbaipublicfiles.com/mae/visualize/mae_visualize_vit_huge.pth")  
 
         chkpt_dir  = 'mae_visualize_vit_huge.pth'
         model_mae  = prepare_model('mae_visualize_vit_huge.pth', 'mae_vit_huge_patch14')
@@ -249,7 +255,8 @@ def load_model(ViT_mode="base", prompt=True):
         
     elif ViT_mode=="large":
         
-        os.system("wget -nc https://dl.fbaipublicfiles.com/mae/visualize/mae_visualize_vit_large.pth")
+        if os.path.exists('mae_visualize_vit_large.pth') == False:
+            os.system("wget -nc https://dl.fbaipublicfiles.com/mae/visualize/mae_visualize_vit_large.pth")
 
         chkpt_dir = 'mae_visualize_vit_large.pth'
         model_mae = prepare_model('mae_visualize_vit_large.pth', 'mae_vit_large_patch16')
