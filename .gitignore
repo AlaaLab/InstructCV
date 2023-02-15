@@ -17,7 +17,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.swp
-comet_config.yml
+*.pth
 
 # Custom
 checkpoints/
@@ -25,5 +25,6 @@ visuals/
 logs/
 data/
 models/
+promtps/
 
 

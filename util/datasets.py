@@ -13,6 +13,7 @@ import PIL
 import torch
 from dataset import Pets
 from torchvision import datasets, transforms
+from torch.utils.data.dataset import ConcatDataset
 from torch.utils.data import DataLoader
 from timm.data import create_transform
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
@@ -33,13 +34,13 @@ def make_signal_task_dataset(dataset_name, task, batch_size, split):
             transforms.ToTensor(),
             ])
 
-        dataset_params = {"root":dataset_path, "transform":transform_aug}
+        dataset_params = {"root":dataset_path, "transform":transform_aug, "target_transform":transform_aug}
         dataset = Datasets[dataset_name](**dataset_params, task=task, split=split)
     
         if split != 'test':
             dataset_loader = DataLoader(dataset, batch_size, shuffle=True, drop_last=True)
         else:
-            dataset_loader = DataLoader(dataset, batch_size, shuffle=False, drop_last=True)
+            dataset_loader = DataLoader(dataset, batch_size, shuffle=False)
 
     elif task == 'detection':
         transform_aug = transforms.Compose([
@@ -47,14 +48,40 @@ def make_signal_task_dataset(dataset_name, task, batch_size, split):
             transforms.ToTensor(),
             ])
 
-        dataset_params = {"root":dataset_path, "transform":transform_aug}
+        dataset_params = {"root":dataset_path, "transform":transform_aug, "target_transform":transform_aug}
         dataset = Datasets[dataset_name](**dataset_params, task=task, split=split)
     
         if split != 'test':
             dataset_loader = DataLoader(dataset, batch_size, shuffle=True, drop_last=True)
         else:
-            dataset_loader = DataLoader(dataset, batch_size, shuffle=False, drop_last=True)
+            dataset_loader = DataLoader(dataset, batch_size, shuffle=False)
+    elif task == 'classification':
+        transform_aug = transforms.Compose([
+            transforms.Resize((image_size, image_size), interpolation=PIL.Image.BICUBIC),
+            transforms.ToTensor(),
+            ])
+
+        dataset_params = {"root":dataset_path, "transform":transform_aug, "target_transform":transform_aug}
+        dataset = Datasets[dataset_name](**dataset_params, task=task, split=split)
     
+        if split != 'test':
+            dataset_loader = DataLoader(dataset, batch_size, shuffle=True, drop_last=True)
+        else:
+            dataset_loader = DataLoader(dataset, batch_size, shuffle=False)
+    else: # for test
+        transform_aug = transforms.Compose([
+            transforms.Resize((image_size, image_size), interpolation=PIL.Image.BICUBIC),
+            transforms.ToTensor(),
+            ])
+
+        dataset_params = {"root":dataset_path, "transform":transform_aug, "target_transform":transform_aug}
+        dataset = Datasets[dataset_name](**dataset_params, task=task, split=split)
+
+        if split != 'test':
+            dataset_loader = DataLoader(dataset, batch_size, shuffle=True, drop_last=True)
+        else:
+            dataset_loader = DataLoader(dataset, batch_size, shuffle=False)
+
     return dataset_loader
 
 def make_multi_task_dataset(dataset_name, tasks, batch_size, split):
@@ -62,28 +89,46 @@ def make_multi_task_dataset(dataset_name, tasks, batch_size, split):
     image_size = config.dataset_params[dataset_name]['IMG_SIZE']
     dataset_path = config.dataset_params[dataset_name]['data_path']
 
-    for task in tasks:
+    transform_aug = transforms.Compose([
+        transforms.Resize((image_size, image_size), interpolation=PIL.Image.BICUBIC),
+        transforms.ToTensor(),
+        ])
 
-        if task == 'segmentation':
-            transform_aug = transforms.Compose([
-                transforms.Resize((image_size, image_size), interpolation=PIL.Image.BICUBIC),
-                transforms.ToTensor(),
-            ])
 
-            dataset_params = {"root":dataset_path, "transform":transform_aug}
-            dataset = Datasets[dataset_name](**dataset_params, task=task, split=split)
-    
-            if split != 'test':
-                dataset_loader = DataLoader(dataset, batch_size, shuffle=True, drop_last=True)
-            else:
-                dataset_loader = DataLoader(dataset, batch_size, shuffle=False)
-    
-    return dataset_loader
+
+    if tasks == ['multi-task'] and split == 'test': # for test
+        dataset_params = {"root":dataset_path, "transform":transform_aug, "target_transform":None}
+        dataset = Datasets[dataset_name](**dataset_params, task=tasks, split=split)
+        dataset_loader = DataLoader(dataset, batch_size)
+        return dataset_loader
+
+    dataset_params = {"root":dataset_path, "transform":transform_aug, "target_transform":transform_aug}
+    dataset = Datasets[dataset_name](**dataset_params, task=tasks, split=split)
+
+    dataset_params = {"root":dataset_path, "transform":transform_aug, "target_transform":None}
+    language_dataset = Datasets[dataset_name](**dataset_params, task=tasks, split=split, g_task_id=True)
+
+    g=torch.Generator()
+    g.manual_seed(0)
+
+    if split != 'test':
+        dataset_loader = DataLoader(dataset, batch_size, shuffle=True, drop_last=True, generator=g)
+        language_dataset_loader = DataLoader(language_dataset, batch_size, shuffle=True, drop_last=True, generator=g)
+    else:
+        dataset_loader = DataLoader(dataset, batch_size, shuffle=False)
+        language_dataset_loader = DataLoader(language_dataset, batch_size, shuffle=False)
+
+
+    for lan in language_dataset_loader:
+        print('lan:{}'.format(lan))
+        break
+
+    return (dataset_loader, language_dataset_loader)
 
 
 def build_dataset(dataset_name, batch_size, task, split):
  
-    if type(task) == type([]):
+    if type(task) == list:
         train_loader = make_multi_task_dataset(dataset_name, task, batch_size, split)
         val_loader = make_multi_task_dataset(dataset_name, task, batch_size, split='test')
     else:
