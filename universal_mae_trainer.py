@@ -107,12 +107,9 @@ def train_epoch(model, visual_cue_model, optimizer, data_loader, device, multi_t
 
         # create a visual collage and apply forward pass
 
-        #print('train_batch:{}, {}'.format(train_batch[0].shape, train_batch[1].shape))
-        #print('train_batch:{}'.format(train_batch[1]))
-        visual_collage = stitch_visual_collage(train_batch, visual_cue_model, batch_size, multi_task).to(device)   
-        loss, y, mask  = model(visual_collage, mask_ratio=0.25)
+        visual_collage = stitch_visual_collage(train_batch, visual_cue_model, batch_size, multi_task).to(device) # image+visual_cue 
+        loss, y, mask  = model(visual_collage)
         
-            
         # Clear gradients
     
         optimizer.zero_grad()
@@ -144,17 +141,18 @@ def train_epoch(model, visual_cue_model, optimizer, data_loader, device, multi_t
 
     epoch_loss = np.mean(np.array(loss_list))    
             
-    return epoch_loss, best_v_cue  
+    return epoch_loss
 
 
 
 
 
-def get_validatation_loss(model, visual_cue_model, optimizer, data_loader, model_type, patch_size, num_epochs, epoch_loss, epoch, multi_task,
-                          val_loss, best_val_loss, best_v_cue, model_path, prompt_path, print_freq=10, finetune=False, experiment=None):
+def get_validatation_loss(model, visual_cue_model, optimizer, data_loader, model_type, patch_size, num_epochs, multi_task, epoch_loss, epoch,
+                          val_loss, best_val_loss, model_path, prompt_path, print_freq=10, finetune=False, experiment=None):
     
     
     valid_loader  = data_loader if multi_task==False else zip(data_loader[0], data_loader[1])
+    batch_size = data_loader.batch_size if multi_task==False else data_loader[0].batch_size
     
     with torch.no_grad():
         
@@ -168,7 +166,7 @@ def get_validatation_loss(model, visual_cue_model, optimizer, data_loader, model
         
         for val_batch in valid_loader:
             
-            visual_collage = stitch_visual_collage(val_batch, visual_cue_model, valid_loader.batch_size).to(device)  
+            visual_collage = stitch_visual_collage(val_batch, visual_cue_model, batch_size, multi_task).to(device)  
             loss, _, __    = model(visual_collage)
             
             if torch.cuda.device_count() > 1:
@@ -218,20 +216,30 @@ def train(model, visual_cue_model, optimizer, train_data_loader, val_data_loader
         epoch_loss_ = train_epoch(model, visual_cue_model, optimizer, train_data_loader, device, multi_task, print_freq=print_freq, experiment=experiment, epoch_num=epoch)
         
         epoch_loss.append(epoch_loss_) 
+    
+
+        # val_loss, best_val_loss = get_validatation_loss(model, visual_cue_model, optimizer, 
+        #                                                                data_loader=val_data_loader, model_type=model_type, 
+        #                                                                patch_size=patch_size, num_epochs=num_epochs, multi_task=multi_task,
+        #                                                                epoch_loss=epoch_loss, epoch=epoch,
+        #                                                                val_loss=val_loss, best_val_loss=best_val_loss, 
+        #                                                                model_path=model_path, prompt_path=prompt_path, 
+        #                                                                print_freq=10, finetune=finetune, experiment=experiment)
         
-        
-        if experiment is not None:
+        print(Fore.CYAN + Style.BRIGHT + "Epoch: {} \t--- Training Loss: {:.4f}".format(epoch, epoch_loss[-1]))
+        #comet_ml
+        # if experiment is not None:
             
-            experiment.log_metric("Training loss", epoch_loss_, step=epoch)
-    
-    
-        val_loss, best_val_loss    = get_validatation_loss(model, visual_cue_model, optimizer, 
-                                                                       data_loader=val_data_loader, model_type=model_type, 
-                                                                       patch_size=patch_size, num_epochs=num_epochs, multi_task=multi_task,
-                                                                       epoch_loss=epoch_loss, epoch=epoch, 
-                                                                       val_loss=val_loss, best_val_loss=best_val_loss, 
-                                                                       model_path=model_path, prompt_path=prompt_path, 
-                                                                       print_freq=10, finetune=finetune, experiment=experiment)
+        #     hyper_params = {
+        #         'batch_size':batch_size,
+        #         'epoch': num_epochs}
+            
+        #     metrics = {
+        #         'train_loss': epoch_loss_,
+        #         'valid_loss': val_loss}
+            
+        #     experiment.log_multiple_params(hyper_params)
+        #     experiment.log_multiple_metrics(metrics, step=epoch)
 
     torch.cuda.empty_cache()
     

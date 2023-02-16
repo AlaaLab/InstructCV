@@ -63,7 +63,6 @@ class MaskedAutoencoderViT(nn.Module):
         self.initialize_weights()
 
 
-
     def initialize_weights(self):
         # initialization
         # initialize (and freeze) pos_embed by sin-cos embedding
@@ -84,6 +83,7 @@ class MaskedAutoencoderViT(nn.Module):
         # initialize nn.Linear and nn.LayerNorm
         self.apply(self._init_weights)
 
+
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
             # we use xavier_uniform following official JAX ViT:
@@ -93,6 +93,7 @@ class MaskedAutoencoderViT(nn.Module):
         elif isinstance(m, nn.LayerNorm):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
+
 
     def patchify(self, imgs):
         """
@@ -108,6 +109,7 @@ class MaskedAutoencoderViT(nn.Module):
         x = x.reshape(shape=(imgs.shape[0], h * w, p**2 * 3))
         return x
 
+
     def unpatchify(self, x):
         """
         x: (N, L, patch_size**2 *3)
@@ -121,6 +123,7 @@ class MaskedAutoencoderViT(nn.Module):
         x = torch.einsum('nhwpqc->nchpwq', x)
         imgs = x.reshape(shape=(x.shape[0], 3, h * p, h * p))
         return imgs
+
 
     def random_masking(self, x, mask_ratio):
         """
@@ -149,13 +152,13 @@ class MaskedAutoencoderViT(nn.Module):
 
         return x_masked, mask, ids_restore
 
+
     def forward_encoder(self, x, mask_ratio):
         # embed patches
         x = self.patch_embed(x)
 
         # add pos embed w/o cls token
         x = x + self.pos_embed[:, 1:, :]
-
 
         # masking: length -> length * mask_ratio
         x, mask, ids_restore = self.random_masking(x, mask_ratio)
@@ -171,6 +174,7 @@ class MaskedAutoencoderViT(nn.Module):
         x = self.norm(x)
 
         return x, mask, ids_restore
+
 
     def forward_decoder(self, x, ids_restore):
         # embed tokens
@@ -198,6 +202,7 @@ class MaskedAutoencoderViT(nn.Module):
 
         return x
 
+
     def forward_loss(self, imgs, pred, mask):
         """
         imgs: [N, 3, H, W]
@@ -215,6 +220,7 @@ class MaskedAutoencoderViT(nn.Module):
 
         loss = (loss * mask).sum() / mask.sum()  # mean loss on removed patches
         return loss
+
 
     def forward(self, imgs, mask_ratio=0.75):
         latent, mask, ids_restore = self.forward_encoder(imgs, mask_ratio)

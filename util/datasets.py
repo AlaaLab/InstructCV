@@ -85,7 +85,12 @@ def make_signal_task_dataset(dataset_name, task, batch_size, split):
     return dataset_loader
 
 def make_multi_task_dataset(dataset_name, tasks, batch_size, split):
-
+    '''
+    Create two dataloder: dataset_loader, language_dataset_loader
+    Args:
+        tasks: ["classification", "segmentation", "detection"]
+    '''
+    
     image_size = config.dataset_params[dataset_name]['IMG_SIZE']
     dataset_path = config.dataset_params[dataset_name]['data_path']
 
@@ -94,17 +99,18 @@ def make_multi_task_dataset(dataset_name, tasks, batch_size, split):
         transforms.ToTensor(),
         ])
 
-
-
-    if tasks == ['multi-task'] and split == 'test': # for test
+    #NOTE: for test
+    if tasks == ['multi-task'] and split == 'test':
         dataset_params = {"root":dataset_path, "transform":transform_aug, "target_transform":None}
         dataset = Datasets[dataset_name](**dataset_params, task=tasks, split=split)
         dataset_loader = DataLoader(dataset, batch_size)
         return dataset_loader
 
+    #image dataset
     dataset_params = {"root":dataset_path, "transform":transform_aug, "target_transform":transform_aug}
     dataset = Datasets[dataset_name](**dataset_params, task=tasks, split=split)
 
+    #language dataset
     dataset_params = {"root":dataset_path, "transform":transform_aug, "target_transform":None}
     language_dataset = Datasets[dataset_name](**dataset_params, task=tasks, split=split, g_task_id=True)
 
@@ -127,6 +133,9 @@ def make_multi_task_dataset(dataset_name, tasks, batch_size, split):
 
 
 def build_dataset(dataset_name, batch_size, task, split):
+    '''
+    Enable multi-task datasets
+    '''
  
     if type(task) == list:
         train_loader = make_multi_task_dataset(dataset_name, task, batch_size, split)

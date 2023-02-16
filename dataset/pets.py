@@ -13,6 +13,7 @@ import xml.etree.ElementTree as ET
 import jieba
 
 def word_token2idx(language, word_token):
+    
     seg_list = list(jieba.cut(language))
     tokens = []
     for w in seg_list:
@@ -28,7 +29,12 @@ def word_token2idx(language, word_token):
 
     return tokens
 
+
 def build_token_dict(word_token_file, samples=[]):
+    '''
+    Return: word token
+    '''
+
     word_token = {}
     if os.path.exists(word_token_file):
         for line in open(word_token_file):
@@ -58,8 +64,13 @@ def build_token_dict(word_token_file, samples=[]):
     fp.close()
     return word_token
 
+
 def find_classes(classes_file):
-    # read classes file, separating out image IDs and class names
+    '''
+    Read classes file, separating out image IDs and class names
+    E.g., image_ids: Abyssinian_100; classes/targets: 1; 
+    class_to_idx: dict to store class & idx mapping
+    '''
 
     image_ids = []
     targets = []
@@ -79,6 +90,17 @@ def find_classes(classes_file):
 
 
 def make_dataset(dir, image_ids, targets, task='segmentation'):
+    
+    '''
+    Args:
+        task: list if multi-task
+    Return:
+        Images: append the list of Classificaiton, Segmentation, Detection
+                    Classificaiton: ((img_path, tk, target)...,)
+                    Segmentation: ((img_path, tk, seg_path)...,)
+                    Detection: ((img_path, tk, bbox)...,) ;test -- ((img_path, tk, target)...,) 
+    '''
+    
     assert(len(image_ids) == len(targets))
     images = []
     dir = os.path.expanduser(dir)
@@ -88,7 +110,7 @@ def make_dataset(dir, image_ids, targets, task='segmentation'):
 
     for tk in task:
         for i in range(len(image_ids)):
-            if tk == 'classification' and targets[i] not in [1, 2]: # 1 猫, 2 狗
+            if tk == 'classification' and targets[i] not in [1, 2]: # 1 cat, 2 dog
                 continue
             if tk == 'classification':
                 img_path = os.path.join(dir, 'images', '%s.jpg' % image_ids[i])
@@ -141,15 +163,18 @@ class Pets(Dataset):
     """
     
     def __init__(self, root, split, transform=None, target_transform=None, download=None, loader=default_loader, task='segmentation', g_task_id = False, word_token_file='language_word.txt', **kwargs):
-        # if split == 'train':
-        #     split = 'trainval'
+        '''
+        g_task_id: identify if this is for the language dataloader
+        word_token_file: predefined file
+        task: list (tasks)
+        '''
         image_ids, targets, classes, class_to_idx = find_classes(os.path.join(root, f'annotations/{split}.txt'))
         
         self.root = root
         self.task = task
         self.g_task_id = g_task_id
         self.loader = default_loader
-        self.samples = make_dataset(self.root, image_ids, targets, task)
+        self.samples = make_dataset(self.root, image_ids, targets, task) # task:list
         self.len = len(self.samples)
         self.classes = classes
         self.class_to_idx = class_to_idx

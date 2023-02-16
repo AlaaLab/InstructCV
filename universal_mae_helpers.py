@@ -20,14 +20,18 @@ import util.lr_decay as lrd
 
 # remove these
 
-imagenet_mean = np.array([0.485, 0.456, 0.406])
-imagenet_std  = np.array([0.229, 0.224, 0.225])
+# imagenet_mean = np.array([0.485, 0.456, 0.406])
+# imagenet_std  = np.array([0.229, 0.224, 0.225])
+
+imagenet_mean = torch.Tensor([0.485, 0.456, 0.406])
+imagenet_std  = torch.Tensor([0.229, 0.224, 0.225])
+
 
 def get_cuda_devices():
     
     if torch.cuda.is_available():
     
-        print("GPU(s) available: ", torch.cuda.get_device_name())
+        # print("GPU(s) available: ", torch.cuda.get_device_name())
     
         # remove any device which doesn't exists
         deviceIds = [int(d) for d in range(torch.cuda.device_count())] 
@@ -46,32 +50,43 @@ def get_cuda_devices():
  
 device        = get_cuda_devices()
 
-
 def stitch_visual_collage(train_batch, visual_cue, batch_size, multi_task, out_shape="nchw"):
+    '''
+    Arg:
+        train_batch - (dataset_loader, language_dataset_loader)
+        visual_cue - VisualCue(args.image_size)
+    
+    Return:
+        train: concat databatch & visual_cue (see shape)
+    '''
     
     if type(train_batch) is list:
         
-        concat_train_batch = torch.cat([train_batch[0], train_batch[1]], dim=2)
+        concat_train_batch      = torch.cat([train_batch[0], train_batch[1]], dim=2)
+        
         print('concat_train_batch:{}'.format(concat_train_batch.shape))
-        train_batch = [concat_train_batch]
+        
+        train_batch             = [concat_train_batch]
                    
-    if multi_task==False:
+    if multi_task == False:
         #print('visual_cue.shape[0]=1, train_batch:{}'.format(train_batch[0].shape))
     
-        train = torch.cat([torch.einsum("nchw->nhwc", train_batch[0]), visual_cue[0, :, :, :].unsqueeze(0).repeat(batch_size, 1, 1, 1)], dim=2) 
+        train                   = torch.cat([torch.einsum("nchw->nhwc", train_batch[0]), visual_cue[0, :, :, :].unsqueeze(0).repeat(batch_size, 1, 1, 1)], dim=2) 
         #print('after cat, train:{}'.format(train.shape))
     
     else:
 
-        data_batch, lan_batch = train_batch
-        visual_cue = visual_cue(lan_batch)
-        print('visual_cue:{}'.format(visual_cue.shape))
+        data_batch, lan_batch   = train_batch
+  
+        visual_cue              = visual_cue(lan_batch)
+        device                  = get_cuda_devices()
+        data_batch[0]           = data_batch[0].to(device)
         train                   = torch.cat([torch.einsum("nchw->nhwc", data_batch[0]), visual_cue], dim=2) 
     
     
     if out_shape=="nchw":
         
-        train = torch.einsum("nhwc->nchw", (train - torch.tensor(imagenet_mean)) / torch.tensor(imagenet_std)).float()
+        train = torch.einsum("nhwc->nchw", (train - torch.tensor(imagenet_mean).to(device)) / torch.tensor(imagenet_std).to(device)).float()
         #print('out_shape is "nchw", train:{}'.format(train.shape))
     
     elif out_shape=="nhwc":
@@ -87,7 +102,7 @@ def create_dir(PATH):
     
         os.makedirs(PATH)
 
-        
+
 def get_out_dir(dataset_name, task, model_type, finetuned):
     
     prompt_subdir = "finetuned" if finetuned else "frozen"
@@ -101,7 +116,6 @@ def get_out_dir(dataset_name, task, model_type, finetuned):
     return model_path, prompt_path
   
     
-    
 def get_comet_experiment(config_path="comet_config.yml"):
     
     with open(config_path, "r") as file:
@@ -113,7 +127,6 @@ def get_comet_experiment(config_path="comet_config.yml"):
                             workspace=comet_data["workspace"],)
     
     return experiment
-
 
 
 def get_optimizer(model, visual_cue, learning_rate, weight_decay, layer_decay, batch_size, finetune, device, **kwargs):
@@ -133,17 +146,15 @@ def get_optimizer(model, visual_cue, learning_rate, weight_decay, layer_decay, b
     return optimizer
 
 
-
 def initialize_visual_cue(num_tasks, image_size):
     
     return torch.nn.init.xavier_uniform(torch.nn.Parameter(torch.zeros(num_tasks, image_size, int(image_size/2), 3)))
 
 
-
 def show_image(image, title=''):
     # image is [H, W, 3]
     assert image.shape[2] == 3
-    plt.imshow(torch.clip((image * imagenet_std + imagenet_mean) * 255, 0, 255).int())
+    plt.imshow(torch.clamp((image * imagenet_std + imagenet_mean) * 255, 0, 255).int())
     plt.title(title, fontsize=16)
     plt.axis('off')
     return
@@ -167,8 +178,7 @@ def prepare_model(chkpt_dir=None, arch='mae_vit_large_patch16'):
     return model
 
 
-
-def run_one_image(img, model, mask_ratio=0.75, display=True, rgb_output=True):
+def run_one_image(img, model, mask_ratio=0.75, display=True, rgb_output=True, save_name='1.png'):
     x = torch.tensor(img).to(device)
 
     # make it a batch-like
@@ -178,7 +188,7 @@ def run_one_image(img, model, mask_ratio=0.75, display=True, rgb_output=True):
     # run MAE
     #loss, y, mask = model(x.float(), mask_ratio=mask_ratio)
     loss, y, mask = model(**dict(imgs=x.float(), mask_ratio=mask_ratio))
-
+ 
     
     if torch.cuda.device_count() > 1:
         
@@ -188,8 +198,9 @@ def run_one_image(img, model, mask_ratio=0.75, display=True, rgb_output=True):
         
         y         = model.unpatchify(y)
   
-    
-    y             = torch.einsum('nchw->nhwc', y).detach().cpu()
+        y         = torch.einsum('nchw->nhwc', y).detach().cpu()
+   
+ 
 
     # visualize the mask
     mask = mask.detach()
@@ -211,7 +222,11 @@ def run_one_image(img, model, mask_ratio=0.75, display=True, rgb_output=True):
     x = torch.einsum('nchw->nhwc', x)
 
     # masked image
+
     im_masked = x * (1 - mask.to(device))
+    
+    # !!!!modify
+    y = torch.einsum('nchw->nhwc', y)
 
     # MAE reconstruction pasted with visible patches
     im_paste = x * (1 - mask.to(device)) + y.to(device) * mask.to(device)
@@ -221,6 +236,8 @@ def run_one_image(img, model, mask_ratio=0.75, display=True, rgb_output=True):
     if display:
         
         plt.rcParams['figure.figsize'] = [24, 24]
+        plt.rcParams['savefig.dpi'] = 200
+        plt.rcParams['figure.dpi'] = 500
 
         plt.subplot(1, 3, 1)
         show_image(x[0].cpu(), "original")
@@ -235,12 +252,17 @@ def run_one_image(img, model, mask_ratio=0.75, display=True, rgb_output=True):
         show_image(im_paste[0].cpu(), "reconstruction + visible")
 
         plt.show()
-
+        plt.savefig(save_name)
+        
     return im_paste[0].cpu(), im_masked[0].cpu(), mask.cpu(), loss.cpu()
 
 
 
 def load_model(ViT_mode="base", prompt=True):
+    '''
+    When prompt = True:
+        replace random_masking with prompted_masking
+    '''
     
     patch_size = 16
     
@@ -250,7 +272,7 @@ def load_model(ViT_mode="base", prompt=True):
             os.system("wget -nc https://dl.fbaipublicfiles.com/mae/visualize/mae_visualize_vit_huge.pth")  
 
         chkpt_dir  = 'mae_visualize_vit_huge.pth'
-        model_mae  = prepare_model('mae_visualize_vit_huge.pth', 'mae_vit_huge_patch14')
+        model_mae  = prepare_model('mae_visualize_vit_huge.pth', 'mae_vit_huge_patch14') # load model_mae
     
         print('Model loaded.')
         

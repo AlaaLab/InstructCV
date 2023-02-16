@@ -40,7 +40,7 @@ assert timm.__version__ == "0.4.5"
 # local imports and utils
 
 import models_mae
-from universal_mae_helpers import load_model, get_cuda_devices, get_out_dir, initialize_visual_cue, get_optimizer
+from universal_mae_helpers import load_model, get_cuda_devices, get_out_dir, initialize_visual_cue, get_optimizer, get_comet_experiment
 from universal_mae_trainer import train
 from util.datasets import * 
 
@@ -62,8 +62,6 @@ from comet_ml import Experiment
 # Define global constants
 imagenet_mean = np.array(timm.data.constants.IMAGENET_DEFAULT_MEAN)
 imagenet_std  = np.array(timm.data.constants.IMAGENET_DEFAULT_STD)
-
-
 
 # ** Get command line arguments **
 
@@ -170,12 +168,11 @@ def main(args):
    
   
     print('dataset_params:{}'.format(dataset_params))
-    train_loader, val_loader = build_dataset(**dataset_params, split="trainval")
+    train_loader, val_loader = build_dataset(**dataset_params, split="trainval") #(dataset_loader, language_dataset_loader)
 
     print("Number of training samples: ", len(train_loader.dataset) if num_tasks==1 else len(train_loader[0].dataset))
     print("Number of validation samples: ", len(val_loader.dataset) if num_tasks==1 else len(val_loader[0].dataset))
 
-    # make_dataset
     
     # load the MAE model pre-trained on ImageNet-1K
     # .............................................
@@ -190,10 +187,10 @@ def main(args):
     
     model, patch_size        = load_model(ViT_mode=args.model, prompt=True)
 
-
-    visual_model = VisualCue(args.image_size)
+    visual_model             = VisualCue(args.image_size)
     #visual_cue               = initialize_visual_cue(num_tasks, args.image_size)
 
+    ## Resume Training
     visula_cue_path = out_dir_params['prompt_path']+'/'+model_params['model_type']+'.pth'
     if os.path.exists(visula_cue_path):
         state = torch.load(visula_cue_path)
@@ -207,7 +204,6 @@ def main(args):
         model.load_state_dict(state)
         print('load checkpoint success! ckpt:{}'.format(chkpt_dir))
 
-    
     
     model.to(device)
     visual_model.to(device)

@@ -1,7 +1,7 @@
 
 NUM_PATCHES        = 16
 IMG_SIZE           = 224
-device             = "cpu" #"cuda"
+device             = "cuda"
 
 redweb_images_dir  = "data/ReDWeb_V1/Imgs/"
 redweb_label_dir   = "data/ReDWeb_V1/RDs/"
