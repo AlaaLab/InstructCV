@@ -77,52 +77,52 @@ visual_cue_model = visual_cue_model.to(get_cuda_devices())
 #data_test              = iter(make_dataset["single_task"](dataset_name="oxford-pets", task="segmentation", batch_size=16, split="test"))
 #data_test              = iter(make_dataset["single_task"](dataset_name="oxford-pets", task="detection", batch_size=16, split="test"))
 #data_test              = iter(make_dataset["single_task"](dataset_name="oxford-pets", task="classification", batch_size=16, split="test"))
-data_test  = iter(make_dataset["single_task"](dataset_name="oxford-pets", task="multi-task", batch_size=16, split="test"))
+data_test  = iter(make_dataset["single_task"](dataset_name="voc", task="multi-task", batch_size=16, split="test"))
 #data_train, data_val   = make_dataset["single_task"](dataset_name="oxford-pets", task="segmentation", batch_size=16, split="trainval")
 
 data_batch            = next(data_test) #next(iter(data_train)) #
 print(data_batch[0].shape)
-#train                   = torch.cat([torch.einsum("nchw->nhwc", data_batch[0]), visual_cue[label_batch, :, :, :]], dim=2) 
+# #train                   = torch.cat([torch.einsum("nchw->nhwc", data_batch[0]), visual_cue[label_batch, :, :, :]], dim=2) 
 
-language = 'segment cat'
-from dataset.pets import build_token_dict,word_token2idx
-word_token = build_token_dict('language_word.txt')
-lan_token = torch.tensor([word_token2idx(language, word_token)]).repeat(16, 1)
-lan_token
-lan_token.shape
+# language = 'is this a photo of cat?'
+# from dataset.pets import build_token_dict,word_token2idx
+# word_token = build_token_dict('language_word.txt')
+# lan_token = torch.tensor([word_token2idx(language, word_token)]).repeat(16, 1)
+# lan_token
+# lan_token.shape
 
-raw_img                = torch.einsum("chw->hwc", data_batch[0][6, :, :, :]) #data_test[50, :, :, :] 
+# raw_img                = torch.einsum("chw->hwc", data_batch[0][6, :, :, :]) #data_test[50, :, :, :] 
 
-plt.figure(figsize=(4, 4))
+# plt.figure(figsize=(4, 4))
 
-fig        = plt.imshow(raw_img)
+# fig        = plt.imshow(raw_img)
 
-fig.axes.get_xaxis().set_visible(False)
-fig.axes.get_yaxis().set_visible(False)
-
-
-
-
-from skimage.transform import resize
-from universal_mae_helpers import *
-
-con_data_batch = [torch.cat([data_batch[0], data_batch[0]], dim=2)]
-print(con_data_batch[0].shape)
-# print("visual_cue_model_device:", visual_cue_model.device)
-
-test_img   = stitch_visual_collage((con_data_batch,lan_token), visual_cue_model, 16, True, "hwc").detach()[5, :, :, :] #torch.cat([raw_img, visual_cue[0, :, :, :]], dim=1).detach() #
-test_img   = test_img.cpu()
-test_img   = test_img - imagenet_mean
-test_img   = test_img / imagenet_std
+# fig.axes.get_xaxis().set_visible(False)
+# fig.axes.get_yaxis().set_visible(False)
 
 
 
-torch.manual_seed(2)
 
-#model.cuda()
+# from skimage.transform import resize
+# from universal_mae_helpers import *
 
-print('MAE with pixel reconstruction:')
-reconstructed_frame = run_one_image(test_img, model)
+# con_data_batch = [torch.cat([data_batch[0], data_batch[0]], dim=2)]
+# print(con_data_batch[0].shape)
+# # print("visual_cue_model_device:", visual_cue_model.device)
+
+# test_img   = stitch_visual_collage((con_data_batch,lan_token), visual_cue_model, 16, True, "hwc").detach()[5, :, :, :] #torch.cat([raw_img, visual_cue[0, :, :, :]], dim=1).detach() #
+# test_img   = test_img.cpu()
+# test_img   = test_img - imagenet_mean
+# test_img   = test_img / imagenet_std
+
+
+
+# torch.manual_seed(2)
+
+# #model.cuda()
+
+# print('MAE with pixel reconstruction:')
+# reconstructed_frame = run_one_image(test_img, model)
 
 
 

@@ -11,7 +11,7 @@ import pdb
 import os
 import PIL
 import torch
-from dataset import Pets
+from dataset import Pets,VOCSegDataset
 from torchvision import datasets, transforms
 from torch.utils.data.dataset import ConcatDataset
 from torch.utils.data import DataLoader
@@ -21,7 +21,7 @@ from universal_mae_helpers import imagenet_mean, imagenet_std
 import config
 
 normalise_dict = {'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}
-Datasets = {"oxford-pets": Pets}
+Datasets = {"oxford-pets": Pets, "voc": VOCSegDataset}
 
 def make_signal_task_dataset(dataset_name, task, batch_size, split):
 
@@ -34,7 +34,7 @@ def make_signal_task_dataset(dataset_name, task, batch_size, split):
             transforms.ToTensor(),
             ])
 
-        dataset_params = {"root":dataset_path, "transform":transform_aug, "target_transform":transform_aug}
+        dataset_params = {"root":dataset_path, "transform":transform_aug, "target_transform":transform_aug, "is_train": False}
         dataset = Datasets[dataset_name](**dataset_params, task=task, split=split)
     
         if split != 'test':
@@ -61,7 +61,7 @@ def make_signal_task_dataset(dataset_name, task, batch_size, split):
             transforms.ToTensor(),
             ])
 
-        dataset_params = {"root":dataset_path, "transform":transform_aug, "target_transform":transform_aug}
+        dataset_params = {"root":dataset_path, "transform":transform_aug, "target_transform":transform_aug, "is_train":False}
         dataset = Datasets[dataset_name](**dataset_params, task=task, split=split)
     
         if split != 'test':
@@ -74,7 +74,7 @@ def make_signal_task_dataset(dataset_name, task, batch_size, split):
             transforms.ToTensor(),
             ])
 
-        dataset_params = {"root":dataset_path, "transform":transform_aug, "target_transform":transform_aug}
+        dataset_params = {"root":dataset_path, "transform":transform_aug, "target_transform":transform_aug, "is_train": False}
         dataset = Datasets[dataset_name](**dataset_params, task=task, split=split)
 
         if split != 'test':

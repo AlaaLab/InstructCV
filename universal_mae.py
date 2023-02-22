@@ -93,7 +93,7 @@ def get_args_parser():
     
     # Dataset, task and prompt parameters  nargs='*'
     parser.add_argument('--dataset_name', default='maze', type=str, help='Name of the source dataset')
-    parser.add_argument('--multi_task', type=strtobool, default="False", help='Finetune for multiple tasks') 
+    parser.add_argument('--multi_task', type=strtobool, default="True", help='Finetune for multiple tasks') 
     parser.add_argument('--task_list', default=['path_finding_5x5', 'path_finding_6x6'], type=str, nargs='*', help='Description of the vision tasks (only read if multi-task flag is True)')
     parser.add_argument('--task', default='path_finding_5x5', type=str, help='Description of the vision task (discarded if multi-task)')
     parser.add_argument('--prompt_path', default='./prompts/', type=str, help='Path for saving visual prompts')
@@ -132,7 +132,7 @@ def main(args):
     # model, logging and training parameters
     # ........................................
     # TODO: Create paths for outputs
-    
+
     device                   = get_cuda_devices()
     fine_tune, multi_task    = args.finetune==1, "multiple_tasks" if args.multi_task==1 else "single_task"
     num_tasks                = len(args.task_list) if args.multi_task==1 else 1
@@ -170,8 +170,8 @@ def main(args):
     print('dataset_params:{}'.format(dataset_params))
     train_loader, val_loader = build_dataset(**dataset_params, split="trainval") #(dataset_loader, language_dataset_loader)
 
-    print("Number of training samples: ", len(train_loader.dataset) if num_tasks==1 else len(train_loader[0].dataset))
-    print("Number of validation samples: ", len(val_loader.dataset) if num_tasks==1 else len(val_loader[0].dataset))
+    # print("Number of training samples: ", len(train_loader.dataset) if multi_task==False else len(train_loader[0].dataset))
+    # print("Number of validation samples: ", len(val_loader.dataset) if multi_task==False else len(val_loader[0].dataset))
 
     
     # load the MAE model pre-trained on ImageNet-1K

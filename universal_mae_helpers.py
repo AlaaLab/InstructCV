@@ -67,7 +67,7 @@ def stitch_visual_collage(train_batch, visual_cue, batch_size, multi_task, out_s
         print('concat_train_batch:{}'.format(concat_train_batch.shape))
         
         train_batch             = [concat_train_batch]
-                   
+    
     if multi_task == False:
         #print('visual_cue.shape[0]=1, train_batch:{}'.format(train_batch[0].shape))
     

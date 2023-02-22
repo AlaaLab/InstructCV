@@ -248,7 +248,7 @@ class Pets(Dataset):
         #img.save('new_test.jpg')
         box_img = img.copy()
         a = ImageDraw.ImageDraw(box_img)
-        a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill=None, outline='red', width=2)
+        a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill=None, outline='red', width=6)
         #img.save('new_test_2.jpg')
         return box_img
 
