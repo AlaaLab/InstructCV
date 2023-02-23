@@ -52,7 +52,8 @@ class EditDataset(Dataset):
         name, seeds = self.seeds[i]
         propt_dir = Path(self.path, name)
         seed = seeds[torch.randint(0, len(seeds), ()).item()]
-        with open(propt_dir.joinpath("prompt.json")) as fp:
+        with open(propt_dir.joinpath("prompt.json"),'r') as fp:
+            print(fp)
             prompt = json.load(fp)["edit"]
 
         image_0 = Image.open(propt_dir.joinpath(f"{seed}_0.jpg"))

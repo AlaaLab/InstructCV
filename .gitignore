@@ -1,0 +1,49 @@
+# ~/.gitignore_global
+# Symlinked into ~/ as .gitignore
+
+# Compiled source
+*.dll
+*.exe
+
+# Packages/ Archives
+*.7z
+*.dmg
+*.gz
+*.iso
+*.tar
+*.zip
+*.pkg
+
+# Databases
+*.sql
+*.sqlite
+*.ckpt
+*.pth
+
+# Logs
+*.log
+
+# project files
+data/oxford-pets/annotations
+data/oxford-pets/images
+data/oxford-pets/image_pairs
+data/oxford-pets/src
+lightning_logs/
+logs/
+images/
+imgs/
+src/
+stable_diffusion_bak
+
+
+
+# OS generated files
+**/*.app
+**/CmakeCache.txt
+**/build/*
+**/CmakeFiles/*
+**/.DS_Store
+.DS_Store
+**/.Spotlight-V100
+**/.Trashes
+**/Thumbs.db

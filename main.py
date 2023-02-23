@@ -491,6 +491,8 @@ class CUDACallback(Callback):
 
 
 if __name__ == "__main__":
+    # os.environ["WANDB_API_KEY"] = 'e5b8ca5f54387bd7e686aa7d13eda847647d2bd4'
+    # os.environ["WANDB_MODE"] = "offline"
     # custom parser to specify config files, train, test and debug mode,
     # postfix, resume.
     # `--key value` arguments are interpreted as arguments to the trainer.
@@ -602,30 +604,30 @@ if __name__ == "__main__":
         trainer_kwargs = dict()
 
         # default logger configs
-        default_logger_cfgs = {
-            "wandb": {
-                "target": "pytorch_lightning.loggers.WandbLogger",
-                "params": {
-                    "name": nowname,
-                    "save_dir": logdir,
-                    "id": nowname,
-                }
-            },
-            "testtube": {
-                "target": "pytorch_lightning.loggers.TestTubeLogger",
-                "params": {
-                    "name": "testtube",
-                    "save_dir": logdir,
-                }
-            },
-        }
-        default_logger_cfg = default_logger_cfgs["wandb"]
-        if "logger" in lightning_config:
-            logger_cfg = lightning_config.logger
-        else:
-            logger_cfg = OmegaConf.create()
-        logger_cfg = OmegaConf.merge(default_logger_cfg, logger_cfg)
-        trainer_kwargs["logger"] = instantiate_from_config(logger_cfg)
+        # default_logger_cfgs = {
+        #     "wandb": {
+        #         "target": "pytorch_lightning.loggers.WandbLogger",
+        #         "params": {
+        #             "name": nowname,
+        #             "save_dir": logdir,
+        #             "id": nowname,
+        #         }
+        #     },
+        #     "testtube": {
+        #         "target": "pytorch_lightning.loggers.TestTubeLogger",
+        #         "params": {
+        #             "name": "testtube",
+        #             "save_dir": logdir,
+        #         }
+        #     },
+        # }
+        # default_logger_cfg = default_logger_cfgs["wandb"]
+        # if "logger" in lightning_config:
+        #     logger_cfg = lightning_config.logger
+        # else:
+        #     logger_cfg = OmegaConf.create()
+        # logger_cfg = OmegaConf.merge(default_logger_cfg, logger_cfg)
+        # trainer_kwargs["logger"] = instantiate_from_config(logger_cfg)
 
         # modelcheckpoint - use TrainResult/EvalResult(checkpoint_on=metric) to
         # specify which metric is used to determine best models
