@@ -31,10 +31,12 @@ def get_bbox_img(root, img_id):
 
 
     img_path = os.path.join(root, 'images', '%s.jpg' % img_id)
-    img = Image.open(img_path)
+    img = Image.open(img_path).convert("RGB")
     box_img = img.copy()
     a = ImageDraw.ImageDraw(box_img)
     a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill=None, outline='red', width=8)
+
+    del a
 
     return box_img
 
@@ -44,8 +46,9 @@ def get_class_img(img_id, target_name):
     draw = ImageDraw.Draw(img)
     #font = ImageFont.truetype(font='YaMingTiC-2.ttf', size=20)
     font = ImageFont.truetype("keyboard.ttf", 26)
-    # font = ImageFont.load_default()
-    draw.text(xy=(30,30),text=target_name, fill='red', font=font) # 画字体
+    draw.text(xy=(30,30),text=target_name, fill='red', font=font)
+
+    del draw
 
     return img
 
@@ -65,40 +68,38 @@ for line in open(os.path.join(root, 'annotations/trainval.txt')):
     img = Image.open(img_path).convert("RGB")
 
     for task_type in tasks:
+
+
+        target_name = ' '.join(img_id.split('_')[:-1]).strip()
+        if task_type == 'seg':
+            output_img = get_seg_img(root, img_id)
+            prompt = {}
+            prompt['edit'] = 'segment the {}'.format(target_name)
+
+        elif task_type == 'cls':
+            output_img = get_class_img(img_id, target_name)
+            prompt = {}
+            prompt['edit'] = 'what is the animal?'.format(target_name)
+
+        else:
+            output_img = get_bbox_img(root, img_id)
+            if output_img is None:
+                continue
+            prompt = {}
+            prompt['edit'] = 'detect the {}'.format(target_name)
+
         output_path = os.path.join(root, 'image_pairs', img_id + '_{}'.format(task_type))
         if os.path.exists(output_path) == False:
             os.mkdir(output_path)
 
-        promt_file = open(os.path.join(output_path, 'prompt.json'), 'w')
-    
-        seeds.append([img_id+'_{}'.format(task_type), [img_id+'_{}'.format(task_type)]])
+        promt_file = open(os.path.join(output_path, 'prompt.json'), 'w')   
+        promt_file.write(json.dumps(prompt))
+        promt_file.close()
 
         img.save(output_path+'/{}_{}_0.jpg'.format(img_id, task_type))
+        output_img.save(output_path + '/{}_{}_1.jpg'.format(img_id, task_type))
 
-        target_name = ' '.join(img_id.split('_')[:-1]).strip()
-        if task_type == 'seg':
-            seg_img = get_seg_img(root, img_id)
-            seg_img.save(output_path + '/{}_{}_1.jpg'.format(img_id, task_type))
-            prompt = {}
-            prompt['edit'] = 'segment the {}'.format(target_name)
-            promt_file.write(json.dumps(prompt))
-        elif task_type == 'cls':
-            cls_img = get_class_img(img_id, target_name)
-            cls_img.save(output_path + '/{}_{}_1.jpg'.format(img_id, task_type))
-            prompt = {}
-            prompt['edit'] = 'what is the animal?'.format(target_name)
-            promt_file.write(json.dumps(prompt))
-
-        else:
-            bbox_img = get_bbox_img(root, img_id)
-            if bbox_img is None:
-                continue
-            bbox_img.save(output_path + '/{}_{}_1.jpg'.format(img_id, task_type))
-            prompt = {}
-            prompt['edit'] = 'detect the {}'.format(target_name)
-            promt_file.write(json.dumps(prompt))
-            
-        promt_file.close()
+        seeds.append([img_id+'_{}'.format(task_type), [img_id+'_{}'.format(task_type)]])
 
     n +=1 
     if n % 100 == 0:
