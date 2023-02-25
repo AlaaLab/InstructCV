@@ -19,6 +19,7 @@
 *.sqlite
 *.ckpt
 *.pth
+*.mat
 
 # Logs
 *.log
@@ -28,6 +29,10 @@ data/oxford-pets/annotations
 data/oxford-pets/images
 data/oxford-pets/image_pairs
 data/oxford-pets/src
+data/coco/
+data/nyu_depths/
+data/nyu_images/
+data/image_pairs
 lightning_logs/
 logs/
 images/

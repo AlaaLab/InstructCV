@@ -82,7 +82,7 @@ data:
     train:
       target: edit_dataset.EditDataset
       params:
-        path: data/oxford-pets/image_pairs #clip-filtered-dataset
+        path: data/image_pairs #clip-filtered-dataset
         split: train
         min_resize_res: 256
         max_resize_res: 256
