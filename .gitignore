@@ -23,12 +23,14 @@
 
 # Logs
 *.log
+*.out
 
 # project files
 data/oxford-pets/annotations
 data/oxford-pets/images
 data/oxford-pets/image_pairs
 data/oxford-pets/src
+data/nyuv2/
 data/coco/
 data/nyu_depths/
 data/nyu_images/

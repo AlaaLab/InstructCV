@@ -1,0 +1,16 @@
+#!/bin/bash
+#SBATCH -o %j.out
+#SBATCH --gres=gpu:1
+#SBATCH -p gpu32
+#SBATCH --qos=normal
+#SBATCH -J test
+#SBATCH --nodes=1 
+#SBATCH -t 120:00:00
+
+#source activate esmfold
+python edit_cli.py --input imgs/579070_det_chair_0.jpg --output imgs/579070_Segment_and_detect_the_person.jpg --edit "Segment and detect the person"
+python edit_cli.py --input imgs/579070_det_chair_0.jpg --output imgs/579070_detect_and_segment_the_person.jpg --edit "Detect and segment the person"
+python edit_cli.py --input imgs/579070_det_chair_0.jpg --output imgs/579070_detect,segment_the_person.jpg --edit "Detect, segment the person"
+python edit_cli.py --input imgs/579070_det_chair_0.jpg --output imgs/579070_segment,detect_the_person.jpg --edit "Segment, detect the person"
+python edit_cli.py --input imgs/579070_det_chair_0.jpg --output imgs/579070_Segment_the_person_Detect_the_person.jpg --edit "Segment the person, Detect the person"
+python edit_cli.py --input imgs/579070_det_chair_0.jpg --output imgs/579070_Detect_the_person_Segment_the_person.jpg --edit "Detect the person, Segment the person"

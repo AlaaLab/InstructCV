@@ -77,8 +77,8 @@ model:
 data:
   target: main.DataModuleFromConfig
   params:
-    batch_size: 32
-    num_workers: 8
+    batch_size: 128
+    num_workers: 16
     train:
       target: edit_dataset.EditDataset
       params:

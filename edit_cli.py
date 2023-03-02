@@ -65,7 +65,7 @@ def main():
     parser.add_argument("--resolution", default=512, type=int)
     parser.add_argument("--steps", default=100, type=int)
     parser.add_argument("--config", default="configs/generate.yaml", type=str)
-    parser.add_argument("--ckpt", default="checkpoints/epoch=000054.ckpt", type=str)
+    parser.add_argument("--ckpt", default="logs/train_auginstructions_cls_det_seg_depth/checkpoints/last.ckpt", type=str)
     parser.add_argument("--vae-ckpt", default=None, type=str)
     parser.add_argument("--input", required=True, type=str)
     parser.add_argument("--output", required=True, type=str)

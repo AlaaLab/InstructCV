@@ -54,6 +54,26 @@ def generate_depth_map(f):
         iconpath=path_converted + str(i)+'.png'
         depths_img.save(iconpath, 'PNG', optimize=True)
 
+ 
+def get_name(f):
+    ft = open('names.txt', 'w+')
+    print(f["names"].shape) #打印查看类别个数，共894类
+    for j in range (894):
+        name = f["names"][0][j]
+        obj = f[name]
+        # import pdb;pdb.set_trace()
+        strr = "".join(chr(i[0]) for i in obj[:])
+        ft.write(strr + '\n')
+    
+    ft.close()
 
-f=h5py.File("nyu_depth_v2_labeled.mat")
-generate_depth_map(f)
+
+if __name__ == "__main__":
+        
+    f=h5py.File("nyu_depth_v2_labeled.mat")
+    
+    # get_name(f)
+    for key in f.keys():
+        print(f[key].name)
+        # print(f[key].shape)
+        # print(f[key].value)

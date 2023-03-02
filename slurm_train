@@ -1,0 +1,11 @@
+#!/bin/bash
+#SBATCH -o %j.out
+#SBATCH --gres=gpu:8
+#SBATCH -p gpu32
+#SBATCH --qos=normal
+#SBATCH -J test
+#SBATCH --nodes=1 
+#SBATCH -t 120:00:00
+
+#source activate esmfold
+python main.py --name auginstructions_cls_det_seg_depth --base configs/train.yaml --train --gpus 0,1,2,3,4,5,6,7
