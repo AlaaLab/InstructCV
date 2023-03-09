@@ -8,9 +8,16 @@
 #SBATCH -t 120:00:00
 
 #source activate esmfold
-python edit_cli.py --input imgs/579070_det_chair_0.jpg --output imgs/579070_Segment_and_detect_the_person.jpg --edit "Segment and detect the person"
-python edit_cli.py --input imgs/579070_det_chair_0.jpg --output imgs/579070_detect_and_segment_the_person.jpg --edit "Detect and segment the person"
-python edit_cli.py --input imgs/579070_det_chair_0.jpg --output imgs/579070_detect,segment_the_person.jpg --edit "Detect, segment the person"
-python edit_cli.py --input imgs/579070_det_chair_0.jpg --output imgs/579070_segment,detect_the_person.jpg --edit "Segment, detect the person"
-python edit_cli.py --input imgs/579070_det_chair_0.jpg --output imgs/579070_Segment_the_person_Detect_the_person.jpg --edit "Segment the person, Detect the person"
-python edit_cli.py --input imgs/579070_det_chair_0.jpg --output imgs/579070_Detect_the_person_Segment_the_person.jpg --edit "Detect the person, Segment the person"
+# python edit_cli.py --input imgs/woody.jpeg --output imgs/woody_seg4.jpeg --edit "segment the person"
+# python edit_cli.py --input imgs/woody.jpeg --output imgs/woody_seg2.jpeg --edit "segment the image"
+# python edit_cli.py --input imgs/woody.jpeg --output imgs/woody_seg3.jpeg --edit "segment all"
+# python edit_cli.py --input imgs/woody.jpeg --output imgs/woody_det13.jpeg --edit "detect the woody"
+# python edit_cli.py --input imgs/woody.jpeg --output imgs/woody_det14.jpeg --edit "detect the person"
+# python edit_cli.py --input imgs/woody.jpeg --output imgs/woody_det15.jpeg --edit "detect the man"
+# python edit_cli.py --input imgs/woody.jpeg --output imgs/woody_detect2.jpeg --edit "detect the face"
+
+# for seg:
+python edit_cli.py --input data/ade20k/images/ADE/training/cultural/apse__indoor/ADE_train_00001472.jpg --output imgs/ADE_train_00001472_seg.jpeg --edit "segment the person"
+
+# for cls:
+# python edit_cli_cls.py --input /lustre/grp/gyqlab/lism/brt/language-vision-interface/data/oxford-pets/images --output /lustre/grp/gyqlab/lism/brt/language-vision-interface/imgs_test_oxford_pets --edit "show white if the picture contain %, else show black"

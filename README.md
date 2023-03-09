@@ -42,3 +42,16 @@ python edit_cli.py --input imgs/example.jpg --output imgs/output.jpg --edit "tur
 # Optionally, you can specify parameters to tune your result:
 # python edit_cli.py --steps 100 --resolution 512 --seed 1371 --cfg-text 7.5 --cfg-image 1.2 --input imgs/example.jpg --output imgs/output.jpg --edit "turn him into a cyborg"
 ```
+
+## Baseline
+### Oxford-pets
+Use Resnet-50 (Pretained on ImageNet) 
+After fine-tuning 100 epochs (lr=0.01, SGD), Acc(%) on test: 93.05, batch size=256
+```
+python baseline/classification/cls.py --model supervised --dataset pets --steps 100
+```
+Use ViT-16 (Pretained on ImageNet21k)
+After fine-tuning 300 epochs (lr=0.001, SGD, the same as original paper), Acc(%) on test: 94.47 (94.43 in vit paper) batch size=64
+```
+python baseline/classification/cls.py --model ViT-16 --dataset pets --steps 300
+```

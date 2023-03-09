@@ -1,0 +1,22 @@
+Show black when there is no cat in the image, otherwise exhibit blue.
+If the image comprises a cat, then present blue; otherwise, demonstrate black.
+When the picture includes a cat, display blue; if not, then exhibit black.
+Exhibit black if the image doesn't contain a cat; otherwise, showcase blue.
+If there's a cat in the image, then display blue; if not, then show black.
+Show black unless the image features a cat, in which case display blue.
+When a cat is present in the image, demonstrate blue; otherwise, exhibit black.
+If the image has a cat, show blue, or else, display black.
+Display blue when the image contains a cat; otherwise, show black.
+Demonstrate black if there's no cat in the picture, but display blue if there is one.
+Show black unless there's a cat in the image, then display blue.
+When the image encompasses a cat, exhibit blue; if not, then showcase black.
+If the picture contains a cat, then display blue; if not, then show black.
+Display blue in the presence of a cat in the image; otherwise, exhibit black.
+If the image shows a cat, then display blue; otherwise, exhibit black.
+Show black if there's no cat in the image, but display blue if there is one.
+Display blue when there's a cat in the image, or else, show black.
+Exhibit black unless the image contains a cat, then display blue.
+If a cat is present in the picture, then display blue; if not, then showcase black.
+Display blue if and only if the image contains a cat, otherwise, show black.
+
+

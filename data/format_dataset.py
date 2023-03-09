@@ -5,11 +5,57 @@ import shutil
 import os
 import json
 import pdb
+import matplotlib.pyplot as plt
 #from pycocotools.coco import COCO
 import cv2
+from fnmatch import fnmatch
 import random
 import copy
-from revChatGPT.V1 import Chatbot
+from numpy import asarray
+# from revChatGPT.V1 import Chatbot
+#for ade20k
+CLASSES = (
+        'background', 'wall', 'building', 'sky', 'floor', 'tree', 'ceiling', 'road', 'bed ',
+        'windowpane', 'grass', 'cabinet', 'sidewalk', 'person', 'earth',
+        'door', 'table', 'mountain', 'plant', 'curtain', 'chair', 'car',
+        'water', 'painting', 'sofa', 'shelf', 'house', 'sea', 'mirror', 'rug',
+        'field', 'armchair', 'seat', 'fence', 'desk', 'rock', 'wardrobe',
+        'lamp', 'bathtub', 'railing', 'cushion', 'base', 'box', 'column',
+        'signboard', 'chest of drawers', 'counter', 'sand', 'sink',
+        'skyscraper', 'fireplace', 'refrigerator', 'grandstand', 'path',
+        'stairs', 'runway', 'case', 'pool table', 'pillow', 'screen door',
+        'stairway', 'river', 'bridge', 'bookcase', 'blind', 'coffee table',
+        'toilet', 'flower', 'book', 'hill', 'bench', 'countertop', 'stove',
+        'palm', 'kitchen island', 'computer', 'swivel chair', 'boat', 'bar',
+        'arcade machine', 'hovel', 'bus', 'towel', 'light', 'truck', 'tower',
+        'chandelier', 'awning', 'streetlight', 'booth', 'television receiver',
+        'airplane', 'dirt track', 'apparel', 'pole', 'land', 'bannister',
+        'escalator', 'ottoman', 'bottle', 'buffet', 'poster', 'stage', 'van',
+        'ship', 'fountain', 'conveyer belt', 'canopy', 'washer', 'plaything',
+        'swimming pool', 'stool', 'barrel', 'basket', 'waterfall', 'tent',
+        'bag', 'minibike', 'cradle', 'oven', 'ball', 'food', 'step', 'tank',
+        'trade name', 'microwave', 'pot', 'animal', 'bicycle', 'lake',
+        'dishwasher', 'screen', 'blanket', 'sculpture', 'hood', 'sconce',
+        'vase', 'traffic light', 'tray', 'ashcan', 'fan', 'pier', 'crt screen',
+        'plate', 'monitor', 'bulletin board', 'shower', 'radiator', 'glass',
+        'clock', 'flag')
+
+Pet_CLASSES = ('Abyssinian', 'american_bulldog', 'american_pit_bull_terrier', 'basset_hound', 'beagle','Bengal',
+               'Birman', 'Bombay', 'boxer', 'British_Shorthair', 'chihuahua', 'english_cocker_spaniel',
+               'english_setter', 'german_shorthaired', 'great_pyrenees', 'havanese', 'japanese_chin',
+               'keeshond', 'leonberger', 'Maine_Coon', 'miniature_pinscher', 'newfoundland', 'Persian',
+               'pomeranian', 'pug', 'Ragdoll', 'Russian_Blue', 'saint_bernard', 'samoyed', 'scottish_terrier',
+               'shiba_inu', 'Siamese', 'Sphynx', 'staffordshire_bull_terrier', 'wheaten_terrier', 'yorkshire_terrier')
+
+COLOR = ([0, 0, 0], [120, 120, 120], [180, 120, 120], [6, 230, 230], [80, 50, 50],
+            [4, 200, 3], [120, 120, 80], [140, 140, 140], [204, 5, 255],
+            [230, 230, 230], [4, 250, 7], [224, 5, 255], [235, 255, 7],
+            [150, 5, 61], [120, 120, 70], [8, 255, 51], [255, 6, 82],
+            [143, 255, 140], [204, 255, 4], [255, 51, 7], [204, 70, 3],
+            [0, 102, 200], [61, 230, 250], [255, 6, 51], [11, 102, 255],
+            [255, 7, 71], [255, 9, 224], [9, 7, 230], [220, 220, 220],
+            [255, 9, 92], [112, 9, 255], [8, 255, 214], [7, 255, 224],
+            [255, 184, 6], [10, 255, 71], [255, 41, 10])
 
 def get_bbox_prompt(cname):
     
@@ -25,7 +71,11 @@ def get_bbox_prompt(cname):
 def get_seg_prompt(cname):
 
     prompts = {}
-    flag = random.randint(1,len(seg_prompts)-1)
+    if len(seg_prompts) == 1:
+        flag = 0
+    else:
+        flag = random.randint(1,len(seg_prompts)-1)
+        
     prompt = seg_prompts[flag]
     prompt = copy.deepcopy(prompt)
     prompt = prompt.replace("%", cname)
@@ -34,49 +84,53 @@ def get_seg_prompt(cname):
 
 def get_cls_prompt(c, cname):
     
-    num = random.randint(1,21)
-    if num == 1:
-        prompt = {'edit': 'Show {} if the picture has {}, otherwise show black'.format(c, cname)}
-    if num == 2:
-        prompt = {'edit': 'If the image has a {}, show it in {}, otherwise show black'.format(cname, c)}
-    if num == 3:
-        prompt = {'edit': 'If the picture shows a {}, display it in {}, otherwise show black.'.format(cname, c)}      
-    if num == 4:
-        prompt = {'edit': 'Display {} if the image contains a {}, otherwise show black.'.format(c, cname)}
-    if num == 5:
-        prompt = {'edit': 'In case the image depicts a {}, show it in {}, else display black.'.format(cname,c)}
-    if num == 6:
-        prompt = {'edit': 'Show the image in {} if it contains a {}, otherwise display black'.format(c, cname)}
-    if num == 7:
-        prompt = {'edit': 'Display {} when the image depicts a {}, otherwise show black'.format(c, cname)}
-    if num == 8:
-        prompt = {'edit': 'Show {} color if the image contains a {}, otherwise show black color'.format(c, cname)}
-    if num == 9:
-        prompt = {'edit': 'If the image includes a {}, display it in {} hue, otherwise show black'.format(cname, c)}
-    if num == 10:
-        prompt = {'edit': 'Display {} tint if the picture has a {}, otherwise show a black tint'.format(c, cname)}
-    if num == 11:
-        prompt = {'edit': 'In case the image shows a {}, show it in {} tone, otherwise show black'.format(cname, c)}
-    if num == 12:
-        prompt = {'edit': 'Show {} shades if the image features a {}, otherwise display black.'.format(c, cname)}
-    if num == 13:
-        prompt = {'edit': 'Display {} coloring if the picture shows a {}, otherwise show black.'.format(c, cname)}
-    if num == 14:
-        prompt = {'edit': 'In the case of a {} being present in the image, display it in {}, otherwise show black'.format(cname, c)}
-    if num == 15:
-        prompt = {'edit': 'If there is a {} in the picture, show it in {} hue, otherwise show black'.format(cname, c)}
-    if num == 16:
-        prompt = {'edit': 'When the image contains a {}, display it in {} color, otherwise show black'.format(cname, c)}
-    if num == 17:
-        prompt = {'edit': 'Show {} tones if the image contains a {}, otherwise show black'.format(c, cname)}
-    if num == 18:
-        prompt = {'edit': 'Display the image in {} if it shows a {}, otherwise show black'.format(c, cname)}
-    if num == 19:
-        prompt = {'edit': 'If there is a {} present in the image, display it in {}, otherwise show black'.format(cname, c)}
-    if num == 20:
-        prompt = {'edit': 'In case the picture features a {}, display it in {} shade, otherwise show black'.format(cname, c)}
-    if num == 21:
-        prompt = {'edit': 'When the image depicts a {}, display it in {} hue, otherwise show black'.format(cname, c)}
+    # fix prompt for init exp.
+    
+    prompt = {'edit': 'Show {} if the picture has {}, otherwise show black'.format(c, cname)}
+    
+    # num = random.randint(1,21)
+    # if num == 1:
+    #     prompt = {'edit': 'Show {} if the picture has {}, otherwise show black'.format(c, cname)}
+    # if num == 2:
+    #     prompt = {'edit': 'If the image has a {}, show it in {}, otherwise show black'.format(cname, c)}
+    # if num == 3:
+    #     prompt = {'edit': 'If the picture shows a {}, display it in {}, otherwise show black.'.format(cname, c)}      
+    # if num == 4:
+    #     prompt = {'edit': 'Display {} if the image contains a {}, otherwise show black.'.format(c, cname)}
+    # if num == 5:
+    #     prompt = {'edit': 'In case the image depicts a {}, show it in {}, else display black.'.format(cname,c)}
+    # if num == 6:
+    #     prompt = {'edit': 'Show the image in {} if it contains a {}, otherwise display black'.format(c, cname)}
+    # if num == 7:
+    #     prompt = {'edit': 'Display {} when the image depicts a {}, otherwise show black'.format(c, cname)}
+    # if num == 8:
+    #     prompt = {'edit': 'Show {} color if the image contains a {}, otherwise show black color'.format(c, cname)}
+    # if num == 9:
+    #     prompt = {'edit': 'If the image includes a {}, display it in {} hue, otherwise show black'.format(cname, c)}
+    # if num == 10:
+    #     prompt = {'edit': 'Display {} tint if the picture has a {}, otherwise show a black tint'.format(c, cname)}
+    # if num == 11:
+    #     prompt = {'edit': 'In case the image shows a {}, show it in {} tone, otherwise show black'.format(cname, c)}
+    # if num == 12:
+    #     prompt = {'edit': 'Show {} shades if the image features a {}, otherwise display black.'.format(c, cname)}
+    # if num == 13:
+    #     prompt = {'edit': 'Display {} coloring if the picture shows a {}, otherwise show black.'.format(c, cname)}
+    # if num == 14:
+    #     prompt = {'edit': 'In the case of a {} being present in the image, display it in {}, otherwise show black'.format(cname, c)}
+    # if num == 15:
+    #     prompt = {'edit': 'If there is a {} in the picture, show it in {} hue, otherwise show black'.format(cname, c)}
+    # if num == 16:
+    #     prompt = {'edit': 'When the image contains a {}, display it in {} color, otherwise show black'.format(cname, c)}
+    # if num == 17:
+    #     prompt = {'edit': 'Show {} tones if the image contains a {}, otherwise show black'.format(c, cname)}
+    # if num == 18:
+    #     prompt = {'edit': 'Display the image in {} if it shows a {}, otherwise show black'.format(c, cname)}
+    # if num == 19:
+    #     prompt = {'edit': 'If there is a {} present in the image, display it in {}, otherwise show black'.format(cname, c)}
+    # if num == 20:
+    #     prompt = {'edit': 'In case the picture features a {}, display it in {} shade, otherwise show black'.format(cname, c)}
+    # if num == 21:
+    #     prompt = {'edit': 'When the image depicts a {}, display it in {} hue, otherwise show black'.format(cname, c)}
         
     return prompt
 
@@ -141,13 +195,6 @@ def get_class_img(img, target_name, cls_label, color, is_pos):
         cls_img = Image.new('RGB', img.size, (0,0,0))
     return cls_img
 
-def get_depth_img(root, img_id):
-    
-    img_path = os.path.join(root, 'nyuv2/depths','%s.png' % img_id)
-    depth_img = Image.open(img_path).convert("RGB")
-    
-    return depth_img
-
 def generate_sample(root, img, img_id, out_img, prompt, task_type):
     '''
     Args img: input/original images
@@ -162,6 +209,8 @@ def generate_sample(root, img, img_id, out_img, prompt, task_type):
     if os.path.exists(output_path) == False:
         os.mkdir(output_path)
 
+    # cv2.imwrite(output_path+'/{}_{}_0.jpg'.format(img_id, task_type), img)
+    # cv2.imwrite(output_path + '/{}_{}_1.jpg'.format(img_id, task_type), out_img)
     img.save(output_path+'/{}_{}_0.jpg'.format(img_id, task_type))
     out_img.save(output_path + '/{}_{}_1.jpg'.format(img_id, task_type))
     
@@ -197,11 +246,14 @@ def proc_oxford_pets(oxford_pets_root, tasks):
                 prompt['edit'] = 'segment the {}'.format(target_name)
 
             elif task_type == 'cls':
+                #randomly set color
                 c = random.choice(lcolor)
                 color = colors[c]
+                
                 output_img = get_class_img(img, target_name, cls_label, color, is_pos=True)
-                prompt = {'edit': 'show {} if the picture contain {}, otherwise show black'.format(c, target_name)}
-
+                # prompt = {'edit': 'show {} if the picture contain {}, otherwise show black'.format(c, target_name)}
+                # fixed prompt:
+                prompt = {'edit': 'show {} if the picture contain {}'.format(c, target_name)}
                 seed = generate_sample(root, img, img_id, output_img, prompt, task_type+'pos')
                 seeds.append(seed)
                 for cls in clses:
@@ -348,30 +400,144 @@ def proc_coco(clses, tasks):
 
 def proc_nyuv2(nyuv2_root):
 
-    print('begin to process NYU_V2 dataset...')
+    print('begin to process NYU_V2 training dataset...')
     
     seeds = []
     prompt = {}
     n = 0
     
-    imgs = os.listdir(os.path.join(nyuv2_root, 'images/'))
+    # load traning dataset
+    with open(os.path.join(nyuv2_root, "nyu_train.txt")) as f:
+        for line in f.readlines():
+            img_file = line.strip()
+            img_name = img_file.split(" ")
+            
+            img_name_0 = os.path.join(img_name[0].split('/')[1] , img_name[0].split('/')[2])
+            img_name_1 = os.path.join(img_name[1].split('/')[1] , img_name[1].split('/')[2])
+
+            img_path = os.path.join(nyuv2_root, img_name_0)
+            dep_path = os.path.join(nyuv2_root, img_name_1)
+            img_id   = img_name_0.split("/")[0] + "_" + img_name_0.split("/")[1]
+
+            img = cv2.imread(img_path)
+            depth_img = cv2.imread(dep_path)
+            
+            prompt  = get_depth_prompt()
+            seed = generate_sample(root, img, img_id, depth_img, prompt, task_type="depes")
+            seeds.append(seed)
     
-    for img_n in imgs:
+    # for img_n in imgs:
         
-        line  = img_n.strip()
-        word  = line.split('.')
-        img_id = word[0]
+    #     line  = img_n.strip()
+    #     word  = line.split('.')
+    #     img_id = word[0]
     
-        img_path = os.path.join(nyuv2_root, 'images', '%s.jpg' % img_id)
-        img = Image.open(img_path).convert("RGB")
-        depth_img = get_depth_img(root, img_id)
+    #     img_path = os.path.join(nyuv2_root, 'images', '%s.jpg' % img_id)
+    #     img = Image.open(img_path).convert("RGB")
+    #     depth_img = get_depth_img(root, img_id)
         
-        # prompt['edit'] = 'Estimate the depth of this image'
-        prompt = get_depth_prompt()
+    #     # prompt['edit'] = 'Estimate the depth of this image'
+    #     prompt = get_depth_prompt()
         
-        seed = generate_sample(root, img, img_id, depth_img, prompt, task_type="depes")
-        seeds.append(seed)
+    #     seed = generate_sample(root, img, img_id, depth_img, prompt, task_type="depes")
+    #     seeds.append(seed)
     
+    return seeds
+
+def proc_ade20k(ade_root):
+    
+    print('begin to process ade20k training dataset...')
+    
+    seeds = []
+    prompt = {}
+    n = 0
+    
+    file_ade = os.listdir(ade_root) #file_ade: [cultural,...]
+    for file in file_ade: #file: cultural
+        file_in_ade = os.listdir(os.path.join(ade_root, file)) #file_in_ade= [apse,...]
+        for file_in in file_in_ade: #file_in: apse_indoor
+            
+            file_name_li = os.listdir(os.path.join(ade_root, file, file_in))
+            
+            img_path_dic = {}
+            seg_path_dic = {}
+            img_li = []
+
+            for file_name in file_name_li:
+                
+                img_id = file_name.split(".")[0]
+
+                if fnmatch(file_name, "*.jpg"):
+                    img_path = os.path.join(ade_root, file, file_in, file_name)
+                    img_path_dic[img_id] = img_path
+                    img_li.append(img_id)
+                    
+                    img = Image.open(img_path).convert("RGB")
+                 
+                if fnmatch(file_name, "*_seg.png"):
+                    
+                    seg_path = os.path.join(ade_root, file, file_in, file_name)
+                    seg_path_dic[img_id] = seg_path
+                    seg_img = Image.open(seg_path).convert("RGB")
+                
+            
+            for id in img_li:
+                img_path = img_path_dic[id]
+                seg_path = seg_path_dic[id+"_seg"]
+                img = Image.open(img_path).convert("RGB")
+                seg_img = Image.open(seg_path).convert("RGB")
+                prompt  = get_seg_prompt(cname="image")
+                seed = generate_sample(root, img, id, seg_img, prompt, task_type="seg")
+                seeds.append(seed)
+                
+                n +=1 
+                if n % 100 == 0:
+                    print('About {} images processed!'.format(n*5))
+
+    return seeds
+
+def proc_adechan2016(ade_root, cls_ade_dict):
+    print('begin to process ade20k training dataset...')
+    
+    seeds = []
+    prompt = {}
+    n = 0
+    
+    img_list = os.listdir(os.path.join(ade_root, "images/training"))
+    
+    
+    for img_name in img_list:
+        
+        img_path = os.path.join(ade_root, "images/training", img_name)
+        seg_path = os.path.join(ade_root, "annotations/training", img_name.split(".")[0]+".png")
+        anno = cv2.imread(seg_path, cv2.IMREAD_GRAYSCALE)
+        
+        clses = np.unique(anno)
+        
+        for cls in clses: # e.g., cls=1
+            img = cv2.imread(img_path) #original image
+            # seg_img = Image.new('RGB', img.size, (0,0,0))
+            
+            seg_img = np.zeros((img.shape[0],img.shape[1],3))
+
+            #find where equals cls in anno
+            r, c = np.where(anno == cls) #r,c are arraries
+            for i in range(len(r)):
+                seg_img[r[i],c[i],:] = (255,255,255)
+            
+            cls_name = cls_ade_dict[cls]
+            
+            if cls_name == "background":
+                continue
+
+            prompt  = get_seg_prompt(cname=cls_name)
+            seed = generate_sample(root, img, img_name.split(".")[0]+"_"+cls_name, seg_img, prompt, task_type="seg")
+            seeds.append(seed)
+    
+            n +=1 
+            if n % 100 == 0:
+                print('About {} images processed!'.format(n))
+
     return seeds
 
 def prompts_chat():
@@ -431,15 +597,20 @@ def chat():
 
 if __name__ == "__main__":
     
-    tasks = ['seg', 'cls', 'det']
+    cls_ade_dict={}
+    for i in range(len(CLASSES)):
+        cls_ade_dict[i] = CLASSES[i]
+    # tasks = ['seg', 'cls', 'det']
+    tasks = ['cls']
 
-    neg_sample_rate=0.005 # negtive sample rate
+    neg_sample_rate=0.2 # negtive sample rate
+    # neg_sample_rate=0 # no negtive sample
 
     # colors = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255),
     #           'white':(255,255,255), 'brown':(165,42,42), 'orange':(255,165,0),
     #           'purple':(128,0,128)}
     
-    colors = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 'purple':(128,0,128)}
+    colors = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 'purple':(128,0,128), 'white':(255,255,255)}
     
     lcolor = list(colors.keys())
 
@@ -449,6 +620,7 @@ if __name__ == "__main__":
     oxford_pets_root = 'oxford-pets'
     coco_root = 'coco'
     nyuv2_root = 'nyuv2'
+    ade_root = 'ADEChallengeData2016'
 
     sample_path =  os.path.join(root, 'image_pairs')
 
@@ -490,11 +662,12 @@ if __name__ == "__main__":
         clses[cls_label] = target_name #store target_name and cls_label
     
     
-    seeds_coco = proc_coco(clses, tasks)
-    # seeds_pets = proc_oxford_pets(oxford_pets_root, tasks)
-    seeds_nyuv2 = proc_nyuv2(nyuv2_root)
+    # seeds_coco = proc_coco(clses, tasks)
+    seeds_pets = proc_oxford_pets(oxford_pets_root, tasks=['cls'])
+    # seeds_ade  = proc_adechan2016(ade_root, cls_ade_dict)
+    # seeds_nyuv2 = proc_nyuv2(nyuv2_root)
     
-    seeds = seeds_nyuv2 + seeds_coco
+    seeds = seeds_pets
     
     seed_file.write(json.dumps(seeds))
     seed_file.close()

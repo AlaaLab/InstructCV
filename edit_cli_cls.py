@@ -78,7 +78,7 @@ def main():
     parser.add_argument("--vae-ckpt", default=None, type=str)
     parser.add_argument("--input", required=True, type=str, help="should be the path to the file")
     parser.add_argument("--output", required=True, type=str, help="should be path to the output file")
-    parser.add_argument("--edit", required=True, type=str)
+    parser.add_argument("--edit", required=True, type=str, help="use e.g., show blue if the image has % (% is a must)")
     parser.add_argument("--cfg-text", default=7.5, type=float)
     parser.add_argument("--cfg-image", default=1.5, type=float)
     parser.add_argument("--seed", type=int)
@@ -93,13 +93,13 @@ def main():
 
     seed = random.randint(0, 100000) if args.seed is None else args.seed
     
-    img_list = os.listdir(args.input)
-    
-    for img_name in img_list:
+    for line in open(os.path.join('/lustre/grp/gyqlab/lism/brt/language-vision-interface/data/oxford-pets/annotations/test.txt')):
+        line = line.strip()
+        words = line.split(' ')
+        img_id = words[0]
+        target_name = ' '.join(img_id.split('_')[:-1]).strip()
         
-        start = time.time()
-        
-        img_path = os.path.join(args.input, img_name)
+        img_path = os.path.join(args.input, '%s.jpg' % img_id)
         input_image = Image.open(img_path).convert("RGB")
         width, height = input_image.size
         factor = args.resolution / max(width, height)
@@ -114,7 +114,12 @@ def main():
 
         with torch.no_grad(), autocast("cuda"), model.ema_scope():
             cond = {}
-            cond["c_crossattn"] = [model.get_learned_conditioning([args.edit])]
+            
+            prompts = args.edit
+            prompts = prompts.replace("%", target_name)
+            print("prompts:", prompts)
+            
+            cond["c_crossattn"] = [model.get_learned_conditioning([prompts])] #modified: args.edit -> prompts
             input_image = 2 * torch.tensor(np.array(input_image)).float() / 255 - 1
             input_image = rearrange(input_image, "h w c -> 1 c h w").to(model.device)
             cond["c_concat"] = [model.encode_first_stage(input_image).mode()]
@@ -139,12 +144,12 @@ def main():
             x = 255.0 * rearrange(x, "1 c h w -> h w c")
             edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
         
-        save_name = img_name.split(".")[0] + "_test.jpg"
+        save_name = target_name + "_test.jpg"
         edited_image.save(args.output + save_name)
         
         end = time.time()
         
-        print("One image done. Inferenct time cost:{}".format(end - start))
+        print("One image done")
 
 
 if __name__ == "__main__":

@@ -13,6 +13,9 @@
 *.tar
 *.zip
 *.pkg
+*.jpg
+*.png
+
 
 # Databases
 *.sql
@@ -20,27 +23,27 @@
 *.ckpt
 *.pth
 *.mat
+*.pkl
 
 # Logs
 *.log
 *.out
 
 # project files
-data/oxford-pets/annotations
-data/oxford-pets/images
-data/oxford-pets/image_pairs
-data/oxford-pets/src
+data/oxford-pets
 data/nyuv2/
 data/coco/
 data/nyu_depths/
 data/nyu_images/
-data/image_pairs
+data/ade20k/
+data/ADEChallengeData2016/
 lightning_logs/
 logs/
 images/
 imgs/
 src/
 stable_diffusion_bak
+data/image_pairs*
 
 
 
