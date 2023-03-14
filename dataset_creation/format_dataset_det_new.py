@@ -44,7 +44,7 @@ def get_bbox_img(root, img_id, bbox, dataset):
         box_img = Image.new('RGB', img.size, (0,0,0))
         a = ImageDraw.ImageDraw(box_img)
         #a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill=None, outline='red', width=6)
-        a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill='red', outline='red', width=1)
+        a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill='white', outline='white', width=1)
     
     elif dataset == 'MSCOCO':
         img_path = os.path.join(root, 'coco/train2017', '%s.jpg' % img_id)

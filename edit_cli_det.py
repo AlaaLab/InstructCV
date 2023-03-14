@@ -4,9 +4,11 @@ import math
 import random
 import sys
 import os
+import pdb
 import time
-from argparse import ArgumentParser
 from torchvision import transforms
+from argparse import ArgumentParser
+
 import einops
 import k_diffusion as K
 import numpy as np
@@ -52,6 +54,7 @@ def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
             for k, v in sd.items()
         }
     model = instantiate_from_config(config.model)
+    
     m, u = model.load_state_dict(sd, strict=False)
     if len(m) > 0 and verbose:
         print("missing keys:")
@@ -74,14 +77,15 @@ def main():
     parser.add_argument("--resolution", default=512, type=int)
     parser.add_argument("--steps", default=100, type=int)
     parser.add_argument("--config", default="configs/generate.yaml", type=str)
-    parser.add_argument("--ckpt", default="logs/train_new_cls_det_seg_depth/checkpoints/last.ckpt", type=str)
+    parser.add_argument("--ckpt", default="", type=str)
     parser.add_argument("--vae-ckpt", default=None, type=str)
     parser.add_argument("--input", required=True, type=str, help="should be the path to the file")
     parser.add_argument("--output", required=True, type=str, help="should be path to the output file")
-    parser.add_argument("--edit", required=True, type=str)
+    parser.add_argument("--edit", required=True, type=str, help="use e.g., show blue if the image has % (% is a must)")
     parser.add_argument("--cfg-text", default=7.5, type=float)
     parser.add_argument("--cfg-image", default=1.5, type=float)
     parser.add_argument("--seed", type=int)
+    parser.add_argument("--task", default="", type=str)
     args = parser.parse_args()
 
     resize = transforms.Resize([512,512])
@@ -94,16 +98,19 @@ def main():
 
     seed = random.randint(0, 100000) if args.seed is None else args.seed
     
-    img_list = os.listdir(args.input)
-    
-    for img_name in img_list:
+    for line in open(os.path.join('data/oxford-pets/annotations/det_test.txt')):
         
         start = time.time()
         
-        img_path = os.path.join(args.input, img_name)
+        line = line.strip()
+        words = line.split('.')
+        img_id = words[0] # Abyssinian_201
+        target_name = ' '.join(img_id.split('_')[:-1]).strip() #Abyssinian
         
+        img_path = os.path.join(args.input, '%s.jpg' % img_id)
         input_image = Image.open(img_path).convert("RGB")
         input_image = resize(input_image)
+        
         
         width, height = input_image.size
         factor = args.resolution / max(width, height)
@@ -112,13 +119,18 @@ def main():
         height = int((height * factor) // 64) * 64
         input_image = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
 
+        prompts = args.edit
+        prompts = prompts.replace("%", target_name)
+        print("prompts:", prompts)
+        
         if args.edit == "":
             input_image.save(args.output)
             return
 
         with torch.no_grad(), autocast("cuda"), model.ema_scope():
             cond = {}
-            cond["c_crossattn"] = [model.get_learned_conditioning([args.edit])]
+            
+            cond["c_crossattn"] = [model.get_learned_conditioning([prompts])] #modified: args.edit -> prompts
             input_image = 2 * torch.tensor(np.array(input_image)).float() / 255 - 1
             input_image = rearrange(input_image, "h w c -> 1 c h w").to(model.device)
             cond["c_concat"] = [model.encode_first_stage(input_image).mode()]
@@ -143,10 +155,19 @@ def main():
             x = 255.0 * rearrange(x, "1 c h w -> h w c")
             edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
         
-        save_name = img_name.split(".")[0] + "_test.jpg"
-        edited_image.save(args.output + save_name)
+        
+        output_path         = os.path.join(args.output, img_id + "_" + args.task)
+
+        if os.path.exists(output_path) == False:
+            os.makedirs(output_path)
+                
+        edited_image.save(output_path+'/{}_{}_pred.jpg'.format(img_id, args.task))
+        
+        # save_name = img_id + "_test_" + args.task + '.jpg'
+        # edited_image.save(args.output + save_name)
         
         end = time.time()
+        
         
         print("One image done. Inferenct time cost:{}".format(end - start))
 

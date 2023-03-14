@@ -4,7 +4,9 @@ import math
 import random
 import sys
 import os
+import pdb
 import time
+from torchvision import transforms
 from argparse import ArgumentParser
 
 import einops
@@ -74,7 +76,7 @@ def main():
     parser.add_argument("--resolution", default=512, type=int)
     parser.add_argument("--steps", default=100, type=int)
     parser.add_argument("--config", default="configs/generate.yaml", type=str)
-    parser.add_argument("--ckpt", default="logs/train_oxford_pets_fix_prompts/checkpoints/last.ckpt", type=str)
+    parser.add_argument("--ckpt", default="logs/train_pets_nyuv2_four_tasks/checkpoints/last.ckpt", type=str)
     parser.add_argument("--vae-ckpt", default=None, type=str)
     parser.add_argument("--input", required=True, type=str, help="should be the path to the file")
     parser.add_argument("--output", required=True, type=str, help="should be path to the output file")
@@ -82,8 +84,10 @@ def main():
     parser.add_argument("--cfg-text", default=7.5, type=float)
     parser.add_argument("--cfg-image", default=1.5, type=float)
     parser.add_argument("--seed", type=int)
+    parser.add_argument("--task", default="", type=str)
     args = parser.parse_args()
 
+    resize = transforms.Resize([512,512])
     config = OmegaConf.load(args.config)
     model = load_model_from_config(config, args.ckpt, args.vae_ckpt)
     model.eval().cuda()
@@ -93,14 +97,20 @@ def main():
 
     seed = random.randint(0, 100000) if args.seed is None else args.seed
     
-    for line in open(os.path.join('/lustre/grp/gyqlab/lism/brt/language-vision-interface/data/oxford-pets/annotations/test.txt')):
+    for line in open('data/oxford-pets/annotations/test.txt'):
+        
+        start = time.time()
+        
         line = line.strip()
         words = line.split(' ')
-        img_id = words[0]
-        target_name = ' '.join(img_id.split('_')[:-1]).strip()
+        img_id = words[0] #Abyssinian_201
+        target_name = ' '.join(img_id.split('_')[:-1]).strip() #Abyssinian
         
         img_path = os.path.join(args.input, '%s.jpg' % img_id)
         input_image = Image.open(img_path).convert("RGB")
+        input_image = resize(input_image)
+        
+        
         width, height = input_image.size
         factor = args.resolution / max(width, height)
         factor = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
@@ -108,16 +118,16 @@ def main():
         height = int((height * factor) // 64) * 64
         input_image = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
 
+        prompts = args.edit
+        prompts = prompts.replace("%", target_name)
+        print("prompts:", prompts)
+        
         if args.edit == "":
             input_image.save(args.output)
             return
 
         with torch.no_grad(), autocast("cuda"), model.ema_scope():
             cond = {}
-            
-            prompts = args.edit
-            prompts = prompts.replace("%", target_name)
-            print("prompts:", prompts)
             
             cond["c_crossattn"] = [model.get_learned_conditioning([prompts])] #modified: args.edit -> prompts
             input_image = 2 * torch.tensor(np.array(input_image)).float() / 255 - 1
@@ -144,12 +154,13 @@ def main():
             x = 255.0 * rearrange(x, "1 c h w -> h w c")
             edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
         
-        save_name = target_name + "_test.jpg"
+        save_name = img_id + "_test_" + args.task + '.jpg'
         edited_image.save(args.output + save_name)
         
         end = time.time()
         
-        print("One image done")
+        
+        print("One image done. Inferenct time cost:{}".format(end - start))
 
 
 if __name__ == "__main__":

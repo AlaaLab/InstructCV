@@ -40,22 +40,23 @@ CLASSES = (
         'plate', 'monitor', 'bulletin board', 'shower', 'radiator', 'glass',
         'clock', 'flag')
 
-Pet_CLASSES = ('Abyssinian', 'american_bulldog', 'american_pit_bull_terrier', 'basset_hound', 'beagle','Bengal',
-               'Birman', 'Bombay', 'boxer', 'British_Shorthair', 'chihuahua', 'english_cocker_spaniel',
-               'english_setter', 'german_shorthaired', 'great_pyrenees', 'havanese', 'japanese_chin',
-               'keeshond', 'leonberger', 'Maine_Coon', 'miniature_pinscher', 'newfoundland', 'Persian',
-               'pomeranian', 'pug', 'Ragdoll', 'Russian_Blue', 'saint_bernard', 'samoyed', 'scottish_terrier',
-               'shiba_inu', 'Siamese', 'Sphynx', 'staffordshire_bull_terrier', 'wheaten_terrier', 'yorkshire_terrier')
+Pet_CLASSES = ('Abyssinian', 'american bulldog', 'american pit bull terrier', 'basset hound', 'beagle','Bengal',
+               'Birman', 'Bombay', 'boxer', 'British Shorthair', 'chihuahua', 'Egyptian Mau', 'english cocker spaniel',
+               'english setter', 'german shorthaired', 'great pyrenees', 'havanese', 'japanese chin',
+               'keeshond', 'leonberger', 'Maine Coon', 'miniature pinscher', 'newfoundland', 'Persian',
+               'pomeranian', 'pug', 'Ragdoll', 'Russian Blue', 'saint bernard', 'samoyed', 'scottish terrier',
+               'shiba inu', 'Siamese', 'Sphynx', 'staffordshire bull terrier', 'wheaten terrier', 'yorkshire terrier')
 
-COLOR = ([0, 0, 0], [120, 120, 120], [180, 120, 120], [6, 230, 230], [80, 50, 50],
-            [4, 200, 3], [120, 120, 80], [140, 140, 140], [204, 5, 255],
-            [230, 230, 230], [4, 250, 7], [224, 5, 255], [235, 255, 7],
-            [150, 5, 61], [120, 120, 70], [8, 255, 51], [255, 6, 82],
-            [143, 255, 140], [204, 255, 4], [255, 51, 7], [204, 70, 3],
-            [0, 102, 200], [61, 230, 250], [255, 6, 51], [11, 102, 255],
-            [255, 7, 71], [255, 9, 224], [9, 7, 230], [220, 220, 220],
-            [255, 9, 92], [112, 9, 255], [8, 255, 214], [7, 255, 224],
-            [255, 184, 6], [10, 255, 71], [255, 41, 10])
+COLOR = ((0, 0, 0), (120, 120, 120), (180, 120, 120), (6, 230, 230), (80, 50, 50),
+            (4, 200, 3), (120, 120, 80), (140, 140, 140), (204, 5, 255),
+            (230, 230, 230), (4, 250, 7), (224, 5, 255), (235, 255, 7),
+            (150, 5, 61), (120, 120, 70), (8, 255, 51), (255, 6, 82),
+            (143, 255, 140), (204, 255, 4), (255, 51, 7), (204, 70, 3),
+            (0, 102, 200), (61, 230, 250), (255, 6, 51), (11, 102, 255),
+            (255, 7, 71), (255, 9, 224), (9, 7, 230), (220, 220, 220),
+            (255, 9, 92), (112, 9, 255), (8, 255, 214), (7, 255, 224),
+            (255, 184, 6), (10, 255, 71), (255, 41, 10),(255, 0, 0))
+
 
 def get_bbox_prompt(cname):
     
@@ -136,16 +137,18 @@ def get_cls_prompt(c, cname):
 
 def get_depth_prompt():
     
-    prompts = {}
-    flag = random.randint(1,len(dep_est_prompts)-1)
-    prompt = dep_est_prompts[flag]
-    prompts['edit'] = prompt
+    # prompts = {}
+    # flag = random.randint(1,len(dep_est_prompts)-1)
+    # prompt = dep_est_prompts[flag]
+    # prompts['edit'] = prompt
+    
+    prompt = {'edit': 'Estimate the depth of the image'}
 
-    return prompts
+    return prompt
 
 def get_seg_img(root, img_id):
     
-    img_path = os.path.join(root, 'oxford-pets/annotations/trimaps', '%s.png' % img_id)
+    img_path = os.path.join(root, 'annotations/trimaps', '%s.png' % img_id)
     seg = Image.open(img_path).convert("RGB")
     seg = np.array(seg)
     seg -= 2
@@ -154,10 +157,12 @@ def get_seg_img(root, img_id):
     return seg_img
 
 def get_bbox_img(root, img_id, bbox, dataset):
+    
     if dataset == 'oxford-pets':
-        xml_file = os.path.join(root, 'oxford-pets/annotations/xmls', '%s.xml' % img_id)
+        
+        xml_file = os.path.join(root, './data/oxford-pets/annotations/xmls', '%s.xml' % img_id.replace('-', '_'))
         if os.path.exists(xml_file) == False:
-            return None
+            return None, bbox
 
         tree = ET.parse(xml_file)
         obj = tree.find('object')
@@ -168,25 +173,29 @@ def get_bbox_img(root, img_id, bbox, dataset):
             int(bndbox.find('xmax').text),
             int(bndbox.find('ymax').text)]
 
-        img_path = os.path.join(root, 'oxford-pets/images', '%s.jpg' % img_id)
+        img_path = os.path.join(root, './data/oxford-pets/images', '%s.jpg' % img_id.replace('-', '_'))
 
         img = Image.open(img_path).convert("RGB")
-        box_img = img.copy()
+        #box_img = img.copy()
+        box_img = Image.new('RGB', img.size, (0,0,0))
         a = ImageDraw.ImageDraw(box_img)
-        a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill=None, outline='red', width=6)
+        #a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill=None, outline='red', width=6)
+        a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill='white', outline='white', width=1)
     
     elif dataset == 'MSCOCO':
-        img_path = os.path.join(root, 'coco/val2017', '%s.jpg' % img_id)
+        img_path = os.path.join(root, 'MSCOCO/val2017', '%s.jpg' % img_id)
 
         img = Image.open(img_path).convert("RGB")
-        box_img = img.copy()
+        #box_img = img.copy()
+        box_img = Image.new('RGB', img.size, (0,0,0))
         a = ImageDraw.ImageDraw(box_img)
         for box in bbox:
-            a.rectangle(box, fill=None, outline='red', width=4)
+            #a.rectangle(box, fill=None, outline='red', width=4)
+            a.rectangle(box, fill='white', outline='white', width=1)
 
     del a
 
-    return box_img
+    return box_img, bbox
 
 def get_class_img(img, target_name, cls_label, color, is_pos):
     if is_pos:
@@ -238,24 +247,35 @@ def proc_oxford_pets(oxford_pets_root, tasks):
 
         img_path = os.path.join(oxford_pets_root, 'images', '%s.jpg' % img_id)
         img = Image.open(img_path).convert("RGB")
-
+        
         for task_type in tasks:
             if task_type == 'seg':
-                output_img = get_seg_img(root, img_id)
+                output_img = get_seg_img(oxford_pets_root, img_id)
+                if output_img is None:
+                    assert "seg output image cannot be nonetype"
                 prompt = {}
                 prompt['edit'] = 'segment the {}'.format(target_name)
+                seed = generate_sample(root, img, img_id, output_img, prompt, 'seg')
+                seeds.append(seed)
 
             elif task_type == 'cls':
-                #randomly set color
+                ## randomly set color
                 c = random.choice(lcolor)
                 color = colors[c]
                 
+                ## specific set color
+                # color = pet_to_color[target_name]
+                
                 output_img = get_class_img(img, target_name, cls_label, color, is_pos=True)
-                # prompt = {'edit': 'show {} if the picture contain {}, otherwise show black'.format(c, target_name)}
-                # fixed prompt:
+                if output_img is None:
+                    assert "cls output image cannot be nonetype"
+                    
                 prompt = {'edit': 'show {} if the picture contain {}'.format(c, target_name)}
-                seed = generate_sample(root, img, img_id, output_img, prompt, task_type+'pos')
+                # fixed prompt:
+                # prompt = {'edit': 'show the corresponding color of this {}'.format(target_name)}
+                seed = generate_sample(root, img, img_id, output_img, prompt, task_type + '_pos')
                 seeds.append(seed)
+                
                 for cls in clses:
                     if cls == cls_label:
                         continue
@@ -266,20 +286,31 @@ def proc_oxford_pets(oxford_pets_root, tasks):
                     color = colors[c]
                     output_img = get_class_img(img, nname, cls_label, color, is_pos=False)
                     prompt = {'edit': 'show {} if the picture has {}, otherwise show black'.format(c, nname)}
-                    seed = generate_sample(root, img, img_id, output_img, prompt, task_type+'neg_{}'.format(nname))
+                    seed = generate_sample(root, img, img_id, output_img, prompt, task_type+'_neg_{}'.format(nname))
                     seeds.append(seed)
                 n += 1
                 if n % 100 == 0:
                     print('{} images processed!'.format(n))
                 continue
+            
             else:
-                output_img = get_bbox_img(root, img_id, None, dataset='oxford-pets')
+                    
+                output_img, bbox = get_bbox_img(root, img_id, None, dataset='oxford-pets')
+                    
                 if output_img is None:
                     continue
+                
                 prompt = {}
                 prompt['edit'] = 'detect the {}'.format(target_name)
-            seed = generate_sample(root, img, img_id, output_img, prompt, task_type)
-            seeds.append(seed)
+                
+                seed = generate_sample(root, img, img_id, output_img, prompt, task_type)
+                seeds.append(seed)
+
+                output_path = os.path.join(root, './image_pairs', img_id + '_det')
+                bbox_info = {'bbox': bbox}
+                bbox_file = open(os.path.join(output_path, 'bbox.json'), 'w')
+                bbox_file.write(json.dumps(bbox_info))
+                bbox_file.close()
 
         n +=1 
         if n % 100 == 0:
@@ -398,49 +429,115 @@ def proc_coco(clses, tasks):
         
     return seeds
 
-def proc_nyuv2(nyuv2_root):
+def proc_nyuv2_all(nyuv2_root):
 
     print('begin to process NYU_V2 training dataset...')
     
     seeds = []
     prompt = {}
     n = 0
+    train_txt_path = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/data/nyu_mdet/nyu_train.txt'
     
-    # load traning dataset
-    with open(os.path.join(nyuv2_root, "nyu_train.txt")) as f:
-        for line in f.readlines():
-            img_file = line.strip()
-            img_name = img_file.split(" ")
-            
-            img_name_0 = os.path.join(img_name[0].split('/')[1] , img_name[0].split('/')[2])
-            img_name_1 = os.path.join(img_name[1].split('/')[1] , img_name[1].split('/')[2])
+    with open(train_txt_path) as file:  
 
-            img_path = os.path.join(nyuv2_root, img_name_0)
-            dep_path = os.path.join(nyuv2_root, img_name_1)
-            img_id   = img_name_0.split("/")[0] + "_" + img_name_0.split("/")[1]
-
-            img = cv2.imread(img_path)
-            depth_img = cv2.imread(dep_path)
+        for line in file:
             
-            prompt  = get_depth_prompt()
+            img_path_part   = line.strip().split(" ")[0] # /kitchen_0028b/rgb_00045.jpg
+            img_path_part   = img_path_part[1:len(img_path_part)] # kitchen_0028b/rgb_00045.jpg
+            
+            file_name       = img_path_part.split("/")[0] # kitchen_0028b
+            
+            if fnmatch(file_name.split("_")[1], "0*"): 
+                cls             = file_name.split("_")[0]
+            else:
+                cls             = file_name.split("_")[0] + " " +file_name.split("_")[1]
+            
+            img_name        = img_path_part.split("/")[1] # rgb_00045.jpg
+            img_path        = os.path.join(nyuv2_root, img_path_part)
+            img_id          = file_name + "_" + img_name.split(".")[0] # kitchen_0028b_rgb_00045
+            dep_path_part = file_name + "/vli_depth_" + img_name.split("_")[-1].replace("jpg","png") # kitchen_0028b/vli_depth_00045.jpg
+            dep_path      = os.path.join(nyuv2_root, dep_path_part)
+            
+            img         = Image.open(img_path).convert("RGB")
+            depth_img   = Image.open(dep_path).convert("RGB")
+            
+            # prompt['edit'] = 'Estimate the depth of this {}'.format(cls)
+            prompt['edit'] = 'Estimate the depth of this image'
+
             seed = generate_sample(root, img, img_id, depth_img, prompt, task_type="depes")
             seeds.append(seed)
+            
+            n += 1 
+            if n % 1000 == 0:
+                print('{} images processed!'.format(n))
     
-    # for img_n in imgs:
+    return seeds
+            
+
+    # for file_name in file_list: # basement_0001a
         
-    #     line  = img_n.strip()
-    #     word  = line.split('.')
-    #     img_id = word[0]
+    #     img_list        = os.listdir(os.path.join(nyuv2_root,file_name)) # (rgb_000.jpg, rgb_001.jpg....)
+        
+    #     img_l = []
+        
+    #     for img_name in img_list: # (rgb_000.jpg)
+            
+    #         if fnmatch(img_name, "*.jpg"):
+    #             img_l.append(img_name)
+        
+    #     for img in img_l: # img: 'rgb_00040.jpg'
+                    
+    #         word        = img.strip().split('.') # word[0]:rgb_00040
+    #         cls         = file_name.split('_')[0] # basement
+    #         img_id      = file_name + "_" + word[0] # basement_0001a_rgb_000040
+    #         dep_name    = "vli_depth_" + word[0].split('_')[-1] + '.png' # vli_depth_00040.png
+        
+    #         img_path    = os.path.join(nyuv2_root, file_name, img)
+    #         dep_path    = os.path.join(nyuv2_root, file_name, dep_name)
+            
+    #         img         = Image.open(img_path).convert("RGB")
+    #         depth_img   = Image.open(dep_path).convert("RGB")
+        
+    #         prompt['edit'] = 'Estimate the depth of this {}'.format(cls)
+        
+    #         seed = generate_sample(root, img, img_id, depth_img, prompt, task_type="depes")
+    #         seeds.append(seed)
+            
+    #         n += 1 
+    #         if n % 1000 == 0:
+    #             print('{} images processed!'.format(n))
     
-    #     img_path = os.path.join(nyuv2_root, 'images', '%s.jpg' % img_id)
-    #     img = Image.open(img_path).convert("RGB")
-    #     depth_img = get_depth_img(root, img_id)
+    # return seeds
+
+def proc_nyuv2(nyuv2_root):
+
+    print('begin to process NYU_V2 training dataset...')
+    
+    seeds               = []
+    prompt              = {}
+    n = 0
+    
+    img_path            = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/data/nyuv2_labeled/nyu_images'
+    depth_path          = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/data/nyuv2_labeled/nyu_depths'
+    imgs                = os.listdir(img_path)
+    
+    for img_n in imgs: #0.jpg
         
-    #     # prompt['edit'] = 'Estimate the depth of this image'
-    #     prompt = get_depth_prompt()
+        line  = img_n.strip()
+        word  = line.split('.')
+        img_id = word[0] #0
+    
+        img_path_        = os.path.join(img_path, '%s.jpg' % img_id)
+        depth_path_      = os.path.join(depth_path, '%s.png' % img_id)
         
-    #     seed = generate_sample(root, img, img_id, depth_img, prompt, task_type="depes")
-    #     seeds.append(seed)
+        img             = Image.open(img_path_).convert("RGB")
+        depth_img       = Image.open(depth_path_).convert("RGB")
+        
+        prompt['edit'] = 'Estimate the depth of this image'
+        # prompt = get_depth_prompt()
+        
+        seed = generate_sample(root, img, img_id, depth_img, prompt, task_type="depes")
+        seeds.append(seed)
     
     return seeds
 
@@ -600,27 +697,33 @@ if __name__ == "__main__":
     cls_ade_dict={}
     for i in range(len(CLASSES)):
         cls_ade_dict[i] = CLASSES[i]
-    # tasks = ['seg', 'cls', 'det']
-    tasks = ['cls']
+    tasks = ['seg', 'cls', 'det']
 
-    neg_sample_rate=0.2 # negtive sample rate
-    # neg_sample_rate=0 # no negtive sample
+    # neg_sample_rate=0.2 # negtive sample rate
+    neg_sample_rate=0 # no negtive sample
 
     # colors = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255),
     #           'white':(255,255,255), 'brown':(165,42,42), 'orange':(255,165,0),
     #           'purple':(128,0,128)}
     
-    colors = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 'purple':(128,0,128), 'white':(255,255,255)}
+    colors                      = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 
+                                   'purple':(128,0,128), 'white':(255,255,255), 'black':(0, 0, 0)}
+    lcolor                      = list(colors.keys())
     
-    lcolor = list(colors.keys())
+    pet_to_color = {}
+    
+    for i, pet_name in enumerate(Pet_CLASSES):
+        c                       = COLOR[i]
+        pet_to_color[pet_name]  = c #{cat: red,...}
+    print('pet_to_color:', pet_to_color)
 
     clses = {}
     
     root = ''
-    oxford_pets_root = 'oxford-pets'
-    coco_root = 'coco'
-    nyuv2_root = 'nyuv2'
-    ade_root = 'ADEChallengeData2016'
+    oxford_pets_root = './data/oxford-pets'
+    coco_root = './data/coco'
+    nyuv2_root = './data/nyu_mdet'
+    ade_root = './data/ADEChallengeData2016'
 
     sample_path =  os.path.join(root, 'image_pairs')
 
@@ -634,19 +737,19 @@ if __name__ == "__main__":
     num_seg, num_det, num_dep_est = 0, 0, 0
     seg_prompts, det_prompts, dep_est_prompts = {}, {}, {}
     
-    with open("seg_prompts.txt") as file:
+    with open("./data/seg_prompts.txt") as file:
         for item_seg in file:
             sen_seg = item_seg.strip()
             seg_prompts[num_seg] = sen_seg
             num_seg += 1
     
-    with open("det_prompts.txt") as file:
+    with open("./data/det_prompts.txt") as file:
         for item_det in file:
             sen_det = item_det.strip()
             det_prompts[num_det] = sen_det
             num_det += 1
     
-    with open("dep_est_prompts.txt") as file:
+    with open("./data/dep_est_prompts.txt") as file:
         for item_dep_est in file:
             sen_dep_est = item_dep_est.strip()
             dep_est_prompts[num_dep_est] = sen_dep_est
@@ -663,11 +766,11 @@ if __name__ == "__main__":
     
     
     # seeds_coco = proc_coco(clses, tasks)
-    seeds_pets = proc_oxford_pets(oxford_pets_root, tasks=['cls'])
     # seeds_ade  = proc_adechan2016(ade_root, cls_ade_dict)
-    # seeds_nyuv2 = proc_nyuv2(nyuv2_root)
+    seeds_nyuv2 = proc_nyuv2(nyuv2_root)
+    seeds_pets = proc_oxford_pets(oxford_pets_root, tasks=tasks)
     
-    seeds = seeds_pets
+    seeds = seeds_pets + seeds_nyuv2
     
     seed_file.write(json.dumps(seeds))
     seed_file.close()

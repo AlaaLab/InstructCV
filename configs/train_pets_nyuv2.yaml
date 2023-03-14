@@ -82,7 +82,7 @@ data:
     train:
       target: edit_dataset.EditDataset
       params:
-        path: data/image_pairs_oxford_pets #clip-filtered-dataset
+        path: ./image_pairs_pets_nyuv2 #clip-filtered-dataset
         split: train
         min_resize_res: 256
         max_resize_res: 256
@@ -91,7 +91,7 @@ data:
     validation:
       target: edit_dataset.EditDataset
       params:
-        path: data/image_pairs_oxford_pets #clip-filtered-dataset
+        path: ./image_pairs_pets_nyuv2 #clip-filtered-dataset
         split: val
         min_resize_res: 256
         max_resize_res: 256
@@ -107,7 +107,7 @@ lightning:
         increase_log_steps: False
 
   trainer:
-    max_epochs: 150
+    max_epochs: 100
     benchmark: True
     accumulate_grad_batches: 4
     check_val_every_n_epoch: 4

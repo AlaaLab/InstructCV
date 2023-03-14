@@ -2,10 +2,12 @@ import numpy as np
 import cv2
 import os
 import pdb
+from PIL import Image, ImageChops
+from torchvision import transforms
 
-ori_path = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/imgs/152120_det_person_0.jpg'
-pre_path = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/imgs/152120_det_person.jpg'
-save_path = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/imgs/562_det_bottle'
+ori_path = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/imgs/000000000063_test.jpg'
+pre_path = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/imgs_test/000000000063.jpg'
+save_path = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/imgs/0000000000063_1234'
 
 def ShapeDetection(img):
     imgContour = img.copy()
@@ -48,13 +50,16 @@ def ShapeDetection(img):
     return imgContour, bboxs
 
 
-ori_img = cv2.imread(ori_path)
-det_img = cv2.imread(pre_path)
+resize = transforms.Resize([512,512])
+
+ori_img = Image.open(ori_path)
+ori_img = resize(ori_img)
+
+det_img = Image.open(pre_path)
 pdb.set_trace()
-det_img = cv2.resize(det_img,(ori_img.shape[1], ori_img.shape[0]), interpolation=cv2.INTER_CUBIC)
+box_img = ImageChops.difference(det_img, ori_img)
 
-box_img = cv2.absdiff(det_img, ori_img)
+# imgContour, bbox = ShapeDetection(box_img)
 
-imgContour, bbox = ShapeDetection(box_img)
-
-cv2.imwrite((save_path+'_box.jpg'), imgContour)
+# cv2.imwrite((save_path+'_box.jpg'), imgContour)
+box_img.save(save_path+'_box.jpg')

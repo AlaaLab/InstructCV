@@ -30,17 +30,12 @@
 *.out
 
 # project files
-data/oxford-pets
-data/nyuv2/
-data/coco/
-data/nyu_depths/
-data/nyu_images/
-data/ade20k/
-data/ADEChallengeData2016/
+data/
 lightning_logs/
 logs/
-images/
+image*/
 imgs/
+imgs*/
 src/
 stable_diffusion_bak
 data/image_pairs*
