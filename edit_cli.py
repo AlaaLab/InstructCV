@@ -74,7 +74,7 @@ def main():
     parser.add_argument("--resolution", default=512, type=int)
     parser.add_argument("--steps", default=100, type=int)
     parser.add_argument("--config", default="configs/generate.yaml", type=str)
-    parser.add_argument("--ckpt", default="logs/train_new_cls_det_seg_depth/checkpoints/last.ckpt", type=str)
+    parser.add_argument("--ckpt", default="", type=str)
     parser.add_argument("--vae-ckpt", default=None, type=str)
     parser.add_argument("--input", required=True, type=str, help="should be the path to the file")
     parser.add_argument("--output", required=True, type=str, help="should be path to the output file")
@@ -82,6 +82,7 @@ def main():
     parser.add_argument("--cfg-text", default=7.5, type=float)
     parser.add_argument("--cfg-image", default=1.5, type=float)
     parser.add_argument("--seed", type=int)
+    parser.add_argument("--task", default="", type=str)
     args = parser.parse_args()
 
     resize = transforms.Resize([512,512])
@@ -104,7 +105,7 @@ def main():
         
         input_image = Image.open(img_path).convert("RGB")
         input_image = resize(input_image)
-        
+
         width, height = input_image.size
         factor = args.resolution / max(width, height)
         factor = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)

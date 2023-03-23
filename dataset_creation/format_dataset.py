@@ -183,17 +183,46 @@ def get_bbox_img(root, img_id, bbox, dataset):
         a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill='white', outline='white', width=1)
     
     elif dataset == 'MSCOCO':
-        img_path = os.path.join(root, 'MSCOCO/val2017', '%s.jpg' % img_id)
+        
+        img_path = os.path.join(root, './data/coco/val2017', '%s.jpg' % img_id)
 
         img = Image.open(img_path).convert("RGB")
-        #box_img = img.copy()
-        box_img = Image.new('RGB', img.size, (0,0,0))
+        # box_img = Image.new('RGB', img.size, (0,0,0))
+
+        # a = ImageDraw.ImageDraw(box_img)
+            
+        box_img = img.copy()
         a = ImageDraw.ImageDraw(box_img)
         for box in bbox:
-            #a.rectangle(box, fill=None, outline='red', width=4)
-            a.rectangle(box, fill='white', outline='white', width=1)
+            #random color
+            # color_r = random.choice(lcolor)
+            a.rectangle(((box[0], box[1]), (box[2], box[3])), fill=None, outline="black", width=5)
 
-    del a
+        del a
+        
+        # for box in bbox:
+        #     box = list(map(int, box[:]))
+        #     area             = (box[2]-box[0] +1) * (box[3]-box[1]+1)
+        #     areas[count]     = area
+        #     sorted_area      = sorted(areas.items(), key=lambda x: x[1])#[(0, 1176.4155), (1, 21471)]
+        #     count           += 1
+        
+        # for i in range(len(sorted_area)):    
+
+        # #a.rectangle(box, fill=None, outline='red', width=4)
+        #     random.shuffle(lcolor)
+        #     color_bbox = np.random.choice(lcolor)
+        #     # box = list(map(int, box[:]))
+
+        #     if area > 1000 and count >= 5:#可调参
+        #         continue
+        #     a = ImageDraw.ImageDraw(box_img)
+        #     print("sorted_area[i][0]]", sorted_area[i][0])
+        #     print("sorted_area", sorted_area)
+        #     a.rectangle(bbox[sorted_area[i][0]], fill=color_bbox, outline=None, width=2)
+        #     count_ += 1
+
+        #     del a
 
     return box_img, bbox
 
@@ -221,6 +250,7 @@ def generate_sample(root, img, img_id, out_img, prompt, task_type):
     # cv2.imwrite(output_path+'/{}_{}_0.jpg'.format(img_id, task_type), img)
     # cv2.imwrite(output_path + '/{}_{}_1.jpg'.format(img_id, task_type), out_img)
     img.save(output_path+'/{}_{}_0.jpg'.format(img_id, task_type))
+    # pdb.set_trace()
     out_img.save(output_path + '/{}_{}_1.jpg'.format(img_id, task_type))
     
 
@@ -360,7 +390,7 @@ def preproc_coco(clses):
     
     return img_info, pet_cls_num
 
-def proc_coco(clses, tasks):
+def proc_coco(coco_root, clses, tasks):
     
     print('begin to process coco dataset...')
     
@@ -373,59 +403,84 @@ def proc_coco(clses, tasks):
             cname = clses[cid+pet_cls_num]
             
             img_id = image_id.zfill(12)
-            img_path = os.path.join(root, 'coco/val2017/{}.jpg'.format(img_id))
+            img_path = os.path.join(coco_root, 'val2017/{}.jpg'.format(img_id))
             img = Image.open(img_path).convert("RGB")
             #print(box, [box[0], box[1], box[0]+box[2], box[1]+box[3]])
-            det_img = get_bbox_img(root, img_id, bbox = img_info[image_id][cid]['bbox'], dataset='MSCOCO')
             
-            prompt  = get_bbox_prompt(cname)
-            # prompt = {'edit': 'detect the {}'.format(cname)}
+            for task in tasks:
                 
-            seed = generate_sample(root, img, img_id, det_img, prompt, task_type='det_{}'.format(cname))
-            seeds.append(seed)
-
-            c = random.choice(lcolor)
-            color = colors[c]
-            cls_img = get_class_img(img, cname, cid+pet_cls_num, color, is_pos=True)
-            
-            # prompt = {'edit': 'show {} if the picture has {}, otherwise show black'.format(c, cname)}
-            prompt  = get_cls_prompt(c, cname)
-            
-            seed = generate_sample(root, img, img_id, cls_img, prompt, task_type='cls_{}_pos'.format(cname))
-            seeds.append(seed)
-            for cls in clses:
-                if cls == cls_label:
-                    continue
-                if random.random() > neg_sample_rate:
-                    continue
-                nname = clses[cls]
-                c = random.choice(lcolor)
-                color = colors[c]
-                output_img = get_class_img(img, nname, cls_label, color, is_pos=False)
+                if task == "det":
+                    
+                    bbox  = img_info[image_id][cid]['bbox']
+                    
+                    count = 0
+                        
+                    det_img, bbox = get_bbox_img(root, img_id, bbox, dataset='MSCOCO')
                 
-                # prompt = {'edit': 'show {} if the picture has {}, otherwise show black'.format(c, nname)}
-                prompt  = get_cls_prompt(c, nname)
-                
-                seed = generate_sample(root, img, img_id, output_img, prompt, task_type='cls_{}_neg_{}'.format(cname, nname))
-                seeds.append(seed)
-
-            h, w = img.size
-            gt = np.zeros((w, h), dtype=np.uint8)
-            for seg in img_info[image_id][cid]['segmentation']:
-                for s in seg:
-                    s = np.array(s).reshape(-1, 2)     # [n_points, 2]
-                    cv2.fillPoly(gt, s.astype(np.int32)[np.newaxis, :, :], (255, 255, 255))
-
-            # prompt = {'edit': 'segment the {}'.format(cname)}
-            prompt  = get_seg_prompt(cname)
+                    # prompt  = get_bbox_prompt(cname)
+                    prompt = {'edit': 'detect the {}'.format(cname)}
+                    
+                    # check if 3 channels
+                    try:
+                        r, g, b = det_img.split()
+                    except Exception:
+                        print("not 3 channels:", img_id)
+                    
+                    seed = generate_sample(root, img, img_id, det_img, prompt, task_type='det_{}'.format(cname))
+                    seeds.append(seed)
+                    
+                    output_path = os.path.join(root, './image_pairs', img_id + '_det_{}'.format(cname))
+                    bbox_info = {'bbox': bbox}
+                    bbox_file = open(os.path.join(output_path, 'bbox.json'), 'w')
+                    bbox_file.write(json.dumps(bbox_info))
+                    bbox_file.close()
+                    count    += 1
+                        
+                    
+                elif task == 'cls':
+                    c = random.choice(lcolor)
+                    color = colors[c]
+                    cls_img = get_class_img(img, cname, cid+pet_cls_num, color, is_pos=True)
             
-            seg_img = Image.fromarray(cv2.cvtColor(gt,cv2.COLOR_BGR2RGB)).convert("RGB")
-            seed = generate_sample(root, img, img_id, seg_img, prompt, task_type='seg_{}'.format(cname))
-            seeds.append(seed)
+                    # prompt = {'edit': 'show {} if the picture has {}, otherwise show black'.format(c, cname)}
+                    prompt  = get_cls_prompt(c, cname)
+            
+                    seed = generate_sample(root, img, img_id, cls_img, prompt, task_type='cls_{}_pos'.format(cname))
+                    seeds.append(seed)
+                    for cls in clses:
+                        if cls == cls_label:
+                            continue
+                        if random.random() > neg_sample_rate:
+                            continue
+                        nname = clses[cls]
+                        c = random.choice(lcolor)
+                        color = colors[c]
+                        output_img = get_class_img(img, nname, cls_label, color, is_pos=False)
+                
+                        # prompt = {'edit': 'show {} if the picture has {}, otherwise show black'.format(c, nname)}
+                        prompt  = get_cls_prompt(c, nname)
+                        
+                        seed = generate_sample(root, img, img_id, output_img, prompt, task_type='cls_{}_neg_{}'.format(cname, nname))
+                        seeds.append(seed)
 
-        n +=1 
-        if n % 100 == 0:
-            print('{} images processed!'.format(n))
+                else:
+                    h, w = img.size
+                    gt = np.zeros((w, h), dtype=np.uint8)
+                    for seg in img_info[image_id][cid]['segmentation']:
+                        for s in seg:
+                            s = np.array(s).reshape(-1, 2)     # [n_points, 2]
+                            cv2.fillPoly(gt, s.astype(np.int32)[np.newaxis, :, :], (255, 255, 255))
+
+                    # prompt = {'edit': 'segment the {}'.format(cname)}
+                    prompt  = get_seg_prompt(cname)
+                    
+                    seg_img = Image.fromarray(cv2.cvtColor(gt,cv2.COLOR_BGR2RGB)).convert("RGB")
+                    seed = generate_sample(root, img, img_id, seg_img, prompt, task_type='seg_{}'.format(cname))
+                    seeds.append(seed)
+
+                n +=1 
+                if n % 100 == 0:
+                    print('{} images processed!'.format(n))
         
     return seeds
 
@@ -594,6 +649,7 @@ def proc_ade20k(ade_root):
     return seeds
 
 def proc_adechan2016(ade_root, cls_ade_dict):
+    
     print('begin to process ade20k training dataset...')
     
     seeds = []
@@ -602,33 +658,50 @@ def proc_adechan2016(ade_root, cls_ade_dict):
     
     img_list = os.listdir(os.path.join(ade_root, "images/training"))
     
-    
     for img_name in img_list:
         
         img_path = os.path.join(ade_root, "images/training", img_name)
         seg_path = os.path.join(ade_root, "annotations/training", img_name.split(".")[0]+".png")
-        anno = cv2.imread(seg_path, cv2.IMREAD_GRAYSCALE)
+        anno = Image.open(seg_path)
+        anno = np.array(anno)
         
         clses = np.unique(anno)
+        # pdb.set_trace()
         
         for cls in clses: # e.g., cls=1
-            img = cv2.imread(img_path) #original image
+            img = Image.open(img_path).convert('RGB') #original image
             # seg_img = Image.new('RGB', img.size, (0,0,0))
             
-            seg_img = np.zeros((img.shape[0],img.shape[1],3))
+            seg_img = Image.new('RGB',(img.size[0],img.size[1]))
+            seg_img = np.array(seg_img)
 
             #find where equals cls in anno
             r, c = np.where(anno == cls) #r,c are arraries
             for i in range(len(r)):
                 seg_img[r[i],c[i],:] = (255,255,255)
+
+            seg_img = Image.fromarray(seg_img).convert('RGB')
+            # pdb.set_trace()
             
             cls_name = cls_ade_dict[cls]
+            cls_name_wospace = cls_name
+            if " " in cls_name:
+                cls_name_wospace = cls_name.replace(" ", "_")
             
             if cls_name == "background":
                 continue
 
-            prompt  = get_seg_prompt(cname=cls_name)
-            seed = generate_sample(root, img, img_name.split(".")[0]+"_"+cls_name, seg_img, prompt, task_type="seg")
+            # prompt  = get_seg_prompt(cname=cls_name)
+            prompt = {'edit': 'segment the {}'.format(cls_name)}
+            
+            # check if 3 channels
+            try:
+                r, g, b = seg_img.split()
+                r1, g1, b1 = img.split()
+            except Exception:
+                print("not 3 channels:", img_name)
+                
+            seed = generate_sample(root, img, img_name.split(".")[0]+"_"+cls_name_wospace, seg_img, prompt, task_type="seg")
             seeds.append(seed)
     
             n +=1 
@@ -697,7 +770,7 @@ if __name__ == "__main__":
     cls_ade_dict={}
     for i in range(len(CLASSES)):
         cls_ade_dict[i] = CLASSES[i]
-    tasks = ['seg', 'cls', 'det']
+    tasks = ['det']
 
     # neg_sample_rate=0.2 # negtive sample rate
     neg_sample_rate=0 # no negtive sample
@@ -707,7 +780,18 @@ if __name__ == "__main__":
     #           'purple':(128,0,128)}
     
     colors                      = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 
-                                   'purple':(128,0,128), 'white':(255,255,255), 'black':(0, 0, 0)}
+                                   'purple':(128,0,128), 'white':(255,255,255), 'black':(0, 0, 0),
+                                   'AliceBlue':(240,248,255), 'Aqua': (0,206,209), 'Peru':(205, 133, 63),
+                                   'Brown':(165,42,42), 'DarkGray':(169,169,169), 'Gold':(255,215,0),
+                                   'Violet':(238,130,238), 'SlateBlue':(230,230,250), 'Orange':(255,128,0),
+                                   'Maroon':(128,0,0), 'LightSlateGray':(119,136,153), 'Indigo':(75,0,130),
+                                   'DarkKhaki':(189,183,107), 'Coral':(255,127,80),'RosyBrown':(188,143,143),
+                                   'LightSalmon':(255,160,122), 'Azure':(240,255,255),'Beige':(245,245,220),
+                                   'CadetBlue':(95,158,160),'DarkBlue':(0,0,139),'Firebrick':(178,34,34),
+                                   'Silver':(192,192,192),'YellowGreen':(154,205,50),'LightPink':(255,182,193),
+                                   'Snow':(255,250,250),'Sienna':(160,82,45),'Salmon':(250,128,114),
+                                   'PowderBlue':(176,224,230),'PeachPuff':(255,218,155),'DarkRed':(139,0,0),
+                                   'Olive':(128,128,0)}
     lcolor                      = list(colors.keys())
     
     pet_to_color = {}
@@ -765,12 +849,11 @@ if __name__ == "__main__":
         clses[cls_label] = target_name #store target_name and cls_label
     
     
-    # seeds_coco = proc_coco(clses, tasks)
+    seeds_coco = proc_coco(coco_root, clses, tasks=["det"])
     # seeds_ade  = proc_adechan2016(ade_root, cls_ade_dict)
-    seeds_nyuv2 = proc_nyuv2(nyuv2_root)
-    seeds_pets = proc_oxford_pets(oxford_pets_root, tasks=tasks)
+    # seeds_nyuv2 = proc_nyuv2_all(nyuv2_root)
+    # seeds_pets = proc_oxford_pets(oxford_pets_root, tasks=["cls"])
     
-    seeds = seeds_pets + seeds_nyuv2
-    
+    seeds = seeds_coco
     seed_file.write(json.dumps(seeds))
     seed_file.close()

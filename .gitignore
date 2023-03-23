@@ -39,6 +39,7 @@ imgs*/
 src/
 stable_diffusion_bak
 data/image_pairs*
+outputs/
 
 
 

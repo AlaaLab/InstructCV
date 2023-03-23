@@ -3,7 +3,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH -p gpu32
 #SBATCH --qos=normal
-#SBATCH -J sponge
+#SBATCH -J test
 #SBATCH --nodes=1 
 #SBATCH -t 120:00:00
 
@@ -28,7 +28,15 @@
 ## for depth estimation
 # python edit_cli_depes.py --input /lustre/grp/gyqlab/lism/brt/language-vision-interface/data/nyuv2/basement_0001a --output imgs_test_nyuv2/ --edit "Assess the image's depth by looking for visual cues and making an estimation."
 
+
+## for pets
 # python edit_cli_cls.py --input data/oxford-pets/images --output imgs_test_oxford_pets/ --edit "show blue if the picture contain %" --task cls
-# python edit_cli_seg_det.py --input data/oxford-pets/images --output imgs_test_oxford_pets/ --edit "segment the %" --task seg
-python edit_cli_det.py --ckpt logs/train_pets_nyuv2_four_tasks_depsprompt:image/checkpoints/last.ckpt --input data/oxford-pets/images --output data/image_pairs_evaluation_det --edit "detect the %" --task det
+# python edit_cli_seg.py --input data/oxford-pets/images --output imgs_test_oxford_pets/ --edit "segment the %" --task seg
+# python edit_cli_det.py --ckpt logs/train_pets_nyuv2_four_tasks_depsprompt:image/checkpoints/last.ckpt --input data/oxford-pets/images --output data/image_pairs_evaluation_det --edit "detect the %" --task det
 # python edit_cli_depes.py --ckpt logs/train_pets_nyuv2_four_tasks_depsprompt:image/checkpoints/last.ckpt --input data/nyu_data/ --output "data/image_pairs_evaluation_dep" --edit "Estimate the depth of this image" --task depes
+
+## for ade20k
+python edit_cli_seg.py --ckpt logs/train_all100kdata_new/checkpoints/last.ckpt --input /lustre/grp/gyqlab/lism/brt/language-vision-interface/data/ADEChallengeData2016 --output outputs/imgs_test_ade20k/ --edit "segment the %" --task seg
+
+# train
+# python edit_cli.py --ckpt logs/train_coco_det_black_new/checkpoints/last.ckpt --input ./outputs/img_test_det_car --output ./outputs/imgs_coco_output3/ --edit "detect the car" --task det

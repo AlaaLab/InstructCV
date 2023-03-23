@@ -5,9 +5,9 @@ import pdb
 from PIL import Image, ImageChops
 from torchvision import transforms
 
-ori_path = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/outputs/imgs_test_coco/000000001000.jpg'
-pre_path = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/outputs/imgs_test_coco_output/000000001000_test.jpg'
-save_path = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/outputs/imgs_test_coco_output/000000001001_test_sub.jpg'
+ori_path = './outputs/img_test_det_car/000000009891_det_car_0.jpg'
+pre_path = './outputs/imgs_coco_output2/000000009891_det_car_0_test.jpg'
+save_path = './outputs/imgs_coco_output2/000000009891_test_sub'
 
 def ShapeDetection(img):
     imgContour = img.copy()
@@ -50,7 +50,7 @@ def ShapeDetection(img):
     return imgContour, bboxs
 
 
-def image_diff(image1, image2, threshold=10):
+def image_diff(image1, image2, threshold=0):
     """Detect the differences between two images and ignore small differences.
     
     Args:
@@ -101,6 +101,16 @@ ori_img         = cv2.imread(ori_path)
 box_img             = image_diff(det_img, ori_img)
 
 # imgContour, bbox = ShapeDetection(box_img)
-box_img             = Image.fromarray(box_img)
-# cv2.imwrite((save_path+'_box.jpg'), imgContour)
-box_img.save(save_path+'_box.jpg')
+# box_img             = Image.fromarray(box_img)
+cv2.imwrite(save_path+'_box.jpg', box_img)
+
+hsv = cv2.cvtColor(box_img, cv2.COLOR_BGR2GRAY)
+
+cv2.imwrite(save_path+'_box333.jpg', hsv)
+
+
+
+
+
+
+

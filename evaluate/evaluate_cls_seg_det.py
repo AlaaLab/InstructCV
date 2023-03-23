@@ -12,6 +12,33 @@ import numpy as np
 import math
 from PIL import Image, ImageDraw
 
+CLASSES = (
+        'background', 'wall', 'building', 'sky', 'floor', 'tree', 'ceiling', 'road', 'bed ',
+        'windowpane', 'grass', 'cabinet', 'sidewalk', 'person', 'earth',
+        'door', 'table', 'mountain', 'plant', 'curtain', 'chair', 'car',
+        'water', 'painting', 'sofa', 'shelf', 'house', 'sea', 'mirror', 'rug',
+        'field', 'armchair', 'seat', 'fence', 'desk', 'rock', 'wardrobe',
+        'lamp', 'bathtub', 'railing', 'cushion', 'base', 'box', 'column',
+        'signboard', 'chest of drawers', 'counter', 'sand', 'sink',
+        'skyscraper', 'fireplace', 'refrigerator', 'grandstand', 'path',
+        'stairs', 'runway', 'case', 'pool table', 'pillow', 'screen door',
+        'stairway', 'river', 'bridge', 'bookcase', 'blind', 'coffee table',
+        'toilet', 'flower', 'book', 'hill', 'bench', 'countertop', 'stove',
+        'palm', 'kitchen island', 'computer', 'swivel chair', 'boat', 'bar',
+        'arcade machine', 'hovel', 'bus', 'towel', 'light', 'truck', 'tower',
+        'chandelier', 'awning', 'streetlight', 'booth', 'television receiver',
+        'airplane', 'dirt track', 'apparel', 'pole', 'land', 'bannister',
+        'escalator', 'ottoman', 'bottle', 'buffet', 'poster', 'stage', 'van',
+        'ship', 'fountain', 'conveyer belt', 'canopy', 'washer', 'plaything',
+        'swimming pool', 'stool', 'barrel', 'basket', 'waterfall', 'tent',
+        'bag', 'minibike', 'cradle', 'oven', 'ball', 'food', 'step', 'tank',
+        'trade name', 'microwave', 'pot', 'animal', 'bicycle', 'lake',
+        'dishwasher', 'screen', 'blanket', 'sculpture', 'hood', 'sconce',
+        'vase', 'traffic light', 'tray', 'ashcan', 'fan', 'pier', 'crt screen',
+        'plate', 'monitor', 'bulletin board', 'shower', 'radiator', 'glass',
+        'clock', 'flag')
+
+
 def get_seg_img(root, img_id):
     
     img_path = os.path.join(root, 'annotations/trimaps', '%s.png' % img_id)
@@ -282,6 +309,7 @@ def calc_cate_ap(cate_bb):
 
     return ap
 
+
 def calc_miou():
     
     gt_img = cv2.imread(os.path.join(test_path, det_p, det_p+'_1.jpg'))  # groundtruth
@@ -340,6 +368,52 @@ def generate_pets_gt(oxford_pets_root, save_root, tasks):
                 bbox_file.close()
                 output_img.save(output_path+'/{}_{}_gt.jpg'.format(img_id, task_type)) # ./data/image_pairs_evalation/Abyssinian_201_det/Abyssinian_201_det_gt.jpg
 
+    return
+
+
+def generate_ade20k_gt(ade20k_root, save_ade_root, cls_ade_dict):
+    
+    print('Begin to generate ADE20k ground truth')
+    
+    img_list                    = os.listdir(os.path.join(ade20k_root, "images/testing"))
+    
+    for img_name in img_list:
+        
+        img_path                     = os.path.join(ade20k_root, "images/testing", img_name)
+        seg_path                     = os.path.join(ade20k_root, "annotations/testing", img_name.split(".")[0]+".png")
+        anno                         = Image.open(seg_path)
+        anno                         = np.array(anno)
+        
+        clses = np.unique(anno)
+        
+        for cls in clses: # e.g., cls=1
+            
+            img                      = Image.open(img_path) #original image
+            seg_img                  = Image.new('RGB',(img.size[0],img.size[1]))
+            seg_img                  = np.array(seg_img)
+
+            #find where equals cls in anno
+            r, c                     = np.where(anno == cls) #r,c are arraries
+            
+            for i in range(len(r)):
+                
+                seg_img[r[i],c[i],:] = (255,255,255)
+
+            seg_img = Image.fromarray(seg_img)
+            
+            cls_name = cls_ade_dict[cls]
+            
+            if cls_name == "background":
+                continue
+            
+            out_name                 = img_name+ "_" + cls_name + "_seg"
+            output_path              = os.path.join(save_ade_root, out_name)
+            
+            if os.path.exists(output_path) == False:
+                os.makedirs(output_path)
+
+            seg_img.save(output_path + '/{}_gt.jpg'.format(out_name))
+    
     return
 
 
@@ -535,7 +609,9 @@ if __name__ == "__main__":
     parser.add_argument("--gt_path", default='./data/image_pairs_pets_nyuv2', type=str)
     parser.add_argument("--pred_path", default='./imgs_test_oxford_pets', type=str)
     parser.add_argument("--cls_pred_root", default='./imgs_test_oxford_pets_cls', type=str)
+    parser.add_argument("--ade20k_root", default='./data/ADEChallengeData2016', type=str)
     parser.add_argument("--save_root", default='./data/image_pairs_evaluation_dep', type=str)
+    parser.add_argument("--save_ade_root", default='./outputs/imgs_test_ade20k', type=str)
     parser.add_argument("--tasks", default=['seg', 'det'], nargs='+')
     
     args = parser.parse_args()
@@ -545,6 +621,11 @@ if __name__ == "__main__":
 
     n = 0
     
+    cls_ade_dict={}
+    for i in range(len(CLASSES)):
+        cls_ade_dict[i] = CLASSES[i]
+    
+    # generate_ade20k_gt(args.ade20k_root, args.save_ade_root, cls_ade_dict)
     
     # generate_nyuv2_gt(args.nyuv2_root, args.save_root)
     
@@ -553,19 +634,20 @@ if __name__ == "__main__":
     # calc acc
     # acc = evaluate_cls(cls_pred_root)
     
-    test_path = './data/image_pairs_evaluation_det'
+    test_path = './outputs/imgs_test_ade20k'
     cls_iou = {}
     cls_ap = {}
     cate_bb = {}
     n = 0
-    for det_p in os.listdir(test_path):
+    
+    for det_p in os.listdir(test_path): #ADE_train_00000001.jpg_ashcan_seg
         if det_p in ['.DS_Store', 'seeds.json']:
             continue
 
         pinfo  = det_p.split('_')
-        img_id = pinfo[1] # Abyssinian
-        task_type = pinfo[2] #seg
-        cls  = pinfo[0] #1,2,3,...
+        img_id = pinfo[2] # Abyssinian
+        task_type = pinfo[-1] #seg
+        cls  = pinfo[-2] #1,2,3,...
 
         if img_id not in cls_iou:
             cls_iou[img_id] = {}
@@ -616,33 +698,33 @@ if __name__ == "__main__":
             print('{} test sample processed!'.format(n))
             #break
 
-    # ious = []
-    # for img_id in cls_iou:
-    #     iou_ = np.mean(list(cls_iou[img_id].values()))
-    #     if math.isnan(iou_):
-    #         continue 
-    #     ious.append(iou_)
-    
-    # # pdb.set_trace()
-
-
-    # print('the mIoU is {}'.format(np.mean(ious)))
-
-
-    APs = []
+    ious = []
     for img_id in cls_iou:
-        if len(list(cls_ap[img_id].values())) == 0:
-            continue
-        APs.append(np.mean(list(cls_ap[img_id].values())))
-
-    print('the mAP is {}'.format(np.mean(APs)))
+        iou_ = np.mean(list(cls_iou[img_id].values()))
+        if math.isnan(iou_):
+            continue 
+        ious.append(iou_)
     
-    cAPs = []
-    for cls in cate_bb:
-        if len(cate_bb[cls]) == 0:
-            continue
-        ap = calc_cate_ap(cate_bb[cls])
-        cAPs.append(ap)
+    # pdb.set_trace()
 
-    print('the mAP of class is {}'.format(np.mean(cAPs)))
+
+    print('the mIoU is {}'.format(np.mean(ious)))
+
+
+    # APs = []
+    # for img_id in cls_iou:
+    #     if len(list(cls_ap[img_id].values())) == 0:
+    #         continue
+    #     APs.append(np.mean(list(cls_ap[img_id].values())))
+
+    # print('the mAP is {}'.format(np.mean(APs)))
+    
+    # cAPs = []
+    # for cls in cate_bb:
+    #     if len(cate_bb[cls]) == 0:
+    #         continue
+    #     ap = calc_cate_ap(cate_bb[cls])
+    #     cAPs.append(ap)
+
+    # print('the mAP of class is {}'.format(np.mean(cAPs)))
         
