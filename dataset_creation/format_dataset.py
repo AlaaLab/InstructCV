@@ -6,13 +6,13 @@ import os
 import json
 import pdb
 import matplotlib.pyplot as plt
-#from pycocotools.coco import COCO
+from argparse import ArgumentParser
 import cv2
 from fnmatch import fnmatch
 import random
 import copy
 from numpy import asarray
-# from revChatGPT.V1 import Chatbot
+
 #for ade20k
 CLASSES = (
         'background', 'wall', 'building', 'sky', 'floor', 'tree', 'ceiling', 'road', 'bed ',
@@ -184,7 +184,7 @@ def get_bbox_img(root, img_id, bbox, dataset):
     
     elif dataset == 'MSCOCO':
         
-        img_path = os.path.join(root, './data/coco/val2017', '%s.jpg' % img_id)
+        img_path = os.path.join(root, 'val2017', '%s.jpg' % img_id)
 
         img = Image.open(img_path).convert("RGB")
         # box_img = Image.new('RGB', img.size, (0,0,0))
@@ -233,7 +233,7 @@ def get_class_img(img, target_name, cls_label, color, is_pos):
         cls_img = Image.new('RGB', img.size, (0,0,0))
     return cls_img
 
-def generate_sample(root, img, img_id, out_img, prompt, task_type):
+def generate_sample(img, img_id, out_img, prompt, task_type):
     '''
     Args img: input/original images
          out_img: add bbox for det; mask for seg; depth img for DE .. 
@@ -242,13 +242,11 @@ def generate_sample(root, img, img_id, out_img, prompt, task_type):
     Return seed
     '''
 
-    output_path = os.path.join(root, 'image_pairs', img_id + '_{}'.format(task_type))
+    output_path = os.path.join(args.save_root, img_id + '_{}'.format(task_type))
 
     if os.path.exists(output_path) == False:
         os.mkdir(output_path)
 
-    # cv2.imwrite(output_path+'/{}_{}_0.jpg'.format(img_id, task_type), img)
-    # cv2.imwrite(output_path + '/{}_{}_1.jpg'.format(img_id, task_type), out_img)
     img.save(output_path+'/{}_{}_0.jpg'.format(img_id, task_type))
     # pdb.set_trace()
     out_img.save(output_path + '/{}_{}_1.jpg'.format(img_id, task_type))
@@ -285,7 +283,7 @@ def proc_oxford_pets(oxford_pets_root, tasks):
                     assert "seg output image cannot be nonetype"
                 prompt = {}
                 prompt['edit'] = 'segment the {}'.format(target_name)
-                seed = generate_sample(root, img, img_id, output_img, prompt, 'seg')
+                seed = generate_sample(img, img_id, output_img, prompt, 'seg')
                 seeds.append(seed)
 
             elif task_type == 'cls':
@@ -303,7 +301,7 @@ def proc_oxford_pets(oxford_pets_root, tasks):
                 prompt = {'edit': 'show {} if the picture contain {}'.format(c, target_name)}
                 # fixed prompt:
                 # prompt = {'edit': 'show the corresponding color of this {}'.format(target_name)}
-                seed = generate_sample(root, img, img_id, output_img, prompt, task_type + '_pos')
+                seed = generate_sample(img, img_id, output_img, prompt, task_type + '_pos')
                 seeds.append(seed)
                 
                 for cls in clses:
@@ -316,7 +314,7 @@ def proc_oxford_pets(oxford_pets_root, tasks):
                     color = colors[c]
                     output_img = get_class_img(img, nname, cls_label, color, is_pos=False)
                     prompt = {'edit': 'show {} if the picture has {}, otherwise show black'.format(c, nname)}
-                    seed = generate_sample(root, img, img_id, output_img, prompt, task_type+'_neg_{}'.format(nname))
+                    seed = generate_sample(img, img_id, output_img, prompt, task_type+'_neg_{}'.format(nname))
                     seeds.append(seed)
                 n += 1
                 if n % 100 == 0:
@@ -325,7 +323,7 @@ def proc_oxford_pets(oxford_pets_root, tasks):
             
             else:
                     
-                output_img, bbox = get_bbox_img(root, img_id, None, dataset='oxford-pets')
+                output_img, bbox = get_bbox_img(img_id, None, dataset='oxford-pets')
                     
                 if output_img is None:
                     continue
@@ -333,10 +331,10 @@ def proc_oxford_pets(oxford_pets_root, tasks):
                 prompt = {}
                 prompt['edit'] = 'detect the {}'.format(target_name)
                 
-                seed = generate_sample(root, img, img_id, output_img, prompt, task_type)
+                seed = generate_sample(img, img_id, output_img, prompt, task_type)
                 seeds.append(seed)
 
-                output_path = os.path.join(root, './image_pairs', img_id + '_det')
+                output_path = os.path.join('./image_pairs', img_id + '_det')
                 bbox_info = {'bbox': bbox}
                 bbox_file = open(os.path.join(output_path, 'bbox.json'), 'w')
                 bbox_file.write(json.dumps(bbox_info))
@@ -353,7 +351,7 @@ def preproc_coco(clses):
     print('begin to pre-process coco dataset...')
     
     pet_cls_num = len(clses)
-    coco_path = os.path.join(root, coco_root, 'annotations/instances_val2017.json')
+    coco_path = os.path.join(args.coco_root, 'annotations/instances_val2017.json')
     coco_fp = open(coco_path)
     anno_js = json.loads(coco_fp.readline())
 
@@ -415,7 +413,7 @@ def proc_coco(coco_root, clses, tasks):
                     
                     count = 0
                         
-                    det_img, bbox = get_bbox_img(root, img_id, bbox, dataset='MSCOCO')
+                    det_img, bbox = get_bbox_img(coco_root, img_id, bbox, dataset='MSCOCO')
                 
                     # prompt  = get_bbox_prompt(cname)
                     prompt = {'edit': 'detect the {}'.format(cname)}
@@ -426,10 +424,10 @@ def proc_coco(coco_root, clses, tasks):
                     except Exception:
                         print("not 3 channels:", img_id)
                     
-                    seed = generate_sample(root, img, img_id, det_img, prompt, task_type='det_{}'.format(cname))
+                    seed = generate_sample(img, img_id, det_img, prompt, task_type='det_{}'.format(cname))
                     seeds.append(seed)
                     
-                    output_path = os.path.join(root, './image_pairs', img_id + '_det_{}'.format(cname))
+                    output_path = os.path.join('./image_pairs', img_id + '_det_{}'.format(cname))
                     bbox_info = {'bbox': bbox}
                     bbox_file = open(os.path.join(output_path, 'bbox.json'), 'w')
                     bbox_file.write(json.dumps(bbox_info))
@@ -445,7 +443,7 @@ def proc_coco(coco_root, clses, tasks):
                     # prompt = {'edit': 'show {} if the picture has {}, otherwise show black'.format(c, cname)}
                     prompt  = get_cls_prompt(c, cname)
             
-                    seed = generate_sample(root, img, img_id, cls_img, prompt, task_type='cls_{}_pos'.format(cname))
+                    seed = generate_sample(img, img_id, cls_img, prompt, task_type='cls_{}_pos'.format(cname))
                     seeds.append(seed)
                     for cls in clses:
                         if cls == cls_label:
@@ -460,8 +458,7 @@ def proc_coco(coco_root, clses, tasks):
                         # prompt = {'edit': 'show {} if the picture has {}, otherwise show black'.format(c, nname)}
                         prompt  = get_cls_prompt(c, nname)
                         
-                        seed = generate_sample(root, img, img_id, output_img, prompt, task_type='cls_{}_neg_{}'.format(cname, nname))
-                        seeds.append(seed)
+                        seed = generate_sample(img, img_id, output_img, prompt, task_type='cls_{}_neg_{}'.format(cname, nname))
 
                 else:
                     h, w = img.size
@@ -475,14 +472,13 @@ def proc_coco(coco_root, clses, tasks):
                     prompt  = get_seg_prompt(cname)
                     
                     seg_img = Image.fromarray(cv2.cvtColor(gt,cv2.COLOR_BGR2RGB)).convert("RGB")
-                    seed = generate_sample(root, img, img_id, seg_img, prompt, task_type='seg_{}'.format(cname))
-                    seeds.append(seed)
+                    seed = generate_sample(img, img_id, seg_img, prompt, task_type='seg_{}'.format(cname))
 
                 n +=1 
                 if n % 100 == 0:
                     print('{} images processed!'.format(n))
         
-    return seeds
+    return
 
 def proc_nyuv2_all(nyuv2_root):
 
@@ -519,7 +515,7 @@ def proc_nyuv2_all(nyuv2_root):
             # prompt['edit'] = 'Estimate the depth of this {}'.format(cls)
             prompt['edit'] = 'Estimate the depth of this image'
 
-            seed = generate_sample(root, img, img_id, depth_img, prompt, task_type="depes")
+            seed = generate_sample(img, img_id, depth_img, prompt, task_type="depes")
             seeds.append(seed)
             
             n += 1 
@@ -527,42 +523,6 @@ def proc_nyuv2_all(nyuv2_root):
                 print('{} images processed!'.format(n))
     
     return seeds
-            
-
-    # for file_name in file_list: # basement_0001a
-        
-    #     img_list        = os.listdir(os.path.join(nyuv2_root,file_name)) # (rgb_000.jpg, rgb_001.jpg....)
-        
-    #     img_l = []
-        
-    #     for img_name in img_list: # (rgb_000.jpg)
-            
-    #         if fnmatch(img_name, "*.jpg"):
-    #             img_l.append(img_name)
-        
-    #     for img in img_l: # img: 'rgb_00040.jpg'
-                    
-    #         word        = img.strip().split('.') # word[0]:rgb_00040
-    #         cls         = file_name.split('_')[0] # basement
-    #         img_id      = file_name + "_" + word[0] # basement_0001a_rgb_000040
-    #         dep_name    = "vli_depth_" + word[0].split('_')[-1] + '.png' # vli_depth_00040.png
-        
-    #         img_path    = os.path.join(nyuv2_root, file_name, img)
-    #         dep_path    = os.path.join(nyuv2_root, file_name, dep_name)
-            
-    #         img         = Image.open(img_path).convert("RGB")
-    #         depth_img   = Image.open(dep_path).convert("RGB")
-        
-    #         prompt['edit'] = 'Estimate the depth of this {}'.format(cls)
-        
-    #         seed = generate_sample(root, img, img_id, depth_img, prompt, task_type="depes")
-    #         seeds.append(seed)
-            
-    #         n += 1 
-    #         if n % 1000 == 0:
-    #             print('{} images processed!'.format(n))
-    
-    # return seeds
 
 def proc_nyuv2(nyuv2_root):
 
@@ -591,7 +551,7 @@ def proc_nyuv2(nyuv2_root):
         prompt['edit'] = 'Estimate the depth of this image'
         # prompt = get_depth_prompt()
         
-        seed = generate_sample(root, img, img_id, depth_img, prompt, task_type="depes")
+        seed = generate_sample(img, img_id, depth_img, prompt, task_type="depes")
         seeds.append(seed)
     
     return seeds
@@ -639,7 +599,7 @@ def proc_ade20k(ade_root):
                 img = Image.open(img_path).convert("RGB")
                 seg_img = Image.open(seg_path).convert("RGB")
                 prompt  = get_seg_prompt(cname="image")
-                seed = generate_sample(root, img, id, seg_img, prompt, task_type="seg")
+                seed = generate_sample(img, id, seg_img, prompt, task_type="seg")
                 seeds.append(seed)
                 
                 n +=1 
@@ -701,7 +661,7 @@ def proc_adechan2016(ade_root, cls_ade_dict):
             except Exception:
                 print("not 3 channels:", img_name)
                 
-            seed = generate_sample(root, img, img_name.split(".")[0]+"_"+cls_name_wospace, seg_img, prompt, task_type="seg")
+            seed = generate_sample(img, img_name.split(".")[0]+"_"+cls_name_wospace, seg_img, prompt, task_type="seg")
             seeds.append(seed)
     
             n +=1 
@@ -767,19 +727,28 @@ def chat():
 
 if __name__ == "__main__":
     
-    cls_ade_dict={}
-    for i in range(len(CLASSES)):
-        cls_ade_dict[i] = CLASSES[i]
-    tasks = ['det']
-
-    # neg_sample_rate=0.2 # negtive sample rate
-    neg_sample_rate=0 # no negtive sample
-
-    # colors = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255),
-    #           'white':(255,255,255), 'brown':(165,42,42), 'orange':(255,165,0),
-    #           'purple':(128,0,128)}
+    parser = ArgumentParser()
+    parser.add_argument("--dataset", default="coco", type=str)
+    parser.add_argument("--save_root", default="./image_pairs", type=str)
+    parser.add_argument("--data_root", default="", type=str)
+    parser.add_argument("--oxford_pets_root", default='./data/oxford-pets', type=str)
+    parser.add_argument("--coco_root", default='./data/coco', type=str)
+    parser.add_argument("--nyuv2_root", default='./data/nyu_mdet', type=str)
+    parser.add_argument("--ade_root", default='./data/ADEChallengeData2016', type=str)
+    parser.add_argument("--tasks", default=['det'], type=list)
+    args = parser.parse_args()
     
-    colors                      = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 
+    cls_ade_dict, pet_to_color, clses           = {}, {}, {}
+    neg_sample_rate                             = 0 # for cls. 0 means no negtive sample
+    num_seg, num_det, num_dep_est               = 0, 0, 0
+    seg_prompts, det_prompts, dep_est_prompts   = {}, {}, {}
+    
+    for i in range(len(CLASSES)):
+        
+        cls_ade_dict[i]                         = CLASSES[i]
+    
+    # get colors for cls
+    colors                                      = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 
                                    'purple':(128,0,128), 'white':(255,255,255), 'black':(0, 0, 0),
                                    'AliceBlue':(240,248,255), 'Aqua': (0,206,209), 'Peru':(205, 133, 63),
                                    'Brown':(165,42,42), 'DarkGray':(169,169,169), 'Gold':(255,215,0),
@@ -792,34 +761,19 @@ if __name__ == "__main__":
                                    'Snow':(255,250,250),'Sienna':(160,82,45),'Salmon':(250,128,114),
                                    'PowderBlue':(176,224,230),'PeachPuff':(255,218,155),'DarkRed':(139,0,0),
                                    'Olive':(128,128,0)}
-    lcolor                      = list(colors.keys())
-    
-    pet_to_color = {}
+    lcolor                                      = list(colors.keys())
+
     
     for i, pet_name in enumerate(Pet_CLASSES):
-        c                       = COLOR[i]
-        pet_to_color[pet_name]  = c #{cat: red,...}
+        
+        c                                       = COLOR[i]
+        pet_to_color[pet_name]                  = c #{cat: red,...}
     print('pet_to_color:', pet_to_color)
 
-    clses = {}
-    
-    root = ''
-    oxford_pets_root = './data/oxford-pets'
-    coco_root = './data/coco'
-    nyuv2_root = './data/nyu_mdet'
-    ade_root = './data/ADEChallengeData2016'
-
-    sample_path =  os.path.join(root, 'image_pairs')
-
-    if os.path.exists(sample_path) == False:
-        os.mkdir(sample_path)
-
-    seed_file = open(os.path.join(root, 'image_pairs', 'seeds.json'), 'w')
-    
+    if os.path.exists(args.save_root)  == False:
+        os.mkdir(args.save_root)
     
     #generate prompts dict
-    num_seg, num_det, num_dep_est = 0, 0, 0
-    seg_prompts, det_prompts, dep_est_prompts = {}, {}, {}
     
     with open("./data/seg_prompts.txt") as file:
         for item_seg in file:
@@ -839,7 +793,7 @@ if __name__ == "__main__":
             dep_est_prompts[num_dep_est] = sen_dep_est
             num_dep_est += 1
 
-    for line in open(os.path.join(root, oxford_pets_root, 'annotations/trainval.txt')):
+    for line in open(os.path.join(args.oxford_pets_root, 'annotations/trainval.txt')):
         line = line.strip()
         words = line.split(' ')
         img_id = words[0]
@@ -849,11 +803,15 @@ if __name__ == "__main__":
         clses[cls_label] = target_name #store target_name and cls_label
     
     
-    seeds_coco = proc_coco(coco_root, clses, tasks=["det"])
-    # seeds_ade  = proc_adechan2016(ade_root, cls_ade_dict)
-    # seeds_nyuv2 = proc_nyuv2_all(nyuv2_root)
-    # seeds_pets = proc_oxford_pets(oxford_pets_root, tasks=["cls"])
+    if fnmatch(args.dataset, "coco"):
+        proc_coco(args.coco_root, clses, tasks=args.tasks)
     
-    seeds = seeds_coco
-    seed_file.write(json.dumps(seeds))
-    seed_file.close()
+    elif fnmatch(args.dataset, "oxford_pets"):
+        proc_oxford_pets(args.oxford_pets_root, args.tasks)
+
+    elif fnmatch(args.dataset, "nyuv2"):
+        proc_nyuv2_all(args.nyuv2_root)
+    
+    elif fnmatch(args.dataset, "ade20k"):
+        proc_adechan2016(args.ade_root)
+    
