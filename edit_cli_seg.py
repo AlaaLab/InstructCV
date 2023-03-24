@@ -138,13 +138,14 @@ def main():
     #     input_image = resize(input_image)
     
     ## for ade20k
-    image_list = os.listdir(args.input + "/images/testing")
-    
-    for image_name in image_list:
+    for image_name in open(os.path.join(args.input,"test_part0.txt")):
+        
+        image_name = image_name.strip()
+        
         start = time.time()
         
-        img_path            = os.path.join(args.input, "images/testing", image_name)
-        anno_path           = os.path.join(args.input, "annotations/testing", image_name.replace("jpg","png"))
+        img_path            = os.path.join(args.input, "images/validation", image_name)
+        anno_path           = os.path.join(args.input, "annotations/validation", image_name.replace("jpg","png"))
 
         # get classes name
         anno                = Image.open(anno_path)
@@ -219,7 +220,6 @@ def main():
             # edited_image.save(args.output + save_name)
             
             end = time.time()
-            
             
             print("One image done. Inferenct time cost:{}".format(end - start))
 

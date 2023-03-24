@@ -375,12 +375,16 @@ def generate_ade20k_gt(ade20k_root, save_ade_root, cls_ade_dict):
     
     print('Begin to generate ADE20k ground truth')
     
-    img_list                    = os.listdir(os.path.join(ade20k_root, "images/testing"))
+    # img_list                    = os.listdir(os.path.join(ade20k_root, "images/testing"))
     
-    for img_name in img_list:
+    # for img_name in img_list:
+    
+    for img_name in open(os.path.join(ade20k_root,"test_part0.txt")):
+    
+        img_name = img_name.strip()
         
-        img_path                     = os.path.join(ade20k_root, "images/testing", img_name)
-        seg_path                     = os.path.join(ade20k_root, "annotations/testing", img_name.split(".")[0]+".png")
+        img_path                     = os.path.join(ade20k_root, "images/validation", img_name)
+        seg_path                     = os.path.join(ade20k_root, "annotations/validation", img_name.split(".")[0]+".png")
         anno                         = Image.open(seg_path)
         anno                         = np.array(anno)
         
