@@ -6,6 +6,7 @@ import sys
 import os
 import pdb
 import time
+import json
 from torchvision import transforms
 from argparse import ArgumentParser
 
@@ -39,6 +40,47 @@ class CFGDenoiser(nn.Module):
         out_cond, out_img_cond, out_uncond = self.inner_model(cfg_z, cfg_sigma, cond=cfg_cond).chunk(3)
         return out_uncond + text_cfg_scale * (out_cond - out_img_cond) + image_cfg_scale * (out_img_cond - out_uncond)
 
+
+def preproc_coco(root):
+    
+    print('begin to pre-process coco dataset...')
+    clses                   = {}
+    coco_path               = os.path.join(root, 'annotations/instances_val2017.json')
+    coco_fp                 = open(coco_path)
+    anno_js                 = json.loads(coco_fp.readline())
+
+    for cate in anno_js['categories']:
+        
+        cid                 = cate['id']
+        cname               = cate['name']
+        clses[cid]          = cname
+
+
+    for key in anno_js:
+        print(key)
+
+    img_info = {}
+    coco_anno = anno_js['annotations']
+
+    for anno in coco_anno:
+        image_id = str(anno['image_id'])
+        box = list(anno['bbox'])
+        cbox = [box[0], box[1], box[0]+box[2], box[1]+box[3]]
+        cid = anno['category_id']
+        segmentation = anno['segmentation']
+        iscrowd = anno['iscrowd']
+
+        if image_id not in img_info:
+            img_info[image_id] = {}
+
+        if cid not in img_info[image_id]:
+            img_info[image_id][cid] = {'bbox': [], 'segmentation': []}
+
+        img_info[image_id][cid]['bbox'].append(cbox)
+        if iscrowd == 0:
+            img_info[image_id][cid]['segmentation'].append(segmentation)
+    
+    return img_info, clses
 
 def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
     print(f"Loading model from {ckpt}")
@@ -98,78 +140,83 @@ def main():
 
     seed = random.randint(0, 100000) if args.seed is None else args.seed
     
-    for line in open(os.path.join('data/oxford-pets/annotations/det_test.txt')):
+    for image_name in open(os.path.join(args.input,"test_part0.txt")):
         
-        start = time.time()
+        start                   = time.time()
         
-        line = line.strip()
-        words = line.split('.')
-        img_id = words[0] # Abyssinian_201
-        target_name = ' '.join(img_id.split('_')[:-1]).strip() #Abyssinian
+        image_name              = image_name.strip()
         
-        img_path = os.path.join(args.input, '%s.jpg' % img_id)
-        input_image = Image.open(img_path).convert("RGB")
-        input_image = resize(input_image)
+        img_info, clses         = preproc_coco(args.input)
         
-        
-        width, height = input_image.size
-        factor = args.resolution / max(width, height)
-        factor = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
-        width = int((width * factor) // 64) * 64
-        height = int((height * factor) // 64) * 64
-        input_image = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
-
-        prompts = args.edit
-        prompts = prompts.replace("%", target_name)
-        print("prompts:", prompts)
-        
-        if args.edit == "":
-            input_image.save(args.output)
-            return
-
-        with torch.no_grad(), autocast("cuda"), model.ema_scope():
-            cond = {}
+        image_id                = image_name.split(".")[0] #000001234
+        img_id                  = image_id.lstrip("0") #1234
             
-            cond["c_crossattn"] = [model.get_learned_conditioning([prompts])] #modified: args.edit -> prompts
-            input_image = 2 * torch.tensor(np.array(input_image)).float() / 255 - 1
-            input_image = rearrange(input_image, "h w c -> 1 c h w").to(model.device)
-            cond["c_concat"] = [model.encode_first_stage(input_image).mode()]
-
-            uncond = {}
-            uncond["c_crossattn"] = [null_token]
-            uncond["c_concat"] = [torch.zeros_like(cond["c_concat"][0])]
-
-            sigmas = model_wrap.get_sigmas(args.steps)
-
-            extra_args = {
-                "cond": cond,
-                "uncond": uncond,
-                "text_cfg_scale": args.cfg_text,
-                "image_cfg_scale": args.cfg_image,
-            }
-            torch.manual_seed(seed)
-            z = torch.randn_like(cond["c_concat"][0]) * sigmas[0]
-            z = K.sampling.sample_euler_ancestral(model_wrap_cfg, z, sigmas, extra_args=extra_args)
-            x = model.decode_first_stage(z)
-            x = torch.clamp((x + 1.0) / 2.0, min=0.0, max=1.0)
-            x = 255.0 * rearrange(x, "1 c h w -> h w c")
-            edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
+        img_path = os.path.join(args.input, 'val2017/{}.jpg'.format(image_id))
         
-        
-        output_path         = os.path.join(args.output, img_id + "_" + args.task)
+        for cid in img_info[img_id]:
+            
+            cname               = clses[cid] #target_name
+            output_path         = os.path.join(args.output, image_id + "_" + cname + "_" + args.task)
+            
+            # # resume
+            # if os.path.exists(output_path) == True:
+            #     continue
 
-        if os.path.exists(output_path) == False:
-            os.makedirs(output_path)
+            input_image         = Image.open(img_path).convert("RGB")
+            input_image         = resize(input_image)
+            
+            width, height       = input_image.size
+            factor              = args.resolution / max(width, height)
+            factor              = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
+            width               = int((width * factor) // 64) * 64
+            height              = int((height * factor) // 64) * 64
+            input_image         = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
+
+            prompts             = args.edit
+            prompts             = prompts.replace("%", cname)
+            print("prompts:", prompts)
+            
+            if args.edit == "":
+                input_image.save(args.output)
+                return
+
+            with torch.no_grad(), autocast("cuda"), model.ema_scope():
+                cond = {}
                 
-        edited_image.save(output_path+'/{}_{}_pred.jpg'.format(img_id, args.task))
-        
-        # save_name = img_id + "_test_" + args.task + '.jpg'
-        # edited_image.save(args.output + save_name)
-        
-        end = time.time()
-        
-        
-        print("One image done. Inferenct time cost:{}".format(end - start))
+                cond["c_crossattn"] = [model.get_learned_conditioning([prompts])] #modified: args.edit -> prompts
+                input_image = 2 * torch.tensor(np.array(input_image)).float() / 255 - 1
+                input_image = rearrange(input_image, "h w c -> 1 c h w").to(model.device)
+                cond["c_concat"] = [model.encode_first_stage(input_image).mode()]
+
+                uncond = {}
+                uncond["c_crossattn"] = [null_token]
+                uncond["c_concat"] = [torch.zeros_like(cond["c_concat"][0])]
+
+                sigmas = model_wrap.get_sigmas(args.steps)
+
+                extra_args = {
+                    "cond": cond,
+                    "uncond": uncond,
+                    "text_cfg_scale": args.cfg_text,
+                    "image_cfg_scale": args.cfg_image,
+                }
+                torch.manual_seed(seed)
+                z = torch.randn_like(cond["c_concat"][0]) * sigmas[0]
+                z = K.sampling.sample_euler_ancestral(model_wrap_cfg, z, sigmas, extra_args=extra_args)
+                x = model.decode_first_stage(z)
+                x = torch.clamp((x + 1.0) / 2.0, min=0.0, max=1.0)
+                x = 255.0 * rearrange(x, "1 c h w -> h w c")
+                edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
+            
+
+            if os.path.exists(output_path) == False:
+                os.makedirs(output_path)
+
+            edited_image.save(output_path+'/{}_{}_pred.jpg'.format(image_id + "_" + cname, args.task))
+
+            end = time.time()
+            
+            print("One image done. Inferenct time cost:{}".format(end - start))
 
 
 if __name__ == "__main__":

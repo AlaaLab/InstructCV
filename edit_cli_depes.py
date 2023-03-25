@@ -95,8 +95,6 @@ def main():
 
     seed = random.randint(0, 100000) if args.seed is None else args.seed
     
-    img_list = os.listdir(args.input)
-    
     test_txt_path = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/data/nyu_mdet/nyu_test.txt'
     
     with open(test_txt_path) as file:  

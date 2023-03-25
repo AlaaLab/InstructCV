@@ -28,6 +28,8 @@ We bulit a interface between language and vision tasks. We can use various langu
 You can put your favorite image and try to use language as instruction to do some vision tasks. Just have a try to see what will happen!
 
 **Step0.** Download the pre-trained weights we provided.
+Or you can download it manually from [Google Drive]('https://drive.google.com/file/d/1pz9eheQRQfx8itLj3nSKXQylTuG8DtB_/view?usp=share_link') |
+[BaiduNet Disk]('https://pan.baidu.com/s/1iPuMJIWTHiDBRVeFpVXUPQ?pwd=3tjr&_at_=1679742406093') 
 ```shell
 bash download_pretain_weights.sh
 ```
@@ -45,6 +47,7 @@ python edit_cli.py --input imgs/ --output outputs/ --edit "segment the cat."
 ```
 
 # &#x1F449; Training
+[Training Log]("https://drive.google.com/file/d/1pMeRfWvDXSW7k7ESQBliMkgGoWQi74FW/view?usp=share_link")
 ## Set up the environments
 
 ```shell
@@ -54,7 +57,7 @@ bash scripts/download_checkpoints.sh
 ```
 
 ## Prepare datasets
-
+We pool all four datasets together and train them at one time.
 <details open>
 <summary>NYUV2 - Depth estimation</summary>
 
@@ -160,27 +163,55 @@ python evaluate/evaluate_cls_seg_det.py
 python evaluate/evaluate_depth.py
 ```
 
+# &#x2B50; Repoduce the results in Table 1.
 
-## Edit a single image:
-```
-python edit_cli.py --input imgs/example.jpg --output imgs/output.jpg --edit "turn him into a cyborg"
+## Semantic segmantation
+We evaluate model's performance on ADE20k
 
-# Optionally, you can specify parameters to tune your result:
-# python edit_cli.py --steps 100 --resolution 512 --seed 1371 --cfg-text 7.5 --cfg-image 1.2 --input imgs/example.jpg --output imgs/output.jpg --edit "turn him into a cyborg"
-```
 
-## Baseline
-### Oxford-pets
+
+# &#x1F3B7; Baseline
+
+<details open>
+<summary>Oxford-pets</summary>
+
 Use Resnet-50 (Pretained on ImageNet) 
 After fine-tuning 100 epochs (lr=0.01, SGD), Acc(%) on test: 93.05, batch size=256
-```
+```shell
 python baseline/classification/cls.py --model supervised --dataset pets --steps 100
 ```
 Use ViT-16 (Pretained on ImageNet21k)
 After fine-tuning 300 epochs (lr=0.001, SGD, the same as original paper), Acc(%) on test: 94.47 (94.43 in vit paper) batch size=64
-```
+```shell
 python baseline/classification/cls.py --model ViT-16 --dataset pets --steps 300
 ```
+</details>
+
+<details open>
+<summary>ADE20k</summary>
+
+Use SegFormer
+download the pretrained weights (SegFormer-B5) from [here](https://drive.google.com/drive/folders/1GAku0G0iR9DsBxCbfENWMJ27c5lYUeQA?usp=sharing).
+```shell
+python tools/test.py local_configs/segformer/B1/segformer.b1.512x512.ade.160k.py /path/to/checkpoint_file
+```
+
+Use Mask2Former
+dowan load the pretrained weights (Swin-L IN2k with 160k iterations) from [here](https://github.com/facebookresearch/Mask2Former/blob/main/MODEL_ZOO.md)
+
+</details>
+<br>
+
+<details open>
+<summary>NYUv2</summary>
+
+Use BTS
+We follow instructions [here](https://github.com/zhyever/Monocular-Depth-Estimation-Toolbox/tree/main/configs/bts) to reproduce the results.
+
+Use Binsformer
+We follow instructions [here](https://github.com/zhyever/Monocular-Depth-Estimation-Toolbox/tree/main/configs/binsformer) to reproduce the results.
+</details>
+<br>
 
 ## Acknowledgement
 This project is based on the following open-source projects. We thank their authors for making the source code publically available.

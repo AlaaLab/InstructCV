@@ -33,10 +33,15 @@
 # python edit_cli_cls.py --input data/oxford-pets/images --output imgs_test_oxford_pets/ --edit "show blue if the picture contain %" --task cls
 # python edit_cli_seg.py --input data/oxford-pets/images --output imgs_test_oxford_pets/ --edit "segment the %" --task seg
 # python edit_cli_det.py --ckpt logs/train_pets_nyuv2_four_tasks_depsprompt:image/checkpoints/last.ckpt --input data/oxford-pets/images --output data/image_pairs_evaluation_det --edit "detect the %" --task det
-# python edit_cli_depes.py --ckpt logs/train_pets_nyuv2_four_tasks_depsprompt:image/checkpoints/last.ckpt --input data/nyu_data/ --output "data/image_pairs_evaluation_dep" --edit "Estimate the depth of this image" --task depes
+
+## for nyuv2
+# python edit_cli_depes.py --ckpt logs/train_all100kdata_new/checkpoints/epoch=000051.ckpt --input data/nyu_mdet/ --output "data/image_pairs_evaluation_dep" --edit "Estimate the depth of this image" --task depes
 
 ## for ade20k
-python edit_cli_seg.py --ckpt logs/train_all100kdata_new/checkpoints/last.ckpt --input /lustre/grp/gyqlab/lism/brt/language-vision-interface/data/ADEChallengeData2016/ --output outputs/imgs_test_ade20k/ --edit "segment the %" --task seg
+python edit_cli_seg.py --ckpt logs/train_all100kdata_new/checkpoints/epoch=000051.ckpt --input /lustre/grp/gyqlab/lism/brt/language-vision-interface/data/ADEChallengeData2016/ --output outputs/imgs_test_ade20k/ --edit "segment the %" --task seg
+
+## for coco
+# python edit_cli_det.py --ckpt logs/train_all100kdata_new/checkpoints/epoch=000051.ckpt --input data/coco/ --output outputs/imgs_test_coco/ --edit "detect the %" --task det
 
 # for coco
 # python edit_cli.py --ckpt logs/train_all100kdata_new/checkpoints/last.ckpt --input ./outputs/img_test_det_person --output ./outputs/imgs_coco_output3/ --edit "detect the person" --task det

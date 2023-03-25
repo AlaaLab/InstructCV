@@ -130,10 +130,6 @@ if __name__ == "__main__":
         # pdb.set_trace()
         
         result                  = compute_errors(pred, gt)
-
-        # print("RMSE:", result["rmse"])
-        # print("a1:", result["a1"])
-        # print("abs_rel:", result["abs_rel"])
         
         rmse_l.append(result["rmse"])
         abs_rel_l.append(result["abs_rel"])

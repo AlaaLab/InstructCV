@@ -346,17 +346,16 @@ def proc_oxford_pets(oxford_pets_root, tasks):
         
     return seeds
 
-def preproc_coco(clses):
+def preproc_coco():
     
     print('begin to pre-process coco dataset...')
-    
-    pet_cls_num = len(clses)
+    clses = {}
     coco_path = os.path.join(args.coco_root, 'annotations/instances_val2017.json')
     coco_fp = open(coco_path)
     anno_js = json.loads(coco_fp.readline())
 
     for cate in anno_js['categories']:
-        cid = cate['id'] + pet_cls_num
+        cid = cate['id']
         cname = cate['name']
         clses[cid] = cname
 
@@ -386,19 +385,21 @@ def preproc_coco(clses):
         if iscrowd == 0:
             img_info[image_id][cid]['segmentation'].append(segmentation)
     
-    return img_info, pet_cls_num
+    return img_info, clses
 
-def proc_coco(coco_root, clses, tasks):
+def proc_coco(coco_root, tasks):
     
     print('begin to process coco dataset...')
     
     seeds = []
     n = 0
-    img_info, pet_cls_num = preproc_coco(clses)
+    img_info, clses = preproc_coco()
     
     for image_id in img_info:
+        
         for cid in img_info[image_id]:
-            cname = clses[cid+pet_cls_num]
+            
+            cname = clses[cid] #target_name
             
             img_id = image_id.zfill(12)
             img_path = os.path.join(coco_root, 'val2017/{}.jpg'.format(img_id))
@@ -793,18 +794,18 @@ if __name__ == "__main__":
             dep_est_prompts[num_dep_est] = sen_dep_est
             num_dep_est += 1
 
-    for line in open(os.path.join(args.oxford_pets_root, 'annotations/trainval.txt')):
-        line = line.strip()
-        words = line.split(' ')
-        img_id = words[0]
-        cls_label = words[1]
+    # for line in open(os.path.join(args.oxford_pets_root, 'annotations/trainval.txt')):
+    #     line = line.strip()
+    #     words = line.split(' ')
+    #     img_id = words[0]
+    #     cls_label = words[1]
 
-        target_name = ' '.join(img_id.split('_')[:-1]).strip()
-        clses[cls_label] = target_name #store target_name and cls_label
+    #     target_name = ' '.join(img_id.split('_')[:-1]).strip()
+    #     clses[cls_label] = target_name #store target_name and cls_label
     
     
     if fnmatch(args.dataset, "coco"):
-        proc_coco(args.coco_root, clses, tasks=args.tasks)
+        proc_coco(args.coco_root, tasks=args.tasks)
     
     elif fnmatch(args.dataset, "oxford_pets"):
         proc_oxford_pets(args.oxford_pets_root, args.tasks)

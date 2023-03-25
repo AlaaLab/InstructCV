@@ -51,12 +51,11 @@ def get_seg_img(root, img_id):
 
 
 def get_bbox_img(root, img_id, bbox, dataset):
-
+    
     if dataset == 'oxford-pets':
         
-        xml_file = os.path.join(root, 'annotations/xmls', '%s.xml' % img_id.replace('-', '_'))
-        # pdb.set_trace()
-        if os.path.exists(xml_file) == False: # some data has no xml (annotation)
+        xml_file = os.path.join(root, './data/oxford-pets/annotations/xmls', '%s.xml' % img_id.replace('-', '_'))
+        if os.path.exists(xml_file) == False:
             return None, bbox
 
         tree = ET.parse(xml_file)
@@ -68,7 +67,7 @@ def get_bbox_img(root, img_id, bbox, dataset):
             int(bndbox.find('xmax').text),
             int(bndbox.find('ymax').text)]
 
-        img_path = os.path.join(root, 'images', '%s.jpg' % img_id.replace('-', '_'))
+        img_path = os.path.join(root, './data/oxford-pets/images', '%s.jpg' % img_id.replace('-', '_'))
 
         img = Image.open(img_path).convert("RGB")
         #box_img = img.copy()
@@ -78,19 +77,66 @@ def get_bbox_img(root, img_id, bbox, dataset):
         a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill='white', outline='white', width=1)
     
     elif dataset == 'MSCOCO':
-        img_path = os.path.join(root, 'MSCOCO/val2017', '%s.jpg' % img_id)
+        
+        img_path = os.path.join(root, 'val2017', '%s.jpg' % img_id)
 
         img = Image.open(img_path).convert("RGB")
-        #box_img = img.copy()
-        box_img = Image.new('RGB', img.size, (0,0,0))
-        a = ImageDraw.ImageDraw(box_img)
-        for box in bbox:
-            #a.rectangle(box, fill=None, outline='red', width=4)
-            a.rectangle(box, fill='white', outline='white', width=1)
+        # box_img = Image.new('RGB', img.size, (0,0,0))
 
-    del a
+        # a = ImageDraw.ImageDraw(box_img)
+            
+        box_img = img.copy()
+        a = ImageDraw.ImageDraw(box_img)
+        
+        for box in bbox:
+
+            a.rectangle(((box[0], box[1]), (box[2], box[3])), fill=None, outline="black", width=5)
+
+        del a
 
     return box_img, bbox
+
+
+def preproc_coco():
+    
+    print('begin to pre-process coco dataset...')
+    clses = {}
+    coco_path = os.path.join(args.coco_root, 'annotations/instances_val2017.json')
+    coco_fp = open(coco_path)
+    anno_js = json.loads(coco_fp.readline())
+
+    for cate in anno_js['categories']:
+        cid = cate['id']
+        cname = cate['name']
+        clses[cid] = cname
+
+    print(clses)
+
+    for key in anno_js:
+        print(key)
+
+    img_info = {}
+    coco_anno = anno_js['annotations']
+
+    for anno in coco_anno:
+        image_id = str(anno['image_id'])
+        box = list(anno['bbox'])
+        cbox = [box[0], box[1], box[0]+box[2], box[1]+box[3]]
+        cid = anno['category_id']
+        segmentation = anno['segmentation']
+        iscrowd = anno['iscrowd']
+
+        if image_id not in img_info:
+            img_info[image_id] = {}
+
+        if cid not in img_info[image_id]:
+            img_info[image_id][cid] = {'bbox': [], 'segmentation': []}
+
+        img_info[image_id][cid]['bbox'].append(cbox)
+        if iscrowd == 0:
+            img_info[image_id][cid]['segmentation'].append(segmentation)
+    
+    return img_info, clses
 
 
 def ShapeDetection(img):
@@ -145,6 +191,58 @@ def iou(gt_img, pred_img):
     print("iou:", iou)
     return iou
 
+
+def cal_bboxes_iou(gt_bboxes, pred_bboxes):
+    """Compute the iou of two boxes.
+    Parameters
+    ----------
+    bbox1, bbox2: list.
+        The bounding box coordinates: [xmin, ymin, xmax, ymax] or [xcenter, ycenter, w, h].
+    center: str, default is 'False'.
+        The format of coordinate.
+        center=False: [xmin, ymin, xmax, ymax]
+        center=True: [xcenter, ycenter, w, h]
+    Returns
+    -------
+    iou: float.
+        The iou of bbox1 and bbox2.
+    """
+
+    iou_dict     = {}
+    pred_bboxes_ = pred_bboxes
+    
+    for i in range(len(gt_bboxes)):
+        
+        xmin1, ymin1, xmax1, ymax1 = gt_bboxes[i]
+        area1 = (xmax1 - xmin1 + 1) * (ymax1 - ymin1 + 1)
+        
+        for j in range(len(pred_bboxes[0])):
+        
+            xmin2, ymin2, xmax2, ymax2 = pred_bboxes[j]
+
+            # Get the coordinates of the vertex of the intersection of rectangular boxes (intersection)
+            xx1 = np.max([xmin1, xmin2])
+            yy1 = np.max([ymin1, ymin2])
+            xx2 = np.min([xmax1, xmax2])
+            yy2 = np.min([ymax1, ymax2])
+
+            area2 = (xmax2 - xmin2 + 1) * (ymax2 - ymin2 + 1) # Calculate the area of two rectangular boxes
+        
+            inter_area = (np.max([0, xx2 - xx1])) * (np.max([0, yy2 - yy1])) # Calculate the intersection area
+            
+            # Calculate the iou
+            iou = inter_area / (area1 + area2 - inter_area + 1e-6)
+            iou_dict[str(j)] = iou
+            iou_dict = sorted(iou_dict.items(), key=lambda x: x[1])
+        pdb.set_trace()
+            
+            
+            # if iou <= 0.8:
+            #     pdb.set_trace()
+            #     pred_bboxes_.pop(j)
+                
+                
+    return pred_bboxes_
 
 def calc_iou(gt_img_path, pred_img):
     iou_scores = []
@@ -369,6 +467,39 @@ def generate_pets_gt(oxford_pets_root, save_root, tasks):
                 output_img.save(output_path+'/{}_{}_gt.jpg'.format(img_id, task_type)) # ./data/image_pairs_evalation/Abyssinian_201_det/Abyssinian_201_det_gt.jpg
 
     return
+
+
+def generate_coco_gt(coco_root, save_root):
+    
+    print('Begin to generate COCO ground truth: box.json and g.t img')
+    
+    img_info, clses       = preproc_coco()
+    
+    for img_name in open(os.path.join(coco_root,"test_part0.txt")):
+    
+        img_name              = img_name.strip()
+        image_id              = img_name.split(".")[0] #000001234
+        id                    = image_id.lstrip("0") #1234
+        
+        for cid in img_info[id]:
+            
+            cname = clses[cid] #target_name  
+            bbox  = img_info[id][cid]['bbox']
+            
+            # save det image
+            output_path = os.path.join(save_root, image_id + '_{}_det'.format(cname))
+            det_img, bbox = get_bbox_img(coco_root, image_id, bbox, dataset='MSCOCO')
+            det_img.save(os.path.join(output_path, "{}_{}_det_gt.jpg".format(image_id, cname)))
+            
+            # save g.t box
+            bbox_info = {'bbox': bbox}
+            bbox_file = open(os.path.join(output_path, 'bbox.json'), 'w')
+            bbox_file.write(json.dumps(bbox_info))
+            bbox_file.close()
+    
+        
+    return
+    
 
 
 def generate_ade20k_gt(ade20k_root, save_ade_root, cls_ade_dict):
@@ -613,19 +744,16 @@ if __name__ == "__main__":
     parser.add_argument("--gt_path", default='./data/image_pairs_pets_nyuv2', type=str)
     parser.add_argument("--pred_path", default='./imgs_test_oxford_pets', type=str)
     parser.add_argument("--cls_pred_root", default='./imgs_test_oxford_pets_cls', type=str)
+    parser.add_argument("--coco_root", default='./data/coco', type=str)
     parser.add_argument("--ade20k_root", default='./data/ADEChallengeData2016', type=str)
     parser.add_argument("--save_root", default='./data/image_pairs_evaluation_dep', type=str)
     parser.add_argument("--save_ade_root", default='./outputs/imgs_test_ade20k', type=str)
     parser.add_argument("--tasks", default=['seg', 'det'], nargs='+')
     
-    args = parser.parse_args()
+    args                             = parser.parse_args()
+    cls_iou, cls_ade_dict, cls_ap    = {}, {},{}
+    n                                = 0
     
-    cls_iou = {}
-    cls_ap = {}
-
-    n = 0
-    
-    cls_ade_dict={}
     for i in range(len(CLASSES)):
         cls_ade_dict[i] = CLASSES[i]
     
@@ -635,10 +763,12 @@ if __name__ == "__main__":
     
     # generate_pets_gt(args.oxford_pets_root, args.save_root, args.tasks)
     
+    # generate_coco_gt(args.coco_root, args.save_root)
+    
     # calc acc
     # acc = evaluate_cls(cls_pred_root)
     
-    test_path = './outputs/imgs_test_ade20k'
+    test_path = './outputs/imgs_test_coco'
     cls_iou = {}
     cls_ap = {}
     cate_bb = {}
@@ -674,25 +804,27 @@ if __name__ == "__main__":
 
         elif task_type == 'det': # 检测
             
-            pred_img = cv2.imread(os.path.join(test_path, det_p, det_p+'_pred.jpg'))  # infer 结果,  实际测试的时候可以把infer结果保存为XXX_2.jpg
-            gt_img = cv2.imread(os.path.join(test_path, det_p, det_p+'_gt.jpg'))  # groundtruth
+            pred_img                = cv2.imread(os.path.join(test_path, det_p, det_p+'_pred.jpg'))  # infer 结果,  实际测试的时候可以把infer结果保存为XXX_2.jpg
+            gt_img                  = cv2.imread(os.path.join(test_path, det_p, det_p+'_gt.jpg'))  # groundtruth
             # pdb.set_trace()
-            h, w, c = gt_img.shape
+            h, w, c                 = gt_img.shape
             
-            pred_img = cv2.resize(pred_img, (w, h))
+            pred_img                = cv2.resize(pred_img, (w, h))
 
-            box_fp = open(os.path.join(test_path, det_p, 'bbox.json'))
-            gt_bbox = json.loads(box_fp.readline())['bbox']
-            imgContour, bboxs = ShapeDetection(pred_img)
+            box_fp                  = open(os.path.join(test_path, det_p, 'bbox.json'))
+            box_pr                  = open(os.path.join(test_path, det_p, 'pred_bbox.json'))
+            gt_bbox                 = json.loads(box_fp.readline())['bbox']
+            # imgContour, bboxs = ShapeDetection(pred_img)
 
-            box_fp = open(os.path.join(test_path, det_p, 'pred_bbox.json'), 'w')
-            pred_box = {'pred_bbox': bboxs}
-            box_fp.write(json.dumps(pred_box))
-            box_fp.close()
-
-            ap = calc_ap(gt_img, pred_img, gt_bbox, bboxs)
-            cls_ap[img_id][cls] = ap
-            cate_bb[cls][img_id] = {'predbbox': bboxs, 'gtbox': gt_bbox}
+            # box_fp = open(os.path.join(test_path, det_p, 'pred_bbox.json'), 'w')
+            # pred_box = {'pred_bbox': bboxs}
+            # box_fp.write(json.dumps(pred_box))
+            # box_fp.close()
+            bboxs                   = json.loads(box_pr.readline())['pred_bbox']
+            pred_bboxes             = cal_bboxes_iou(gt_bbox, bboxs)
+            ap                      = calc_ap(gt_img, pred_img, gt_bbox, bboxs)
+            cls_ap[img_id][cls]     = ap
+            cate_bb[cls][img_id]    = {'predbbox': bboxs, 'gtbox': gt_bbox}
 
         else:
             continue
@@ -702,33 +834,33 @@ if __name__ == "__main__":
             print('{} test sample processed!'.format(n))
             #break
 
-    ious = []
-    for img_id in cls_iou:
-        iou_ = np.mean(list(cls_iou[img_id].values()))
-        if math.isnan(iou_):
-            continue 
-        ious.append(iou_)
-    
-    # pdb.set_trace()
-
-
-    print('the mIoU is {}'.format(np.mean(ious)))
-
-
-    # APs = []
+    # ious = []
     # for img_id in cls_iou:
-    #     if len(list(cls_ap[img_id].values())) == 0:
-    #         continue
-    #     APs.append(np.mean(list(cls_ap[img_id].values())))
-
-    # print('the mAP is {}'.format(np.mean(APs)))
+    #     iou_ = np.mean(list(cls_iou[img_id].values()))
+    #     if math.isnan(iou_):
+    #         continue 
+    #     ious.append(iou_)
     
-    # cAPs = []
-    # for cls in cate_bb:
-    #     if len(cate_bb[cls]) == 0:
-    #         continue
-    #     ap = calc_cate_ap(cate_bb[cls])
-    #     cAPs.append(ap)
+    # # pdb.set_trace()
 
-    # print('the mAP of class is {}'.format(np.mean(cAPs)))
+
+    # print('the mIoU is {}'.format(np.mean(ious)))
+
+
+    APs = []
+    for img_id in cls_iou:
+        if len(list(cls_ap[img_id].values())) == 0:
+            continue
+        APs.append(np.mean(list(cls_ap[img_id].values())))
+
+    print('the mAP is {}'.format(np.mean(APs)))
+    
+    cAPs = []
+    for cls in cate_bb:
+        if len(cate_bb[cls]) == 0:
+            continue
+        ap = calc_cate_ap(cate_bb[cls])
+        cAPs.append(ap)
+
+    print('the mAP of class is {}'.format(np.mean(cAPs)))
         
