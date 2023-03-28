@@ -1,0 +1,3 @@
+Show black when there is no % in the image, otherwise exhibit %.
+
+

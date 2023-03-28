@@ -1,0 +1,48 @@
+#!/bin/bash
+#SBATCH -o %j.out
+#SBATCH --gres=gpu:1
+#SBATCH -p gpu31
+#SBATCH --qos=normal
+#SBATCH -J test
+#SBATCH --nodes=1 
+#SBATCH -t 120:00:00
+
+#source activate esmfold
+# python edit_cli.py --input imgs/woody.jpeg --output imgs/woody_seg4.jpeg --edit "segment the person"
+# python edit_cli.py --input imgs/woody.jpeg --output imgs/woody_seg2.jpeg --edit "segment the image"
+# python edit_cli.py --input imgs/woody.jpeg --output imgs/woody_seg3.jpeg --edit "segment all"
+# python edit_cli.py --input imgs/woody.jpeg --output imgs/woody_det13.jpeg --edit "detect the woody"
+# python edit_cli.py --input imgs/woody.jpeg --output imgs/woody_det14.jpeg --edit "detect the person"
+# python edit_cli.py --input imgs/woody.jpeg --output imgs/woody_det15.jpeg --edit "detect the man"
+# python edit_cli.py --input imgs/woody.jpeg --output imgs/woody_detect2.jpeg --edit "detect the face"
+
+## for det:
+# python edit_cli.py --input imgs_test_coco/ --output imgs/ --edit "detect the person"
+
+## for seg:
+# python edit_cli.py --input data/ade20k/images/ADE/training/cultural/apse__indoor/ADE_train_00001472.jpg --output imgs/ADE_train_00001472_seg.jpeg --edit "segment the person"
+
+## for cls:
+# python edit_cli_cls.py --input /lustre/grp/gyqlab/lism/brt/language-vision-interface/data/oxford-pets/images --output /lustre/grp/gyqlab/lism/brt/language-vision-interface/imgs_test_oxford_pets/ --edit "show the corresponding color of this %"
+
+## for depth estimation
+# python edit_cli_depes.py --input /lustre/grp/gyqlab/lism/brt/language-vision-interface/data/nyuv2/basement_0001a --output imgs_test_nyuv2/ --edit "Assess the image's depth by looking for visual cues and making an estimation."
+
+
+## for pets
+# python edit_cli_cls.py --input data/oxford-pets/images --output imgs_test_oxford_pets/ --edit "show blue if the picture contain %" --task cls
+# python edit_cli_seg.py --input data/oxford-pets/images --output imgs_test_oxford_pets/ --edit "segment the %" --task seg
+# python edit_cli_det.py --ckpt logs/train_pets_nyuv2_four_tasks_depsprompt:image/checkpoints/last.ckpt --input data/oxford-pets/images --output data/image_pairs_evaluation_det --edit "detect the %" --task det
+
+## for nyuv2
+# python edit_cli_depes.py --resolution 256 --ckpt logs/train_all100kdata_new/checkpoints/epoch=000051.ckpt --input data/nyu_mdet/ --output "data/image_pairs_evaluation_dep" --edit "Estimate the depth of this image" --task depes
+
+## for ade20k
+# python edit_cli_seg.py --resolution 256 --split "test_part0.txt" --ckpt logs/train_all100kdata_new/checkpoints/epoch=000071.ckpt --input /lustre/grp/gyqlab/lism/brt/language-vision-interface/data/ADEChallengeData2016/ --output outputs/imgs_test_ade20k/ --edit "segment the %" --task seg
+
+## for coco
+python edit_cli_det.py --split "test_part0.txt" --ckpt logs/train_all100kdata_new/checkpoints/epoch=000051.ckpt --input data/coco/ --output outputs/imgs_test_coco/ --edit "detect the %" --task det
+
+
+# for coco
+# python edit_cli.py --ckpt logs/train_all100kdata_new/checkpoints/last.ckpt --input ./outputs/img_test_det_person --output ./outputs/imgs_coco_output3/ --edit "detect the person" --task det

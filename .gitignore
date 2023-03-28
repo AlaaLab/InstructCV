@@ -1,0 +1,57 @@
+# ~/.gitignore_global
+# Symlinked into ~/ as .gitignore
+
+# Compiled source
+*.dll
+*.exe
+
+# Packages/ Archives
+*.7z
+*.dmg
+*.gz
+*.iso
+*.tar
+*.zip
+*.pkg
+*.jpg
+*.png
+
+
+# Databases
+*.sql
+*.sqlite
+*.ckpt
+*.pth
+*.mat
+*.pkl
+*.err
+
+# Logs
+*.log
+*.out
+
+# project files
+data/
+lightning_logs/
+logs/
+image*/
+imgs/
+imgs*/
+src/
+stable_diffusion_bak
+data/image_pairs*
+outputs/
+baselines/
+
+
+
+# OS generated files
+**/*.app
+**/CmakeCache.txt
+**/build/*
+**/CmakeFiles/*
+**/.DS_Store
+.DS_Store
+**/.Spotlight-V100
+**/.Trashes
+**/Thumbs.db
