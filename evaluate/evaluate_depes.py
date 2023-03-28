@@ -7,6 +7,7 @@ from torchvision import transforms
 from sklearn.metrics import mean_squared_error
 from math import sqrt
 from fnmatch import fnmatch
+import math
 import os
 
 def absolute_mean_relative_error(pred, gt):
@@ -34,11 +35,11 @@ def absolute_mean_relative_error(pred, gt):
 def read_gt_img(img_name):
     
     img = Image.open(img_name)
-
-    h, w = img.size #(640,480)
+    
+    h, w = img.size
 
     np_img = np.array(img)
-    np_img = np.asarray([np_img], dtype=np.int32)
+    np_img = np.asarray([np_img], dtype=float)
     
     return np_img, h, w
 
@@ -47,10 +48,11 @@ def read_pred_img(img_name, h, w):
     img = Image.open(img_name)
     
     resize = transforms.Resize([w,h])
-    img = resize(img) #640,480
+    img = resize(img)
     
     np_img = np.array(img)
-    np_img = np.asarray([np_img], dtype=np.int32)
+    np_img[np_img<10] = 0
+    np_img = np.asarray([np_img], dtype=float)
     
     return np_img
 
@@ -77,9 +79,9 @@ def compute_errors(gt, pred):
     a2                      = (thresh < 1.25 ** 2).mean()
     a3                      = (thresh < 1.25 ** 3).mean()
     abs_rel                 = np.mean(np.abs(gt_new_nozero - pred_new_nozero) / gt_new_nozero)
+    
     rmse                    = (gt_new - pred_new) ** 2
     rmse                    = np.sqrt(rmse.mean())
-    # log_10                  = (np.abs(np.log10(gt_new)-np.log10(pred_new))).mean()
     
     return dict(a1=a1, a2=a2, a3=a3, 
                 abs_rel=abs_rel, rmse=rmse)
@@ -118,25 +120,17 @@ if __name__ == "__main__":
         pred = read_pred_img(pred_path, h, w)
         pred = pred[:,:,:,0].squeeze()
         pred = pred * 10 / 255
-
-        ## print logs
-        # pred = np.expand_dims(pred, axis=0)
-        # print("gt mean:", np.mean(gt))
-        # print("pred mean:", np.mean(pred))
-        # print("gt max:", np.max(gt))
-        # print("pred max:", np.max(pred))
-        # print("gt min:", np.min(gt))
-        # print("pred min:", np.min(pred))
-        # pdb.set_trace()
         
         result                  = compute_errors(pred, gt)
+        
+        # if result["rmse"] <= 0.2:
+        #     print(result["rmse"])
+        #     print(pred_path)
         
         rmse_l.append(result["rmse"])
         abs_rel_l.append(result["abs_rel"])
         a1_l.append(result["a1"])
         
-        # A_rel               = absolute_mean_relative_error(pred, gt)
-        # results = compute_errors(gt, pred)
     
     sum_rmse, sum_a1, sum_abs_rel = 0, 0, 0 
     for item in rmse_l:

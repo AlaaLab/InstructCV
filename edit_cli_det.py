@@ -79,7 +79,7 @@ def preproc_coco(root):
         img_info[image_id][cid]['bbox'].append(cbox)
         if iscrowd == 0:
             img_info[image_id][cid]['segmentation'].append(segmentation)
-    
+
     return img_info, clses
 
 def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
@@ -124,6 +124,7 @@ def main():
     parser.add_argument("--input", required=True, type=str, help="should be the path to the file")
     parser.add_argument("--output", required=True, type=str, help="should be path to the output file")
     parser.add_argument("--edit", required=True, type=str, help="use e.g., show blue if the image has % (% is a must)")
+    parser.add_argument("--split", default="", required=True, type=str)
     parser.add_argument("--cfg-text", default=7.5, type=float)
     parser.add_argument("--cfg-image", default=1.5, type=float)
     parser.add_argument("--seed", type=int)
@@ -140,7 +141,7 @@ def main():
 
     seed = random.randint(0, 100000) if args.seed is None else args.seed
     
-    for image_name in open(os.path.join(args.input,"test_part0.txt")):
+    for image_name in open(os.path.join(args.input,args.split)): #"test_part0.txt"
         
         start                   = time.time()
         
@@ -153,6 +154,10 @@ def main():
             
         img_path = os.path.join(args.input, 'val2017/{}.jpg'.format(image_id))
         
+        if img_id not in img_info:
+            
+            continue
+
         for cid in img_info[img_id]:
             
             cname               = clses[cid] #target_name

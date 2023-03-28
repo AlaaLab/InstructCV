@@ -208,15 +208,15 @@ def cal_bboxes_iou(gt_bboxes, pred_bboxes):
         The iou of bbox1 and bbox2.
     """
 
-    iou_dict     = {}
-    pred_bboxes_ = pred_bboxes
-    
+    pred_bboxes_ = []
+
     for i in range(len(gt_bboxes)):
         
+        iou_dict     = {}
         xmin1, ymin1, xmax1, ymax1 = gt_bboxes[i]
         area1 = (xmax1 - xmin1 + 1) * (ymax1 - ymin1 + 1)
         
-        for j in range(len(pred_bboxes[0])):
+        for j in range(len(pred_bboxes)):
         
             xmin2, ymin2, xmax2, ymax2 = pred_bboxes[j]
 
@@ -231,32 +231,33 @@ def cal_bboxes_iou(gt_bboxes, pred_bboxes):
             inter_area = (np.max([0, xx2 - xx1])) * (np.max([0, yy2 - yy1])) # Calculate the intersection area
             
             # Calculate the iou
+            iou = 0
             iou = inter_area / (area1 + area2 - inter_area + 1e-6)
             iou_dict[str(j)] = iou
-            iou_dict = sorted(iou_dict.items(), key=lambda x: x[1])
-        pdb.set_trace()
-            
-            
-            # if iou <= 0.8:
-            #     pdb.set_trace()
-            #     pred_bboxes_.pop(j)
+
+        iou_dict = sorted(iou_dict.items(), key=lambda x: x[1], reverse=True)
+        pred_bboxes_.append(pred_bboxes[int(iou_dict[0][0])])
+
+        # if iou <= 0.8:
+        #     pred_bboxes_.pop(j)
                 
                 
     return pred_bboxes_
 
-def calc_iou(gt_img_path, pred_img):
-    iou_scores = []
-    epsilon = 1e-6
-    
-    gt_img = Image.open(gt_img_path)
-    resize = transforms.Resize([512,512])
-    gt_img = resize(gt_img)
-    gt_img = np.asarray(gt_img)
-    
-    intersection = np.sum((gt_img) & (pred_img))
-    union = np.sum((gt_img) | (pred_img))
 
-    iou = (intersection + epsilon) / (union + epsilon)
+def calc_iou(gt_img_path, pred_img):
+    
+    epsilon         = 1e-6
+    h, w            = pred_img.size
+    gt_img          = Image.open(gt_img_path)
+    resize          = transforms.Resize([w,h])
+    gt_img          = resize(gt_img)
+    gt_img          = np.asarray(gt_img)
+    
+    intersection    = np.sum((gt_img) & (pred_img))
+    union           = np.sum((gt_img) | (pred_img))
+
+    iou             = (intersection + epsilon) / (union + epsilon)
 
     print("iou:", iou)
         
@@ -412,7 +413,7 @@ def calc_miou():
     
     gt_img = cv2.imread(os.path.join(test_path, det_p, det_p+'_1.jpg'))  # groundtruth
 
-    pred_img = cv2.imread(os.path.join(test_path, det_p, det_p+'_1.jpg'))  # infer 结果, 实际测试的时候可以把infer结果保存为XXX_2.jpg
+    pred_img = cv2.imread(os.path.join(test_path, det_p, det_p+'_1.jpg'))
     iou = calc_iou(gt_img, pred_img)
     cls_iou[img_id][cls] = iou
     
@@ -433,7 +434,7 @@ def generate_pets_gt(oxford_pets_root, save_root, tasks):
         line                        = line.strip()
         words                       = line.split(' ')
         img_id                      = words[0].split(".")[0] #'Abyssinian_201'
-        # pdb.set_trace()
+
         target_name = ' '.join(img_id.split('_')[:-1]).strip()
         
         for task_type in tasks:
@@ -499,7 +500,6 @@ def generate_coco_gt(coco_root, save_root):
     
         
     return
-    
 
 
 def generate_ade20k_gt(ade20k_root, save_ade_root, cls_ade_dict):
@@ -510,7 +510,7 @@ def generate_ade20k_gt(ade20k_root, save_ade_root, cls_ade_dict):
     
     # for img_name in img_list:
     
-    for img_name in open(os.path.join(ade20k_root,"test_part0.txt")):
+    for img_name in open(os.path.join(ade20k_root,"test_part9.txt")):
     
         img_name = img_name.strip()
         
@@ -768,7 +768,7 @@ if __name__ == "__main__":
     # calc acc
     # acc = evaluate_cls(cls_pred_root)
     
-    test_path = './outputs/imgs_test_coco'
+    test_path = './outputs/imgs_test_ade20k'
     cls_iou = {}
     cls_ap = {}
     cate_bb = {}
@@ -796,17 +796,19 @@ if __name__ == "__main__":
         # gt_img = cv2.imread(os.path.join(test_path, det_p, det_p+'_gt.jpg'))  # groundtruth
         # gt_img = Image.open(os.path.join(test_path, det_p, det_p+'_gt.jpg'))  # groundtruth
         if task_type == 'seg':
+            pred_path = os.path.join(test_path, det_p, det_p+'_pred.jpg')
+            if not os.path.exists(pred_path):
+                continue
             
-            # pred_img = cv2.imread(os.path.join(test_path, det_p, det_p+'_pred.jpg'))  # infer 结果, 实际测试的时候可以把infer结果保存为XXX_2.jpg
-            pred_img = Image.open(os.path.join(test_path, det_p, det_p+'_pred.jpg'))
+            pred_img  = Image.open(pred_path)
             iou = calc_iou(gt_img_root, pred_img)
             cls_iou[img_id][cls] = iou
 
         elif task_type == 'det': # 检测
             
-            pred_img                = cv2.imread(os.path.join(test_path, det_p, det_p+'_pred.jpg'))  # infer 结果,  实际测试的时候可以把infer结果保存为XXX_2.jpg
+            pred_img                = cv2.imread(os.path.join(test_path, det_p, det_p+'_pred.jpg'))
             gt_img                  = cv2.imread(os.path.join(test_path, det_p, det_p+'_gt.jpg'))  # groundtruth
-            # pdb.set_trace()
+
             h, w, c                 = gt_img.shape
             
             pred_img                = cv2.resize(pred_img, (w, h))
@@ -822,7 +824,7 @@ if __name__ == "__main__":
             # box_fp.close()
             bboxs                   = json.loads(box_pr.readline())['pred_bbox']
             pred_bboxes             = cal_bboxes_iou(gt_bbox, bboxs)
-            ap                      = calc_ap(gt_img, pred_img, gt_bbox, bboxs)
+            ap                      = calc_ap(gt_img, pred_img, gt_bbox, pred_bboxes)
             cls_ap[img_id][cls]     = ap
             cate_bb[cls][img_id]    = {'predbbox': bboxs, 'gtbox': gt_bbox}
 
@@ -834,33 +836,32 @@ if __name__ == "__main__":
             print('{} test sample processed!'.format(n))
             #break
 
-    # ious = []
-    # for img_id in cls_iou:
-    #     iou_ = np.mean(list(cls_iou[img_id].values()))
-    #     if math.isnan(iou_):
-    #         continue 
-    #     ious.append(iou_)
-    
-    # # pdb.set_trace()
-
-
-    # print('the mIoU is {}'.format(np.mean(ious)))
-
-
-    APs = []
+    ious = []
     for img_id in cls_iou:
-        if len(list(cls_ap[img_id].values())) == 0:
-            continue
-        APs.append(np.mean(list(cls_ap[img_id].values())))
-
-    print('the mAP is {}'.format(np.mean(APs)))
+        iou_ = np.mean(list(cls_iou[img_id].values()))
+        if math.isnan(iou_):
+            continue 
+        ious.append(iou_)
     
-    cAPs = []
-    for cls in cate_bb:
-        if len(cate_bb[cls]) == 0:
-            continue
-        ap = calc_cate_ap(cate_bb[cls])
-        cAPs.append(ap)
 
-    print('the mAP of class is {}'.format(np.mean(cAPs)))
+
+    print('the mIoU is {}'.format(np.mean(ious)))
+
+
+    # APs = []
+    # for img_id in cls_iou:
+    #     if len(list(cls_ap[img_id].values())) == 0:
+    #         continue
+    #     APs.append(np.mean(list(cls_ap[img_id].values())))
+
+    # print('the mAP is {}'.format(np.mean(APs)))
+    
+    # cAPs = []
+    # for cls in cate_bb:
+    #     if len(cate_bb[cls]) == 0:
+    #         continue
+    #     ap = calc_cate_ap(cate_bb[cls])
+    #     cAPs.append(ap)
+
+    # print('the mAP of class is {}'.format(np.mean(cAPs)))
         

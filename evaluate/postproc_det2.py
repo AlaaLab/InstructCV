@@ -2,6 +2,7 @@ import cv2
 from argparse import ArgumentParser
 import numpy as np
 import os
+import pdb
 import json
 from fnmatch import fnmatch
 import time
@@ -16,13 +17,16 @@ def cnt_area(cnt):
     return area
 
 
-def extract_bbox(pred_img_path):
+def extract_bbox(pred_img_path, gt_path):
     '''
     input one image
     return coodinates of all bboxes in this image
     '''
     start                       = time.time()
+    gt_img                      = cv2.imread(gt_path)
+    h, w, c                     = gt_img.shape  
     bgr_img                     = cv2.imread(pred_img_path)     # load images
+    bgr_img                     = cv2.resize(bgr_img, (w, h))
     output                      = bgr_img
     bgr_img                     = cv2.medianBlur(bgr_img, 3)    # median filtering
     bgr_img                     = cv2.bilateralFilter(bgr_img, 0, 0, 30)   # bilateral filtering
@@ -110,21 +114,23 @@ def generate_exc_bbox(pred_root):
         
         for img in img_list:
             
-            # resume
-            if args.resume:
-                file_                       = file + "+exc.jpg"
-                print("pass,{}".format(file_))
-                if file_ in img_list:
-                    continue
+            # # resume
+            # if args.resume:
+            #     file_                       = file + "+exc.jpg"
+            #     print("pass,{}".format(file_))
+            #     if file_ in img_list:
+            #         continue
             
             
             if fnmatch(img, "*pred.jpg"):
                 pred_img_path           = os.path.join(file_path, img)
+
             else:
                 continue
             
             # generate coordinates of bboxes (json)
-            bboxes, output              = extract_bbox(pred_img_path)
+            gt_path                     = os.path.join(root, 'val2017', img.split("_")[0]+'.jpg')
+            bboxes, output              = extract_bbox(pred_img_path, gt_path)
             bbox_info                   = {'pred_bbox': bboxes}
             bbox_file                   = open(os.path.join(file_path, 'pred_bbox.json'), 'w')
             bbox_file.write(json.dumps(bbox_info))
@@ -133,7 +139,7 @@ def generate_exc_bbox(pred_root):
             save_path                   = os.path.join(file_path, img.replace("pred", "exc"))
             
             # generate images with bboxes
-            # cv2.imwrite(save_path, output)
+            cv2.imwrite(save_path, output)
             
             n+=1
             if n % 100 == 0:

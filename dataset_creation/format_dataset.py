@@ -384,7 +384,7 @@ def preproc_coco():
         img_info[image_id][cid]['bbox'].append(cbox)
         if iscrowd == 0:
             img_info[image_id][cid]['segmentation'].append(segmentation)
-    
+    pdb.set_trace()
     return img_info, clses
 
 def proc_coco(coco_root, tasks):

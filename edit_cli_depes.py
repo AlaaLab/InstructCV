@@ -111,8 +111,6 @@ def main():
 
             img_id          = file_name + "_" + img_name.split(".")[0] # kitchen_rgb_00045
             
-            ### !!bug here!! modified 13th Mar
-            # dep_path_part = file_name + "/vli_depth_" + img_name.split("_")[-1].replace("jpg","png") # kitchen_0028b/vli_depth_00045.jpg
             dep_path_part = file_name + "/rgb_" + img_name.split("_")[-1] # kitchen_0028b/rgb_00045.jpg
             dep_path      = os.path.join('data/nyu_mdet', dep_path_part)
             

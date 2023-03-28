@@ -109,6 +109,7 @@ def main():
     parser.add_argument("--edit", required=True, type=str, help="use e.g., show blue if the image has % (% is a must)")
     parser.add_argument("--cfg-text", default=7.5, type=float)
     parser.add_argument("--cfg-image", default=1.5, type=float)
+    parser.add_argument("--split", default="", required=True, type=str)
     parser.add_argument("--seed", type=int)
     parser.add_argument("--task", default="", type=str)
     args = parser.parse_args()
@@ -138,7 +139,7 @@ def main():
     #     input_image = resize(input_image)
     
     ## for ade20k
-    for image_name in open(os.path.join(args.input,"test_part0.txt")):
+    for image_name in open(os.path.join(args.input, args.split)):
         
         image_name = image_name.strip()
         
