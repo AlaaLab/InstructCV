@@ -188,7 +188,10 @@ After fine-tuning 300 epochs (lr=0.001, SGD, the same as original paper), Acc(%)
 ```shell
 python baseline/classification/cls.py --model ViT-16 --dataset pets --steps 300
 ```
+
 </details>
+<br>
+
 
 <details open>
 <summary>ADE20k</summary>
