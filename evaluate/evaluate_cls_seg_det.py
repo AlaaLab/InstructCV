@@ -217,6 +217,10 @@ def cal_bboxes_iou(gt_bboxes, pred_bboxes):
         area1 = (xmax1 - xmin1 + 1) * (ymax1 - ymin1 + 1)
         
         for j in range(len(pred_bboxes)):
+            
+            if len(pred_bboxes[j]) == 5:# add those are confident to be a rectangle
+                pred_bboxes_.append(pred_bboxes[iou_dict[0][0]])
+                continue
         
             xmin2, ymin2, xmax2, ymax2 = pred_bboxes[j]
 
@@ -236,10 +240,10 @@ def cal_bboxes_iou(gt_bboxes, pred_bboxes):
             iou_dict[str(j)] = iou
 
         iou_dict = sorted(iou_dict.items(), key=lambda x: x[1], reverse=True)
-        pred_bboxes_.append(pred_bboxes[int(iou_dict[0][0])])
+        # pred_bboxes_.append(pred_bboxes[int(iou_dict[0][0])])
 
-        # if iou <= 0.8:
-        #     pred_bboxes_.pop(j)
+        if iou_dict[0][1] > 0.5:
+            pred_bboxes_.append(pred_bboxes[iou_dict[0][0]])
                 
                 
     return pred_bboxes_
