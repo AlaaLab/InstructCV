@@ -1,11 +1,12 @@
 #!/bin/bash
 #SBATCH -o %j.out
+#SBATCH -A synth-derm
 #SBATCH --gres=gpu:1
-#SBATCH -p gpu31
+#SBATCH -p g40
 #SBATCH --qos=normal
-#SBATCH -J test
+#SBATCH -J lvi-inference
 #SBATCH --nodes=1 
-#SBATCH -t 120:00:00
+#SBATCH -t 20:00:00
 
 #source activate esmfold
 # python edit_cli.py --input imgs/woody.jpeg --output imgs/woody_seg4.jpeg --edit "segment the person"
@@ -41,8 +42,11 @@
 # python edit_cli_seg.py --resolution 256 --split "test_part0.txt" --ckpt logs/train_all100kdata_new/checkpoints/epoch=000071.ckpt --input /lustre/grp/gyqlab/lism/brt/language-vision-interface/data/ADEChallengeData2016/ --output outputs/imgs_test_ade20k/ --edit "segment the %" --task seg
 
 ## for coco
-python edit_cli_det.py --split "test_part0.txt" --ckpt logs/train_all100kdata_new/checkpoints/epoch=000051.ckpt --input data/coco/ --output outputs/imgs_test_coco/ --edit "detect the %" --task det
+# python edit_cli_det.py --split "test_part0.txt" --ckpt logs/train_all100kdata_new/checkpoints/epoch=000051.ckpt --input data/coco/ --output outputs/imgs_test_coco/ --edit "detect the %" --task det
 
 
 # for coco
 # python edit_cli.py --ckpt logs/train_all100kdata_new/checkpoints/last.ckpt --input ./outputs/img_test_det_person --output ./outputs/imgs_coco_output3/ --edit "detect the person" --task det
+
+# for unified-io 
+CUDA_VISIBLE_DEVICES=0 python baselines/unified-io-inference/demo_script.py

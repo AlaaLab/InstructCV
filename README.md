@@ -31,7 +31,7 @@ You can put your favorite image and try to use language as instruction to do som
 Or you can download it manually from [Google Drive](https://drive.google.com/file/d/1pz9eheQRQfx8itLj3nSKXQylTuG8DtB_/view?usp=share_link) |
 [BaiduNet Disk](https://pan.baidu.com/s/1iPuMJIWTHiDBRVeFpVXUPQ?pwd=3tjr&_at_=1679742406093) 
 ```shell
-bash download_pretain_weights.sh
+bash scripts/download_pretain_weights.sh
 ```
 
 **Step1.** Put your image under a dictionary you created.
@@ -45,64 +45,23 @@ python edit_cli.py --input <path_to_the_dictionary_you_created> --output <path_t
 # a specific example:
 python edit_cli.py --input imgs/ --output outputs/ --edit "segment the cat."
 ```
+<br>
 
-# &#x1F449; Training
-[Training Log](https://drive.google.com/file/d/1pMeRfWvDXSW7k7ESQBliMkgGoWQi74FW/view?usp=share_link)
-## Set up the environments
 
-```shell
-conda env create -f environment.yaml
-conda activate ip2p
-bash scripts/download_checkpoints.sh
+# &#x2714; Prepare training datasets
+## Structure
+### Train
+```
+language_vision_interface
+├──scripts
+├──datasets
+├──data
+│   ├── image_pairs_train
+│   │   ├── Abyssianian_1_cls
+│   ├── image_pairs_evalation
 ```
 
-## Prepare datasets
-We pool all four datasets together and train them at one time.
-<details open>
-<summary>NYUV2 - Depth estimation</summary>
-
-Download the dataset [here](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html)
-
-Or, you can download the processed dataset follow the instructions [here](https://github.com/zhyever/Monocular-Depth-Estimation-Toolbox/blob/main/docs/dataset_prepare.md#NYU).
-</details>
-
-<details open>
-<summary>MS-COCO - Object Detection</summary>
-
-Download the dataset [here](https://cocodataset.org/)
-</details>
-
-<details open>
-<summary>ADE20k - Semantic Segmentation</summary>
-
-Download the dataset [here](http://sceneparsing.csail.mit.edu/index_challenge.html)
-</details>
-
-<details open>
-<summary>Oxford-IIIT - Classification</summary>
-
-Download the dataset [here](https://www.robots.ox.ac.uk/~vgg/data/pets/)
-</details>
-<br/>
-
-```shell
-python dataset_creation/format_dataset.py --save_root <path_to_save> --tasks <vision tasks> --data_root <path_to_dataset>
-# specific examples
-## coco
-python dataset_creation/format_dataset.py --save_root './image_pairs' --tasks ['det'] --data_root './data/coco'
-```
-
-## Train with multi-gpus
-
-```shell
-python main.py --name <exp_name> --base configs/train.yaml --train --gpus 0,1,2,3,4,5,6,7
-```
-
-# &#x2714; Dataset Structure
-## Train
-
-
-## Evaluate
+### Evaluate
 ```
 language_vision_interface
 ├──scripts
@@ -153,6 +112,79 @@ language_vision_interface
 │   │   │   ├── living_room_0010_33_1
 
 ```
+<br>
+
+## Prepare datasets
+We pool all four datasets together and train them at one time.
+
+<details open>
+<summary>NYUV2 - Depth estimation</summary>
+
+Download the dataset [here](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html)
+
+Or, you can download the processed dataset follow the instructions [here](https://github.com/zhyever/Monocular-Depth-Estimation-Toolbox/blob/main/docs/dataset_prepare.md#NYU).
+</details>
+
+<details open>
+<summary>MS-COCO - Object Detection</summary>
+
+Download the dataset [here](https://cocodataset.org/)
+</details>
+
+<details open>
+<summary>ADE20k - Semantic Segmentation</summary>
+
+Download the dataset [here](http://data.csail.mit.edu/places/ADEchallenge/ADEChallengeData2016.zip)
+</details>
+
+<details open>
+<summary>Oxford-IIIT - Classification</summary>
+
+Download the dataset [here](https://www.robots.ox.ac.uk/~vgg/data/pets/)
+</details>
+<br/>
+
+## Build our training data
+
+Next, we are going to process these datasets to build our training data. You can run the following commands.
+
+```shell
+python dataset_creation/format_dataset.py --save_root <path_to_save> --tasks <vision tasks> --data_root <path_to_dataset>
+# specific examples
+## coco
+python dataset_creation/format_dataset.py --save_root './image_pairs' --tasks ['det'] --data_root './data/coco'
+```
+
+# &#x1F449; Training
+[Training Log](https://drive.google.com/file/d/1pMeRfWvDXSW7k7ESQBliMkgGoWQi74FW/view?usp=share_link)
+## Set up the environments
+
+```shell
+conda env create -f environment.yaml
+conda activate lvi
+```
+
+## Download pre-trained models
+We trained our model from the checkpoint provided by Stable Diffusion V1.5
+```shell
+#  Stable Diffusion V1.5
+bash scripts/download_checkpoints.sh
+#  The checkpoint we provided (finetune with our training data for 50 epochs)
+bash scripts/download_pretrained_weights.sh
+```
+
+
+## Train with multi-gpus
+
+```shell
+python main.py --name <exp_name> --base configs/train.yaml --train --gpus 0,1,2,3,4,5,6,7
+```
+
+## Train on slurm clusters
+```shell
+sbatch scripts/slurm_train
+```
+
 
 ## Reproduce the Table 2.
 1. Build the datasets following Sec. Prepare datasets
@@ -173,7 +205,7 @@ We evaluate model's performance on ADE20k
 # &#x1F3B7; Baseline
 
 <details open>
-<summary>Oxford-pets</summary>
+<summary>Specialized model - Classification</summary>
 <br>
 
 **Resnet-50 (Pretained on ImageNet)**
@@ -194,7 +226,7 @@ python baseline/classification/cls.py --model ViT-16 --dataset pets --steps 300
 
 
 <details open>
-<summary>ADE20k</summary>
+<summary>Specialized model - Semantic Segmentation</summary>
 <br>
 
 **SegFormer**
@@ -212,7 +244,7 @@ download the pretrained weights (Swin-L IN2k with 160k iterations) from [here](h
 <br>
 
 <details open>
-<summary>NYUv2</summary>
+<summary>Specialized model - Monocular Depth Estimation</summary>
 <br>
 
 **BTS**
@@ -224,6 +256,38 @@ We follow instructions [here](https://github.com/zhyever/Monocular-Depth-Estimat
 We follow instructions [here](https://github.com/zhyever/Monocular-Depth-Estimation-Toolbox/tree/main/configs/binsformer) to reproduce the results.
 </details>
 <br>
+
+
+<details open>
+<summary>Specialized model - Object Detection</summary>
+<br>
+
+**Faster RCNN**
+We run Faster R-CNN models
+in [Detectron2](https://github.com/facebookresearch/detectron2)
+
+
+**DETR**
+We follow instructions [here](https://github.com/facebookresearch/detr) to reproduce the results.
+
+</details>
+<br>
+
+<details open>
+<summary>Specialized model - Object Detection</summary>
+<br>
+
+**Generalist models**
+
+**Unified-IO**
+we use larger_1000k.bin as the pre-trained model.
+It takes ~27s to inference single image.
+
+
+</details>
+<br>
+
+
 
 ## Acknowledgement
 This project is based on the following open-source projects. We thank their authors for making the source code publically available.

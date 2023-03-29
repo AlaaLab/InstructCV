@@ -51,7 +51,7 @@ def read_pred_img(img_name, h, w):
     img = resize(img)
     
     np_img = np.array(img)
-    np_img[np_img<10] = 0
+    # np_img[np_img<10] = 0
     np_img = np.asarray([np_img], dtype=float)
     
     return np_img
@@ -89,7 +89,8 @@ def compute_errors(gt, pred):
     
 if __name__ == "__main__":
     
-    test_path = "./data/image_pairs_evaluation_dep"
+    # test_path = "./data/image_pairs_evaluation_dep"
+    test_path = "./outputs/img_pairs_eva_dep"
     file_name = os.listdir(test_path)
     rmse_l    = []
     a1_l        = []
@@ -107,19 +108,19 @@ if __name__ == "__main__":
         
         for img_name_ in img_list:
             
-            if fnmatch(img_name_, '*gt.jpg'):
+            if fnmatch(img_name_, '*gt*'):
                 gt_path = os.path.join(test_path, file, img_name_)
                 
-            if fnmatch(img_name_, '*pred.jpg'):
+            if fnmatch(img_name_, '*pred*'):
                 pred_path = os.path.join(test_path, file, img_name_)
     
         gt, h, w = read_gt_img(gt_path)
         gt = gt[:,:,:,0].squeeze()
-        gt = gt * 10 / 255
+        # gt = gt * 10 / 255
 
         pred = read_pred_img(pred_path, h, w)
         pred = pred[:,:,:,0].squeeze()
-        pred = pred * 10 / 255
+        # pred = pred * 10 / 255
         
         result                  = compute_errors(pred, gt)
         
