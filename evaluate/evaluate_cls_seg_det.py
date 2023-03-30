@@ -241,9 +241,11 @@ def cal_bboxes_iou(gt_bboxes, pred_bboxes):
 
         iou_dict = sorted(iou_dict.items(), key=lambda x: x[1], reverse=True)
         # pred_bboxes_.append(pred_bboxes[int(iou_dict[0][0])])
-
+        # print("iou_dict", len(iou_dict))
+        if len(iou_dict) == 0:
+            return pred_bboxes_
         if iou_dict[0][1] > 0.5:
-            pred_bboxes_.append(pred_bboxes[iou_dict[0][0]])
+            pred_bboxes_.append(pred_bboxes[int(iou_dict[0][0])])
                 
                 
     return pred_bboxes_
@@ -747,7 +749,7 @@ if __name__ == "__main__":
     parser.add_argument("--nyuv2_root", default='./data/nyu_mdet', type=str)
     parser.add_argument("--gt_path", default='./data/image_pairs_pets_nyuv2', type=str)
     parser.add_argument("--pred_path", default='./imgs_test_oxford_pets', type=str)
-    parser.add_argument("--cls_pred_root", default='./imgs_test_oxford_pets_cls', type=str)
+    parser.add_argument("--cls_pred_root", default='./outputs/imgs_test_oxford_pets', type=str)
     parser.add_argument("--coco_root", default='./data/coco', type=str)
     parser.add_argument("--ade20k_root", default='./data/ADEChallengeData2016', type=str)
     parser.add_argument("--save_root", default='./data/image_pairs_evaluation_dep', type=str)
@@ -770,102 +772,102 @@ if __name__ == "__main__":
     # generate_coco_gt(args.coco_root, args.save_root)
     
     # calc acc
-    # acc = evaluate_cls(cls_pred_root)
+    acc = evaluate_cls(args.cls_pred_root)
     
-    test_path = './outputs/imgs_test_ade20k'
-    cls_iou = {}
-    cls_ap = {}
-    cate_bb = {}
-    n = 0
+    # test_path = './outputs/imgs_test_coco'
+    # cls_iou = {}
+    # cls_ap = {}
+    # cate_bb = {}
+    # n = 0
     
-    for det_p in os.listdir(test_path): #ADE_train_00000001.jpg_ashcan_seg
-        if det_p in ['.DS_Store', 'seeds.json']:
-            continue
-
-        pinfo  = det_p.split('_')
-        img_id = pinfo[2] # Abyssinian
-        task_type = pinfo[-1] #seg
-        cls  = pinfo[-2] #1,2,3,...
-
-        if img_id not in cls_iou:
-            cls_iou[img_id] = {}
-        
-        if img_id not in cls_ap:
-            cls_ap[img_id] = {}
-            
-        if cls not in cate_bb:
-            cate_bb[cls] = {}
-
-        gt_img_root = os.path.join(test_path, det_p, det_p+'_gt.jpg')
-        # gt_img = cv2.imread(os.path.join(test_path, det_p, det_p+'_gt.jpg'))  # groundtruth
-        # gt_img = Image.open(os.path.join(test_path, det_p, det_p+'_gt.jpg'))  # groundtruth
-        if task_type == 'seg':
-            pred_path = os.path.join(test_path, det_p, det_p+'_pred.jpg')
-            if not os.path.exists(pred_path):
-                continue
-            
-            pred_img  = Image.open(pred_path)
-            iou = calc_iou(gt_img_root, pred_img)
-            cls_iou[img_id][cls] = iou
-
-        elif task_type == 'det': # 检测
-            
-            pred_img                = cv2.imread(os.path.join(test_path, det_p, det_p+'_pred.jpg'))
-            gt_img                  = cv2.imread(os.path.join(test_path, det_p, det_p+'_gt.jpg'))  # groundtruth
-
-            h, w, c                 = gt_img.shape
-            
-            pred_img                = cv2.resize(pred_img, (w, h))
-
-            box_fp                  = open(os.path.join(test_path, det_p, 'bbox.json'))
-            box_pr                  = open(os.path.join(test_path, det_p, 'pred_bbox.json'))
-            gt_bbox                 = json.loads(box_fp.readline())['bbox']
-            # imgContour, bboxs = ShapeDetection(pred_img)
-
-            # box_fp = open(os.path.join(test_path, det_p, 'pred_bbox.json'), 'w')
-            # pred_box = {'pred_bbox': bboxs}
-            # box_fp.write(json.dumps(pred_box))
-            # box_fp.close()
-            bboxs                   = json.loads(box_pr.readline())['pred_bbox']
-            pred_bboxes             = cal_bboxes_iou(gt_bbox, bboxs)
-            ap                      = calc_ap(gt_img, pred_img, gt_bbox, pred_bboxes)
-            cls_ap[img_id][cls]     = ap
-            cate_bb[cls][img_id]    = {'predbbox': bboxs, 'gtbox': gt_bbox}
-
-        else:
-            continue
-        
-        n += 1
-        if n % 100 == 0:
-            print('{} test sample processed!'.format(n))
-            #break
-
-    ious = []
-    for img_id in cls_iou:
-        iou_ = np.mean(list(cls_iou[img_id].values()))
-        if math.isnan(iou_):
-            continue 
-        ious.append(iou_)
-    
-
-
-    print('the mIoU is {}'.format(np.mean(ious)))
-
-
-    # APs = []
-    # for img_id in cls_iou:
-    #     if len(list(cls_ap[img_id].values())) == 0:
+    # for det_p in os.listdir(test_path): #ADE_train_00000001.jpg_ashcan_seg
+    #     if det_p in ['.DS_Store', 'seeds.json']:
     #         continue
-    #     APs.append(np.mean(list(cls_ap[img_id].values())))
 
-    # print('the mAP is {}'.format(np.mean(APs)))
-    
-    # cAPs = []
-    # for cls in cate_bb:
-    #     if len(cate_bb[cls]) == 0:
+    #     pinfo  = det_p.split('_')
+    #     img_id = pinfo[2] # Abyssinian
+    #     task_type = pinfo[-1] #seg
+    #     cls  = pinfo[-2] #1,2,3,...
+
+    #     if img_id not in cls_iou:
+    #         cls_iou[img_id] = {}
+        
+    #     if img_id not in cls_ap:
+    #         cls_ap[img_id] = {}
+            
+    #     if cls not in cate_bb:
+    #         cate_bb[cls] = {}
+
+    #     gt_img_root = os.path.join(test_path, det_p, det_p+'_gt.jpg')
+    #     # gt_img = cv2.imread(os.path.join(test_path, det_p, det_p+'_gt.jpg'))  # groundtruth
+    #     # gt_img = Image.open(os.path.join(test_path, det_p, det_p+'_gt.jpg'))  # groundtruth
+    #     if task_type == 'seg':
+    #         pred_path = os.path.join(test_path, det_p, det_p+'_pred.jpg')
+    #         if not os.path.exists(pred_path):
+    #             continue
+            
+    #         pred_img  = Image.open(pred_path)
+    #         iou = calc_iou(gt_img_root, pred_img)
+    #         cls_iou[img_id][cls] = iou
+
+    #     elif task_type == 'det': # 检测
+            
+    #         pred_img                = cv2.imread(os.path.join(test_path, det_p, det_p+'_pred.jpg'))
+    #         gt_img                  = cv2.imread(os.path.join(test_path, det_p, det_p+'_gt.jpg'))  # groundtruth
+
+    #         h, w, c                 = gt_img.shape
+            
+    #         pred_img                = cv2.resize(pred_img, (w, h))
+
+    #         box_fp                  = open(os.path.join(test_path, det_p, 'bbox.json'))
+    #         box_pr                  = open(os.path.join(test_path, det_p, 'pred_bbox.json'))
+    #         gt_bbox                 = json.loads(box_fp.readline())['bbox']
+    #         # imgContour, bboxs = ShapeDetection(pred_img)
+
+    #         # box_fp = open(os.path.join(test_path, det_p, 'pred_bbox.json'), 'w')
+    #         # pred_box = {'pred_bbox': bboxs}
+    #         # box_fp.write(json.dumps(pred_box))
+    #         # box_fp.close()
+    #         bboxs                   = json.loads(box_pr.readline())['pred_bbox']
+    #         pred_bboxes             = cal_bboxes_iou(gt_bbox, bboxs)
+    #         ap                      = calc_ap(gt_img, pred_img, gt_bbox, pred_bboxes)
+    #         cls_ap[img_id][cls]     = ap
+    #         cate_bb[cls][img_id]    = {'predbbox': bboxs, 'gtbox': gt_bbox}
+
+    #     else:
     #         continue
-    #     ap = calc_cate_ap(cate_bb[cls])
-    #     cAPs.append(ap)
+        
+    #     n += 1
+    #     if n % 100 == 0:
+    #         print('{} test sample processed!'.format(n))
+    #         #break
 
-    # print('the mAP of class is {}'.format(np.mean(cAPs)))
+    # # ious = []
+    # # for img_id in cls_iou:
+    # #     iou_ = np.mean(list(cls_iou[img_id].values()))
+    # #     if math.isnan(iou_):
+    # #         continue 
+    # #     ious.append(iou_)
+    
+
+
+    # # print('the mIoU is {}'.format(np.mean(ious)))
+
+
+    # # APs = []
+    # # for img_id in cls_iou:
+    # #     if len(list(cls_ap[img_id].values())) == 0:
+    # #         continue
+    # #     APs.append(np.mean(list(cls_ap[img_id].values())))
+
+    # # print('the mAP is {}'.format(np.mean(APs)))
+    
+    # # cAPs = []
+    # # for cls in cate_bb:
+    # #     if len(cate_bb[cls]) == 0:
+    # #         continue
+    # #     ap = calc_cate_ap(cate_bb[cls])
+    # #     cAPs.append(ap)
+
+    # # print('the mAP of class is {}'.format(np.mean(cAPs)))
         

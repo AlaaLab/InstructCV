@@ -1,10 +1,9 @@
 #!/bin/bash
 #SBATCH -o %j.out
-#SBATCH -A synth-derm
 #SBATCH --gres=gpu:1
-#SBATCH -p g40
+#SBATCH -p gpu32
 #SBATCH --qos=normal
-#SBATCH -J lvi-inference
+#SBATCH -J test
 #SBATCH --nodes=1 
 #SBATCH -t 20:00:00
 
@@ -31,7 +30,7 @@
 
 
 ## for pets
-# python edit_cli_cls.py --input data/oxford-pets/images --output imgs_test_oxford_pets/ --edit "show blue if the picture contain %" --task cls
+python edit_cli_cls.py --resolution 256 --ckpt logs/train_all100kdata_new/checkpoints/epoch=000051.ckpt --input data/oxford-pets/images --output outputs/imgs_test_oxford_pets/ --edit "show blue if the picture contain %" --task cls
 # python edit_cli_seg.py --input data/oxford-pets/images --output imgs_test_oxford_pets/ --edit "segment the %" --task seg
 # python edit_cli_det.py --ckpt logs/train_pets_nyuv2_four_tasks_depsprompt:image/checkpoints/last.ckpt --input data/oxford-pets/images --output data/image_pairs_evaluation_det --edit "detect the %" --task det
 
@@ -49,4 +48,4 @@
 # python edit_cli.py --ckpt logs/train_all100kdata_new/checkpoints/last.ckpt --input ./outputs/img_test_det_person --output ./outputs/imgs_coco_output3/ --edit "detect the person" --task det
 
 # for unified-io 
-CUDA_VISIBLE_DEVICES=0 python baselines/unified-io-inference/demo_script.py
+# CUDA_VISIBLE_DEVICES=0 python baselines/unified-io-inference/demo_script.py
