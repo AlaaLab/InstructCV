@@ -196,7 +196,7 @@ def get_bbox_img(root, img_id, bbox, dataset):
         for box in bbox:
             #random color
             # color_r = random.choice(lcolor)
-            a.rectangle(((box[0], box[1]), (box[2], box[3])), fill=None, outline="black", width=5)
+            a.rectangle(((box[0], box[1]), (box[2], box[3])), fill=None, outline="red", width=4)
 
         del a
         
@@ -384,7 +384,7 @@ def preproc_coco():
         img_info[image_id][cid]['bbox'].append(cbox)
         if iscrowd == 0:
             img_info[image_id][cid]['segmentation'].append(segmentation)
-    pdb.set_trace()
+
     return img_info, clses
 
 def proc_coco(coco_root, tasks):
