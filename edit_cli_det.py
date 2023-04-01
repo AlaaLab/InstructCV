@@ -107,7 +107,7 @@ def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
     return model
 
 
-def main():
+def inference_det():
     '''
     Modified by Yulu Gan
     6th, March, 2022
@@ -225,4 +225,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    inference_det()

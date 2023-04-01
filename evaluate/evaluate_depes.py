@@ -33,10 +33,10 @@ def absolute_mean_relative_error(pred, gt):
 
 
 def read_gt_img(img_name):
-    
-    img = Image.open(img_name)
-    
-    h, w = img.size
+ 
+    img = cv2.imread(img_name, -1)
+    img = img.astype(np.float16) #e.g., max = 7333
+    h, w = img.shape
 
     np_img = np.array(img)
     np_img = np.asarray([np_img], dtype=float)
@@ -47,7 +47,7 @@ def read_pred_img(img_name, h, w):
     
     img = Image.open(img_name)
     
-    resize = transforms.Resize([w,h])
+    resize = transforms.Resize([h,w])
     img = resize(img)
     
     np_img = np.array(img)
@@ -89,12 +89,12 @@ def compute_errors(gt, pred):
     
 if __name__ == "__main__":
     
-    # test_path = "./data/image_pairs_evaluation_dep"
-    test_path = "./outputs/img_pairs_eva_dep"
+    test_path = "./data/image_pairs_evaluation_dep"
     file_name = os.listdir(test_path)
     rmse_l    = []
     a1_l        = []
     abs_rel_l   = []
+    max      = 0
     
     for file in file_name:
         
@@ -114,19 +114,19 @@ if __name__ == "__main__":
             if fnmatch(img_name_, '*pred*'):
                 pred_path = os.path.join(test_path, file, img_name_)
     
+        max_list = []
+        
         gt, h, w = read_gt_img(gt_path)
+        
+        
         gt = gt[:,:,:,0].squeeze()
-        # gt = gt * 10 / 255
+        gt = gt * 10 / 255
 
         pred = read_pred_img(pred_path, h, w)
         pred = pred[:,:,:,0].squeeze()
-        # pred = pred * 10 / 255
+        pred = pred * 10 / 255
         
         result                  = compute_errors(pred, gt)
-        
-        # if result["rmse"] <= 0.2:
-        #     print(result["rmse"])
-        #     print(pred_path)
         
         rmse_l.append(result["rmse"])
         abs_rel_l.append(result["abs_rel"])

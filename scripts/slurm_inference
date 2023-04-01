@@ -1,7 +1,8 @@
 #!/bin/bash
 #SBATCH -o %j.out
+#SBATCH -A synth-derm
 #SBATCH --gres=gpu:1
-#SBATCH -p gpu32
+#SBATCH -p g40
 #SBATCH --qos=normal
 #SBATCH -J test
 #SBATCH --nodes=1 
@@ -30,7 +31,7 @@
 
 
 ## for pets
-python edit_cli_cls.py --resolution 256 --ckpt logs/train_all100kdata_new/checkpoints/epoch=000051.ckpt --input data/oxford-pets/images --output outputs/imgs_test_oxford_pets/ --edit "show blue if the picture contain %" --task cls
+# python edit_cli_cls.py --resolution 256 --ckpt logs/train_all100kdata_new/checkpoints/epoch=000051.ckpt --input data/oxford-pets/images --output outputs/imgs_test_oxford_pets/ --edit "show blue if the picture contain %" --task cls
 # python edit_cli_seg.py --input data/oxford-pets/images --output imgs_test_oxford_pets/ --edit "segment the %" --task seg
 # python edit_cli_det.py --ckpt logs/train_pets_nyuv2_four_tasks_depsprompt:image/checkpoints/last.ckpt --input data/oxford-pets/images --output data/image_pairs_evaluation_det --edit "detect the %" --task det
 
@@ -49,3 +50,8 @@ python edit_cli_cls.py --resolution 256 --ckpt logs/train_all100kdata_new/checkp
 
 # for unified-io 
 # CUDA_VISIBLE_DEVICES=0 python baselines/unified-io-inference/demo_script.py
+
+# for fs-1000
+# python edit_cli.py --resolution 256 --ckpt logs/train_all100kdata_new/LIV_v1_epoch=50.ckpt --input /fsx/proj-lvi/language-vision-interface/data/fss-1000/fewshot_data/fewshot_data --output outputs/imgs_test_fs1000/ --edit "segment the %" --task seg_fs1000
+## unified-io
+CUDA_VISIBLE_DEVICES=0 python baselines/unified-io-inference/demo_script_seg_fs1000.py

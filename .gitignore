@@ -25,6 +25,7 @@
 *.mat
 *.pkl
 *.err
+*.bin
 
 # Logs
 *.log
@@ -42,6 +43,7 @@ stable_diffusion_bak
 data/image_pairs*
 outputs/
 baselines/
+__pycache__/
 
 
 

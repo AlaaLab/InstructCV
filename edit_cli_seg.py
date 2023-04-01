@@ -90,10 +90,10 @@ def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
     return model
 
 
-def main():
+def inference_seg():
     '''
     Modified by Yulu Gan
-    6th, March, 2022
+    March 31, 2022
     1. Support multiple images inference
     2. Make outputs' size are the closest as inputs
     '''
@@ -124,21 +124,7 @@ def main():
 
     seed = random.randint(0, 100000) if args.seed is None else args.seed
     
-    ## for pets
-    # for line in open(os.path.join('data/oxford-pets/annotations/test.txt')):
-        
-    #     start = time.time()
-        
-    #     line = line.strip()
-    #     words = line.split(' ')
-    #     img_id = words[0] #Abyssinian_201
-    #     target_name = ' '.join(img_id.split('_')[:-1]).strip() #Abyssinian
-        
-    #     img_path = os.path.join(args.input, '%s.jpg' % img_id)
-    #     input_image = Image.open(img_path).convert("RGB")
-    #     input_image = resize(input_image)
     
-    ## for ade20k
     for image_name in open(os.path.join(args.input, args.split)):
         
         image_name = image_name.strip()
@@ -226,4 +212,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    inference_seg()

@@ -4,10 +4,14 @@ import math
 import random
 import sys
 import os
+import pdb
 import time
-from argparse import ArgumentParser
+from fnmatch import fnmatch
 from torchvision import transforms
+from argparse import ArgumentParser
+
 import einops
+import shutil
 import k_diffusion as K
 import numpy as np
 import torch
@@ -20,6 +24,32 @@ from torch import autocast
 sys.path.append("./stable_diffusion")
 
 from stable_diffusion.ldm.util import instantiate_from_config
+
+CLASSES = (
+        'background', 'wall', 'building', 'sky', 'floor', 'tree', 'ceiling', 'road', 'bed ',
+        'windowpane', 'grass', 'cabinet', 'sidewalk', 'person', 'earth',
+        'door', 'table', 'mountain', 'plant', 'curtain', 'chair', 'car',
+        'water', 'painting', 'sofa', 'shelf', 'house', 'sea', 'mirror', 'rug',
+        'field', 'armchair', 'seat', 'fence', 'desk', 'rock', 'wardrobe',
+        'lamp', 'bathtub', 'railing', 'cushion', 'base', 'box', 'column',
+        'signboard', 'chest of drawers', 'counter', 'sand', 'sink',
+        'skyscraper', 'fireplace', 'refrigerator', 'grandstand', 'path',
+        'stairs', 'runway', 'case', 'pool table', 'pillow', 'screen door',
+        'stairway', 'river', 'bridge', 'bookcase', 'blind', 'coffee table',
+        'toilet', 'flower', 'book', 'hill', 'bench', 'countertop', 'stove',
+        'palm', 'kitchen island', 'computer', 'swivel chair', 'boat', 'bar',
+        'arcade machine', 'hovel', 'bus', 'towel', 'light', 'truck', 'tower',
+        'chandelier', 'awning', 'streetlight', 'booth', 'television receiver',
+        'airplane', 'dirt track', 'apparel', 'pole', 'land', 'bannister',
+        'escalator', 'ottoman', 'bottle', 'buffet', 'poster', 'stage', 'van',
+        'ship', 'fountain', 'conveyer belt', 'canopy', 'washer', 'plaything',
+        'swimming pool', 'stool', 'barrel', 'basket', 'waterfall', 'tent',
+        'bag', 'minibike', 'cradle', 'oven', 'ball', 'food', 'step', 'tank',
+        'trade name', 'microwave', 'pot', 'animal', 'bicycle', 'lake',
+        'dishwasher', 'screen', 'blanket', 'sculpture', 'hood', 'sconce',
+        'vase', 'traffic light', 'tray', 'ashcan', 'fan', 'pier', 'crt screen',
+        'plate', 'monitor', 'bulletin board', 'shower', 'radiator', 'glass',
+        'clock', 'flag')
 
 
 class CFGDenoiser(nn.Module):
@@ -62,79 +92,63 @@ def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
     return model
 
 
-def inference_depes():
+def inference_seg_fs1000(resolution, steps, vae_ckpt, split, config, 
+                  ckpt, input, output, edit, cfg_text, cfg_image, seed, task):
     '''
     Modified by Yulu Gan
-    6th, March, 2022
+    March 31, 2022
     1. Support multiple images inference
     2. Make outputs' size are the closest as inputs
     '''
-    
-    parser = ArgumentParser()
-    parser.add_argument("--resolution", default=512, type=int)
-    parser.add_argument("--steps", default=100, type=int)
-    parser.add_argument("--config", default="configs/generate.yaml", type=str)
-    parser.add_argument("--ckpt", default="", type=str)
-    parser.add_argument("--vae-ckpt", default=None, type=str)
-    parser.add_argument("--input", required=True, type=str, help="should be the path to the file")
-    parser.add_argument("--output", required=True, type=str, help="should be path to the output file")
-    parser.add_argument("--edit", required=True, type=str)
-    parser.add_argument("--cfg-text", default=7.5, type=float)
-    parser.add_argument("--cfg-image", default=1.5, type=float)
-    parser.add_argument("--seed", type=int)
-    parser.add_argument("--task", default="", type=str)
-    args = parser.parse_args()
 
     resize = transforms.Resize([512,512])
-    config = OmegaConf.load(args.config)
-    model = load_model_from_config(config, args.ckpt, args.vae_ckpt)
+    config = OmegaConf.load(config)
+    model = load_model_from_config(config, ckpt, vae_ckpt)
     model.eval().cuda()
     model_wrap = K.external.CompVisDenoiser(model)
     model_wrap_cfg = CFGDenoiser(model_wrap)
     null_token = model.get_learned_conditioning([""])
 
-    seed = random.randint(0, 100000) if args.seed is None else args.seed
+    seed = random.randint(0, 100000) if seed is None else seed
     
-    test_txt_path = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/data/nyu_mdet/nyu_test.txt'
     
-    with open(test_txt_path) as file:  
-
-        for line in file:
+    for file_name in os.listdir(input):
         
-            start = time.time()
+        file_path = os.path.join(input, file_name)
+        
+        for img_name in os.listdir(file_path):
             
-            img_path_part   = line.strip().split(" ")[0] # kitchen/rgb_00045.jpg
+            img_id              = img_name.split(".")[0]
+            output_path         = os.path.join(output, img_id + "_" + task)
             
-            file_name       = img_path_part.split("/")[0] # kitchen
+            if fnmatch(img_name, "*.jpg"):
+        
+                img_path = os.path.join(file_path, img_name)
             
-            img_name        = img_path_part.split("/")[1] # rgb_00045.jpg
-
-            img_id          = file_name + "_" + img_name.split(".")[0] # kitchen_rgb_00045
+            if fnmatch(img_name, "*.png"):
+                
+                shutil.copy(os.path.join(file_path, img_name), output_path + '/{}_{}_gt.jpg'.format(img_id, task))
             
-            dep_path_part = file_name + "/rgb_" + img_name.split("_")[-1] # kitchen_0028b/rgb_00045.jpg
-            dep_path      = os.path.join('data/nyu_mdet', dep_path_part)
+            cname               = file_name.replace("_"," ")
+            prompts             = edit.repace(cname)
+            start               = time.time()
             
-            input_image = Image.open(dep_path).convert("RGB")
-            input_image = resize(input_image)
             
-            width, height = input_image.size
-            factor = args.resolution / max(width, height)
-            factor = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
-            width = int((width * factor) // 64) * 64
-            height = int((height * factor) // 64) * 64
-            input_image = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
-            
-            prompts = args.edit
-            # prompts = prompts.replace("%", file_name)
-            print("prompts:", prompts)
-
-            if args.edit == "":
-                input_image.save(args.output)
-                return
-
             with torch.no_grad(), autocast("cuda"), model.ema_scope():
+                
+                input_image = Image.open(img_path).convert("RGB")
+                input_image = resize(input_image)
+
+                width, height = input_image.size
+                factor = resolution / max(width, height)
+                factor = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
+                width = int((width * factor) // 64) * 64
+                height = int((height * factor) // 64) * 64
+                input_image = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
+                
                 cond = {}
-                cond["c_crossattn"] = [model.get_learned_conditioning([prompts])]
+                
+                cond["c_crossattn"] = [model.get_learned_conditioning([prompts])] #modified: args.edit -> prompts
                 input_image = 2 * torch.tensor(np.array(input_image)).float() / 255 - 1
                 input_image = rearrange(input_image, "h w c -> 1 c h w").to(model.device)
                 cond["c_concat"] = [model.encode_first_stage(input_image).mode()]
@@ -143,13 +157,13 @@ def inference_depes():
                 uncond["c_crossattn"] = [null_token]
                 uncond["c_concat"] = [torch.zeros_like(cond["c_concat"][0])]
 
-                sigmas = model_wrap.get_sigmas(args.steps)
+                sigmas = model_wrap.get_sigmas(steps)
 
                 extra_args = {
                     "cond": cond,
                     "uncond": uncond,
-                    "text_cfg_scale": args.cfg_text,
-                    "image_cfg_scale": args.cfg_image,
+                    "text_cfg_scale": cfg_text,
+                    "image_cfg_scale": cfg_image,
                 }
                 torch.manual_seed(seed)
                 z = torch.randn_like(cond["c_concat"][0]) * sigmas[0]
@@ -159,13 +173,13 @@ def inference_depes():
                 x = 255.0 * rearrange(x, "1 c h w -> h w c")
                 edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
             
-            output_path = os.path.join(args.output, img_id + "_" + args.task)
-                
+
             if os.path.exists(output_path) == False:
                 os.makedirs(output_path)
                     
-            edited_image.save(output_path+'/{}_{}_pred.jpg'.format(img_id, args.task))            
-            # save_name = img_name + "_test_" + args.task + ".jpg" 
+            edited_image.save(output_path+'/{}_{}_pred.jpg'.format(img_id, task))
+            
+            # save_name = img_id + "_test_" + args.task + '.jpg'
             # edited_image.save(args.output + save_name)
             
             end = time.time()
@@ -174,4 +188,4 @@ def inference_depes():
 
 
 if __name__ == "__main__":
-    inference_depes()
+    inference_seg_fs1000()
