@@ -258,8 +258,9 @@ def calc_iou(gt_img_path, pred_img):
     gt_img          = Image.open(gt_img_path)
     resize          = transforms.Resize([w,h])
     gt_img          = resize(gt_img)
-    gt_img          = np.asarray(gt_img)
     
+    gt_img          = np.asarray(gt_img)
+
     intersection    = np.sum((gt_img) & (pred_img))
     union           = np.sum((gt_img) | (pred_img))
 
@@ -784,10 +785,9 @@ if __name__ == "__main__":
         if det_p in ['.DS_Store', 'seeds.json']:
             continue
 
-        pinfo  = det_p.split('_')
-        img_id = pinfo[2] # Abyssinian
-        task_type = pinfo[-1] #seg
-        cls  = pinfo[-2] #1,2,3,...
+        img_id          = "{}".format(n)
+        task_type       = "seg" #seg
+        cls             = det_p[-1] #1,2,3,...
 
         if img_id not in cls_iou:
             cls_iou[img_id] = {}
@@ -798,44 +798,21 @@ if __name__ == "__main__":
         if cls not in cate_bb:
             cate_bb[cls] = {}
 
-        gt_img_root = os.path.join(test_path, det_p, det_p+'_gt.jpg')
-        # gt_img = cv2.imread(os.path.join(test_path, det_p, det_p+'_gt.jpg'))  # groundtruth
-        # gt_img = Image.open(os.path.join(test_path, det_p, det_p+'_gt.jpg'))  # groundtruth
-        if task_type == 'seg':
-            pred_path = os.path.join(test_path, det_p, det_p+'_pred.jpg')
-            if not os.path.exists(pred_path):
-                continue
-            
-            pred_img  = Image.open(pred_path)
-            iou = calc_iou(gt_img_root, pred_img)
-            cls_iou[img_id][cls] = iou
-
-        elif task_type == 'det': # 检测
-            
-            pred_img                = cv2.imread(os.path.join(test_path, det_p, det_p+'_pred.jpg'))
-            gt_img                  = cv2.imread(os.path.join(test_path, det_p, det_p+'_gt.jpg'))  # groundtruth
-
-            h, w, c                 = gt_img.shape
-            
-            pred_img                = cv2.resize(pred_img, (w, h))
-
-            box_fp                  = open(os.path.join(test_path, det_p, 'bbox.json'))
-            box_pr                  = open(os.path.join(test_path, det_p, 'pred_bbox.json'))
-            gt_bbox                 = json.loads(box_fp.readline())['bbox']
-            # imgContour, bboxs = ShapeDetection(pred_img)
-
-            # box_fp = open(os.path.join(test_path, det_p, 'pred_bbox.json'), 'w')
-            # pred_box = {'pred_bbox': bboxs}
-            # box_fp.write(json.dumps(pred_box))
-            # box_fp.close()
-            bboxs                   = json.loads(box_pr.readline())['pred_bbox']
-            pred_bboxes             = cal_bboxes_iou(gt_bbox, bboxs)
-            ap                      = calc_ap(gt_img, pred_img, gt_bbox, pred_bboxes)
-            cls_ap[img_id][cls]     = ap
-            cate_bb[cls][img_id]    = {'predbbox': bboxs, 'gtbox': gt_bbox}
-
-        else:
+        gt_img_root = os.path.join(test_path, det_p, '{}_gt.jpg'.format(cls))
+        pred_path = os.path.join(test_path, det_p, '{}_pred.jpg'.format(cls))
+        if not os.path.exists(pred_path):
             continue
+        
+        pred_img  = Image.open(pred_path)
+        
+        gt_img          = Image.open(gt_img_root)
+        gt_img          = np.asarray(gt_img)
+        if gt_img.shape[2] == 4:
+            print("gt_img.shape",gt_img.size)
+            continue
+        
+        iou = calc_iou(gt_img_root, pred_img)
+        cls_iou[img_id][cls] = iou
         
         n += 1
         if n % 100 == 0:

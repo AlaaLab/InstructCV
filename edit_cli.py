@@ -45,6 +45,8 @@ def main():
                                      "task": args.task,
                                      })
     
+    #TODO: enable batch-level input
+    
     if args.task == "seg":
         inference_seg(**inference_params)
         

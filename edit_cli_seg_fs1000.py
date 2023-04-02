@@ -119,7 +119,12 @@ def inference_seg_fs1000(resolution, steps, vae_ckpt, split, config,
         for img_name in os.listdir(file_path):
             
             img_id              = img_name.split(".")[0]
-            output_path         = os.path.join(output, img_id + "_" + task)
+            ge_path             = os.path.join(output, file_name + img_id)
+            gt_save_path        = os.path.join(ge_path, img_id + "_gt.jpg")
+            pred_save_path      = os.path.join(ge_path, img_id + "_pred.jpg")
+            
+            if os.path.exists(ge_path) == False:
+                os.makedirs(ge_path)
             
             if fnmatch(img_name, "*.jpg"):
         
@@ -127,10 +132,11 @@ def inference_seg_fs1000(resolution, steps, vae_ckpt, split, config,
             
             if fnmatch(img_name, "*.png"):
                 
-                shutil.copy(os.path.join(file_path, img_name), output_path + '/{}_{}_gt.jpg'.format(img_id, task))
+                shutil.copy(os.path.join(file_path, img_name), gt_save_path)
+                continue
             
             cname               = file_name.replace("_"," ")
-            prompts             = edit.repace(cname)
+            prompts             = edit.replace("%", cname)
             start               = time.time()
             
             
@@ -172,12 +178,9 @@ def inference_seg_fs1000(resolution, steps, vae_ckpt, split, config,
                 x = torch.clamp((x + 1.0) / 2.0, min=0.0, max=1.0)
                 x = 255.0 * rearrange(x, "1 c h w -> h w c")
                 edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
-            
-
-            if os.path.exists(output_path) == False:
-                os.makedirs(output_path)
+        
                     
-            edited_image.save(output_path+'/{}_{}_pred.jpg'.format(img_id, task))
+            edited_image.save(pred_save_path)
             
             # save_name = img_id + "_test_" + args.task + '.jpg'
             # edited_image.save(args.output + save_name)
