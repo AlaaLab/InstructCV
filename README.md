@@ -160,13 +160,12 @@ python dataset_creation/format_dataset.py --save_root './image_pairs' --tasks ['
 ## Set up the environments
 
 ```shell
-# (must) Set up the env.
+#(must) Step0. Set up the env.
 conda env create -f environment.yaml
 conda activate lvi
-# (optional) Set env. for baselines - pix2seq
-git clone https://github.com/google-research/pix2seq.git
-pip install -r requirements.txt
-# (optional) Set env. for baselines - detection
+#(optional) Step1. Set env. for baselines - pix2seq
+## install tensorflow : https://www.tensorflow.org/install/pip
+#(optional) Step2. Set env. for baselines - detection
 pip3 install git+https://github.com/philferriere/cocoapi.git#subdirectory=PythonAPI #Install the pycocotool
 pip install -U openmim
 mim install mmcv-full

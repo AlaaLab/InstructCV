@@ -27,6 +27,7 @@
 *.err
 *.bin
 
+
 # Logs
 *.log
 *.out
