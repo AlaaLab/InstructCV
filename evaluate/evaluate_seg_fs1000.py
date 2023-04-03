@@ -260,6 +260,17 @@ def calc_iou(gt_img_path, pred_img):
     gt_img          = resize(gt_img)
     
     gt_img          = np.asarray(gt_img)
+    if gt_img.shape[2] == 4:
+        gt_img = gt_img[:, :, :3]
+    
+    pred_img        = np.asarray(pred_img)
+    
+    if gt_img.shape != pred_img.shape:
+        if gt_img.shape[2] == 3:
+            gt_img = gt_img[:, :, 0]
+        elif pred_img.shape[2] == 3:
+            pred_img = pred_img[:, :, 0]
+        
 
     intersection    = np.sum((gt_img) & (pred_img))
     union           = np.sum((gt_img) | (pred_img))
@@ -785,9 +796,16 @@ if __name__ == "__main__":
         if det_p in ['.DS_Store', 'seeds.json']:
             continue
 
-        img_id          = "{}".format(n)
+        # img_id          = det_p.split("_")[-4]
+        # print(img_id)
+        if fnmatch(det_p[:-1], "*1"):
+            img_id          = det_p[:-2]
+        else:
+            img_id          = det_p[:-1]
+
         task_type       = "seg" #seg
-        cls             = det_p[-1] #1,2,3,...
+        # cls             = det_p.split("_")[-3] #1,2,3,...
+        cls               = det_p[-1]
 
         if img_id not in cls_iou:
             cls_iou[img_id] = {}
@@ -800,16 +818,14 @@ if __name__ == "__main__":
 
         gt_img_root = os.path.join(test_path, det_p, '{}_gt.jpg'.format(cls))
         pred_path = os.path.join(test_path, det_p, '{}_pred.jpg'.format(cls))
+        
         if not os.path.exists(pred_path):
             continue
         
-        pred_img  = Image.open(pred_path)
-        
-        gt_img          = Image.open(gt_img_root)
-        gt_img          = np.asarray(gt_img)
-        if gt_img.shape[2] == 4:
-            print("gt_img.shape",gt_img.size)
+        if not os.path.exists(gt_img_root):
             continue
+        
+        pred_img  = Image.open(pred_path)
         
         iou = calc_iou(gt_img_root, pred_img)
         cls_iou[img_id][cls] = iou
@@ -820,15 +836,18 @@ if __name__ == "__main__":
             #break
 
     ious = []
+    class_iou = {}
     for img_id in cls_iou:
         iou_ = np.mean(list(cls_iou[img_id].values()))
+        class_iou[img_id] = iou_
         if math.isnan(iou_):
             continue 
         ious.append(iou_)
-    
+        
+    class_iou = sorted(class_iou.items(), key=lambda x: x[1], reverse=True)
+    # print("class_iou:", class_iou)
 
-
-    # print('the mIoU is {}'.format(np.mean(ious)))
+    print('the mIoU is {}'.format(np.mean(ious)))
 
 
     # APs = []

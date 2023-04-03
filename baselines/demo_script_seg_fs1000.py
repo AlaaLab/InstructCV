@@ -25,10 +25,10 @@ logging.set_verbosity(logging.INFO)
 
 def main():
 
-  model = runner.ModelRunner("xl", "/fsx/proj-lvi/language-vision-interface/baselines/unified-io-inference/xl_1000k.bin")
+  model = runner.ModelRunner("xl", "/lustre/grp/gyqlab/lism/brt/language-vision-interface/baselines/unified-io-inference/xl.bin")
   
-  fs1000_root               = "/fsx/proj-lvi/language-vision-interface/data/fss-1000/fewshot_data/fewshot_data"
-  save_root                 = "/fsx/proj-lvi/language-vision-interface/outputs/imgs_test_fs1000"
+  fs1000_root               = "/lustre/grp/gyqlab/lism/brt/language-vision-interface/data/fewshot_data/fewshot_data"
+  save_root                 = "/lustre/grp/gyqlab/lism/brt/language-vision-interface/outputs/imgs_test_fs1000_bsln"
   task                      = "fs_seg"
   
   for file_path in open(os.path.join(fs1000_root,"test_part0.txt")):# neck_brace/10.jpg

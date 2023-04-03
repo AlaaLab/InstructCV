@@ -66,7 +66,7 @@ if __name__ == "__main__":
     
     ADE_path            = './data/ADEChallengeData2016/'
     coco_path           = './data/coco'
-    fs1000_path         = './data/fss-1000/fewshot_data/fewshot_data'
+    fs1000_path         = './data/fewshot_data/fewshot_data'
     
     
     split(dataset="fs_1000")

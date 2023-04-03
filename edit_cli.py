@@ -59,7 +59,7 @@ def main():
     if args.task == "depes":
         inference_depes(**inference_params)
     
-    if args.task == "seg_fs1000":
+    if args.task == "fs1000_seg":
         inference_seg_fs1000(**inference_params)
     
 

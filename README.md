@@ -160,8 +160,19 @@ python dataset_creation/format_dataset.py --save_root './image_pairs' --tasks ['
 ## Set up the environments
 
 ```shell
+# (must) Set up the env.
 conda env create -f environment.yaml
 conda activate lvi
+# (optional) Set env. for baselines - pix2seq
+git clone https://github.com/google-research/pix2seq.git
+pip install -r requirements.txt
+# (optional) Set env. for baselines - detection
+pip3 install git+https://github.com/philferriere/cocoapi.git#subdirectory=PythonAPI #Install the pycocotool
+pip install -U openmim
+mim install mmcv-full
+git clone https://github.com/open-mmlab/mmdetection.git
+cd mmdetection
+pip install -v -e .
 ```
 
 ## Download pre-trained models
@@ -200,8 +211,6 @@ python evaluate/evaluate_depth.py
 ## Semantic segmantation
 We evaluate model's performance on ADE20k
 
-
-
 # &#x1F3B7; Baseline
 
 <details open>
@@ -212,13 +221,14 @@ We evaluate model's performance on ADE20k
 
 After fine-tuning 100 epochs (lr=0.01, SGD), Acc(%) on test: 93.05, batch size=256
 ```shell
-python baseline/classification/cls.py --model supervised --dataset pets --steps 100
+python baselines/classification/cls.py --model supervised --dataset pets --steps 100
+python baselines/classification/cls.py --model supervised --dataset caltech --steps 100
 ```
 **ViT-16 (Pretained on ImageNet21k)**
 
 After fine-tuning 300 epochs (lr=0.001, SGD, the same as original paper), Acc(%) on test: 94.47 (94.43 in vit paper) batch size=64
 ```shell
-python baseline/classification/cls.py --model ViT-16 --dataset pets --steps 300
+python baselines/classification/cls.py --model ViT-16 --dataset pets --steps 300
 ```
 
 </details>
@@ -280,8 +290,15 @@ We follow instructions [here](https://github.com/facebookresearch/detr) to repro
 **Generalist models**
 
 **Unified-IO**
-we use larger_1000k.bin as the pre-trained model.
+we use xl_1000k.bin as the pre-trained model.
 It takes ~27s to inference single image.
+
+**Pixel2Seq**
+You may change all the dict[str, tf.Tensor] to dict, as it will exist error like "TypeError:  'type' is not subscriptable" caused by dependencies version differences.
+
+Change the data_root in dataset_configs.py
+
+
 
 
 </details>

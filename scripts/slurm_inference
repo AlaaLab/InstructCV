@@ -1,12 +1,11 @@
 #!/bin/bash
 #SBATCH -o %j.out
-#SBATCH -A synth-derm
 #SBATCH --gres=gpu:1
-#SBATCH -p g40
+#SBATCH -p gpu32
 #SBATCH --qos=normal
 #SBATCH -J test
 #SBATCH --nodes=1 
-#SBATCH -t 96:00:00
+#SBATCH -t 48:00:00
 
 #source activate esmfold
 # python edit_cli.py --input imgs/woody.jpeg --output imgs/woody_seg4.jpeg --edit "segment the person"
@@ -52,6 +51,6 @@
 # CUDA_VISIBLE_DEVICES=0 python baselines/unified-io-inference/demo_script.py
 
 # for fs-1000
-# python edit_cli.py --resolution 256 --ckpt logs/train_all100kdata_new/checkpoints/epoch=000051.ckpt --input data/fewshot_data/fewshot_data --output outputs/imgs_test_fs1000/ --edit "segment the %" --task seg_fs1000
+# python edit_cli.py --resolution 256 --ckpt logs/train_all100kdata_new/checkpoints/epoch=000051.ckpt --input data/fewshot_data/fewshot_data --output outputs/imgs_test_fs1000/ --edit "segment the %" --task fs1000_seg
 ## unified-io
 python baselines/unified-io-inference/demo_script_seg_fs1000.py
