@@ -89,49 +89,6 @@ def get_cls_prompt(c, cname):
     
     prompt = {'edit': 'Show {} if the picture has {}, otherwise show black'.format(c, cname)}
     
-    # num = random.randint(1,21)
-    # if num == 1:
-    #     prompt = {'edit': 'Show {} if the picture has {}, otherwise show black'.format(c, cname)}
-    # if num == 2:
-    #     prompt = {'edit': 'If the image has a {}, show it in {}, otherwise show black'.format(cname, c)}
-    # if num == 3:
-    #     prompt = {'edit': 'If the picture shows a {}, display it in {}, otherwise show black.'.format(cname, c)}      
-    # if num == 4:
-    #     prompt = {'edit': 'Display {} if the image contains a {}, otherwise show black.'.format(c, cname)}
-    # if num == 5:
-    #     prompt = {'edit': 'In case the image depicts a {}, show it in {}, else display black.'.format(cname,c)}
-    # if num == 6:
-    #     prompt = {'edit': 'Show the image in {} if it contains a {}, otherwise display black'.format(c, cname)}
-    # if num == 7:
-    #     prompt = {'edit': 'Display {} when the image depicts a {}, otherwise show black'.format(c, cname)}
-    # if num == 8:
-    #     prompt = {'edit': 'Show {} color if the image contains a {}, otherwise show black color'.format(c, cname)}
-    # if num == 9:
-    #     prompt = {'edit': 'If the image includes a {}, display it in {} hue, otherwise show black'.format(cname, c)}
-    # if num == 10:
-    #     prompt = {'edit': 'Display {} tint if the picture has a {}, otherwise show a black tint'.format(c, cname)}
-    # if num == 11:
-    #     prompt = {'edit': 'In case the image shows a {}, show it in {} tone, otherwise show black'.format(cname, c)}
-    # if num == 12:
-    #     prompt = {'edit': 'Show {} shades if the image features a {}, otherwise display black.'.format(c, cname)}
-    # if num == 13:
-    #     prompt = {'edit': 'Display {} coloring if the picture shows a {}, otherwise show black.'.format(c, cname)}
-    # if num == 14:
-    #     prompt = {'edit': 'In the case of a {} being present in the image, display it in {}, otherwise show black'.format(cname, c)}
-    # if num == 15:
-    #     prompt = {'edit': 'If there is a {} in the picture, show it in {} hue, otherwise show black'.format(cname, c)}
-    # if num == 16:
-    #     prompt = {'edit': 'When the image contains a {}, display it in {} color, otherwise show black'.format(cname, c)}
-    # if num == 17:
-    #     prompt = {'edit': 'Show {} tones if the image contains a {}, otherwise show black'.format(c, cname)}
-    # if num == 18:
-    #     prompt = {'edit': 'Display the image in {} if it shows a {}, otherwise show black'.format(c, cname)}
-    # if num == 19:
-    #     prompt = {'edit': 'If there is a {} present in the image, display it in {}, otherwise show black'.format(cname, c)}
-    # if num == 20:
-    #     prompt = {'edit': 'In case the picture features a {}, display it in {} shade, otherwise show black'.format(cname, c)}
-    # if num == 21:
-    #     prompt = {'edit': 'When the image depicts a {}, display it in {} hue, otherwise show black'.format(cname, c)}
         
     return prompt
 
