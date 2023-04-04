@@ -1,3 +1,13 @@
+# Copyright (c) 2023, Yulu Gan
+# Licensed under the BSD 3-clause license (see LICENSE.txt)
+# ---------------------------------------------------------------------------------
+# ** Description ** Evaluate the three tasks.
+# --------------------------------------------------------
+# References:
+# mmdetection: https://github.com/open-mmlab/mmdetection
+# cocoapi: https://github.com/cocodataset/cocoapi/tree/master/PythonAPI/pycocotools
+# --------------------------------------------------------
+
 from argparse import ArgumentParser
 import numpy as np
 import cv2

@@ -1,3 +1,9 @@
+# Copyright (c) 2023, Yulu Gan
+# Licensed under the BSD 3-clause license (see LICENSE.txt)
+# ---------------------------------------------------------------------------------
+# ** Description ** Generate training dataset
+# --------------------------------------------------------
+
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import xml.etree.ElementTree as ET

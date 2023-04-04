@@ -1,3 +1,9 @@
+# Copyright (c) 2023, Yulu Gan
+# Licensed under the BSD 3-clause license (see LICENSE.txt)
+# ---------------------------------------------------------------------------------
+# ** Description ** Post-steps for evaluating object detection task.
+# --------------------------------------------------------
+
 import cv2
 from argparse import ArgumentParser
 import numpy as np

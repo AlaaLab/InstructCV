@@ -64,38 +64,24 @@ def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
     return model
 
 
-def inference_cls():
+def inference_cls(resolution, steps, vae_ckpt, split, config, 
+                  ckpt, input, output, edit, cfg_text, cfg_image, seed, task, rephrase):
     '''
     Modified by Yulu Gan
     6th, March, 2022
     1. Support multiple images inference
     2. Make outputs' size are the closest as inputs
     '''
-    
-    parser = ArgumentParser()
-    parser.add_argument("--resolution", default=512, type=int)
-    parser.add_argument("--steps", default=100, type=int)
-    parser.add_argument("--config", default="configs/generate.yaml", type=str)
-    parser.add_argument("--ckpt", default="logs/train_pets_nyuv2_four_tasks/checkpoints/last.ckpt", type=str)
-    parser.add_argument("--vae-ckpt", default=None, type=str)
-    parser.add_argument("--input", required=True, type=str, help="should be the path to the file")
-    parser.add_argument("--output", required=True, type=str, help="should be path to the output file")
-    parser.add_argument("--edit", required=True, type=str, help="use e.g., show blue if the image has % (% is a must)")
-    parser.add_argument("--cfg-text", default=7.5, type=float)
-    parser.add_argument("--cfg-image", default=1.5, type=float)
-    parser.add_argument("--seed", type=int)
-    parser.add_argument("--task", default="", type=str)
-    args = parser.parse_args()
 
-    resize = transforms.Resize([512,512])
-    config = OmegaConf.load(args.config)
-    model = load_model_from_config(config, args.ckpt, args.vae_ckpt)
+    resize = transforms.Resize((resolution,resolution))
+    config = OmegaConf.load(config)
+    model = load_model_from_config(config, ckpt, vae_ckpt)
     model.eval().cuda()
     model_wrap = K.external.CompVisDenoiser(model)
     model_wrap_cfg = CFGDenoiser(model_wrap)
     null_token = model.get_learned_conditioning([""])
 
-    seed = random.randint(0, 100000) if args.seed is None else args.seed
+    seed = random.randint(0, 100000) if seed is None else seed
     
     for line in open('data/oxford-pets/annotations/test.txt'):
         
@@ -106,30 +92,30 @@ def inference_cls():
         img_id = words[0] #Abyssinian_201
         target_name = ' '.join(img_id.split('_')[:-1]).strip() #Abyssinian
         
-        img_path = os.path.join(args.input, '%s.jpg' % img_id)
+        img_path = os.path.join(input, '%s.jpg' % img_id)
         input_image = Image.open(img_path).convert("RGB")
         input_image = resize(input_image)
         
         
         width, height = input_image.size
-        factor = args.resolution / max(width, height)
+        factor = resolution / max(width, height)
         factor = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
         width = int((width * factor) // 64) * 64
         height = int((height * factor) // 64) * 64
         input_image = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
 
-        prompts = args.edit
+        prompts = edit
         prompts = prompts.replace("%", target_name)
         print("prompts:", prompts)
         
-        if args.edit == "":
-            input_image.save(args.output)
+        if edit == "":
+            input_image.save(output)
             return
 
         with torch.no_grad(), autocast("cuda"), model.ema_scope():
             cond = {}
             
-            cond["c_crossattn"] = [model.get_learned_conditioning([prompts])] #modified: args.edit -> prompts
+            cond["c_crossattn"] = [model.get_learned_conditioning([prompts])] #modified: edit -> prompts
             input_image = 2 * torch.tensor(np.array(input_image)).float() / 255 - 1
             input_image = rearrange(input_image, "h w c -> 1 c h w").to(model.device)
             cond["c_concat"] = [model.encode_first_stage(input_image).mode()]
@@ -138,13 +124,13 @@ def inference_cls():
             uncond["c_crossattn"] = [null_token]
             uncond["c_concat"] = [torch.zeros_like(cond["c_concat"][0])]
 
-            sigmas = model_wrap.get_sigmas(args.steps)
+            sigmas = model_wrap.get_sigmas(steps)
 
             extra_args = {
                 "cond": cond,
                 "uncond": uncond,
-                "text_cfg_scale": args.cfg_text,
-                "image_cfg_scale": args.cfg_image,
+                "text_cfg_scale": cfg_text,
+                "image_cfg_scale": cfg_image,
             }
             torch.manual_seed(seed)
             z = torch.randn_like(cond["c_concat"][0]) * sigmas[0]
@@ -154,8 +140,8 @@ def inference_cls():
             x = 255.0 * rearrange(x, "1 c h w -> h w c")
             edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
         
-        save_name = img_id + "_test_" + args.task + '.jpg'
-        edited_image.save(args.output + save_name)
+        save_name = img_id + "_test_" + task + '.jpg'
+        edited_image.save(output + save_name)
         
         end = time.time()
         

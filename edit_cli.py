@@ -28,6 +28,7 @@ def main():
     parser.add_argument("--split", default="", type=str)
     parser.add_argument("--seed", type=int)
     parser.add_argument("--task", default="", type=str)
+    parser.add_argument("--rephrase", action='store_true', default=False, help="Disable rephrasing prompts")
     args = parser.parse_args()
     
     inference_params           = dict({"resolution": args.resolution, 
@@ -43,6 +44,7 @@ def main():
                                      "split": args.split,
                                      "seed": args.seed,
                                      "task": args.task,
+                                     "rephrase": args.rephrase
                                      })
     
     #TODO: enable batch-level input

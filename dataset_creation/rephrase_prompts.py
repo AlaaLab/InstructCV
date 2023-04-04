@@ -1,34 +1,66 @@
-from parrot import Parrot
-import torch
-import warnings
-warnings.filterwarnings("ignore")
+# ** Description ** Rephrase the prompts
+# --------------------------------------------------------
+# References:
+# https://huggingface.co/humarin/chatgpt_paraphraser_on_T5_base
+# --------------------------------------------------------
 
-''' 
-uncomment to get reproducable paraphrase generations
-def random_state(seed):
-  torch.manual_seed(seed)
-  if torch.cuda.is_available():
-    torch.cuda.manual_seed_all(seed)
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import random
 
-random_state(1234)
-'''
 
-#Init models (make sure you init ONLY once if you integrate this to your code)
-def rephrase(phrases):
+device = "cuda"# not use
+
+
+class Rephrase(object):
     
-    parrot = Parrot(model_tag="prithivida/parrot_paraphraser_on_T5")
+    def __init__(self, text, num_beams=5, 
+                 num_beam_groups=5, num_return_sequences=5,
+                 repetition_penalty=5.0, diversity_penalty=5.0,
+                 no_repeat_ngram_size=5, temperature=0.7, max_length=128
+                 ):
+        
+        self.text = text
+        self.tokenizer              = AutoTokenizer.from_pretrained("humarin/chatgpt_paraphraser_on_T5_base")
+        self.model                  = AutoModelForSeq2SeqLM.from_pretrained("humarin/chatgpt_paraphraser_on_T5_base")
+        self.num_beams              = num_beams
+        self.num_beam_groups        = num_beam_groups
+        self.num_return_sequences   = num_return_sequences
+        self.repetition_penalty     = repetition_penalty
+        self.diversity_penalty      = diversity_penalty
+        self.no_repeat_ngram_size   = no_repeat_ngram_size
+        self.temperature            = temperature
+        self.max_length             = max_length
+        
+        
+    def do(self):
+        input_ids = self.tokenizer(
+            f'paraphrase: {self.text}',
+            return_tensors = "pt", padding="longest",
+            max_length = self.max_length,
+            truncation = True,
+        ).input_ids
+        
+        outputs = self.model.generate(
+            input_ids, temperature = self.temperature, repetition_penalty = self.repetition_penalty,
+            num_return_sequences = self.num_return_sequences, no_repeat_ngram_size = self.no_repeat_ngram_size,
+            num_beams = self.num_beams, num_beam_groups = self.num_beam_groups,
+            max_length = self.max_length, diversity_penalty = self.diversity_penalty
+        )
 
-    for phrase in phrases:
-        print("-"*100)
-        print("Input_phrase: ", phrase)
-        print("-"*100)
-        para_phrases = parrot.augment(input_phrase=phrase, use_gpu=False)
-    for para_phrase in para_phrases:
-        print(para_phrase)
+        res = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
+        
+        res.append(self.text)
+        res.append(self.text.replace("help me",""))
+        
+        res = random.choice(res)
+
+        return res
 
 if __name__ == "__main__":
     
-    phrases = ["Can you help me detect the dog?",
-           "What are the famous places we should not miss in Russia?"]
-    
-    rephrase(phrases)
+    text = 'help me segment the %'
+    output = Rephrase(text).do()
+    print("output", type(output))
+    print("output", len(output))
+    print("output", output)
+
