@@ -2,6 +2,7 @@
 # Licensed under the BSD 3-clause license (see LICENSE.txt)
 # ---------------------------------------------------------------------------------
 # ** Description ** Post-steps for evaluating object detection task.
+# Generate the extracted bboxes and visual images. (pred_bbox.json & images)
 # --------------------------------------------------------
 
 import cv2

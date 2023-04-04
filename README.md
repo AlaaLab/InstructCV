@@ -275,9 +275,13 @@ We follow instructions [here](https://github.com/zhyever/Monocular-Depth-Estimat
 We run Faster R-CNN models
 in [Detectron2](https://github.com/facebookresearch/detectron2)
 
+**Mask RCNN**
+We run Mask R-CNN models (Backbone: R-101-FPN, Lr schd: 2x)
+in [mmdetection](https://github.com/open-mmlab/mmdetection/tree/master/configs/mask_rcnn)
+
 
 **DETR**
-We follow instructions [here](https://github.com/facebookresearch/detr) to reproduce the results.
+We follow instructions [here](https://github.com/open-mmlab/mmdetection/tree/master/configs/detr) to reproduce the results.
 
 </details>
 <br>
