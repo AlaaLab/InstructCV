@@ -1,3 +1,12 @@
+# Copyright (c) 2023, Yulu Gan
+# Licensed under the BSD 3-clause license (see LICENSE.txt)
+# ---------------------------------------------------------------------------------
+# ** Description **  Script for inferencing the detection task.
+# ---------------------------------------------------------------------------------
+# References:
+# Instruct-pix2pix: https://github.com/timothybrooks/instruct-pix2pix/blob/main/edit_cli.py
+# ---------------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import math
@@ -19,6 +28,7 @@ from einops import rearrange
 from omegaconf import OmegaConf
 from PIL import Image, ImageOps
 from torch import autocast
+from dataset_creation.format_dataset import preproc_coco
 
 sys.path.append("./stable_diffusion")
 
@@ -40,47 +50,6 @@ class CFGDenoiser(nn.Module):
         out_cond, out_img_cond, out_uncond = self.inner_model(cfg_z, cfg_sigma, cond=cfg_cond).chunk(3)
         return out_uncond + text_cfg_scale * (out_cond - out_img_cond) + image_cfg_scale * (out_img_cond - out_uncond)
 
-
-def preproc_coco(root):
-    
-    print('begin to pre-process coco dataset...')
-    clses                   = {}
-    coco_path               = os.path.join(root, 'annotations/instances_val2017.json')
-    coco_fp                 = open(coco_path)
-    anno_js                 = json.loads(coco_fp.readline())
-
-    for cate in anno_js['categories']:
-        
-        cid                 = cate['id']
-        cname               = cate['name']
-        clses[cid]          = cname
-
-
-    for key in anno_js:
-        print(key)
-
-    img_info = {}
-    coco_anno = anno_js['annotations']
-
-    for anno in coco_anno:
-        image_id = str(anno['image_id'])
-        box = list(anno['bbox'])
-        cbox = [box[0], box[1], box[0]+box[2], box[1]+box[3]]
-        cid = anno['category_id']
-        segmentation = anno['segmentation']
-        iscrowd = anno['iscrowd']
-
-        if image_id not in img_info:
-            img_info[image_id] = {}
-
-        if cid not in img_info[image_id]:
-            img_info[image_id][cid] = {'bbox': [], 'segmentation': []}
-
-        img_info[image_id][cid]['bbox'].append(cbox)
-        if iscrowd == 0:
-            img_info[image_id][cid]['segmentation'].append(segmentation)
-
-    return img_info, clses
 
 def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
     print(f"Loading model from {ckpt}")
@@ -107,7 +76,7 @@ def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
     return model
 
 
-def inference_det(resolution, steps, vae_ckpt, split, config, 
+def inference_det(resolution, steps, vae_ckpt, split, config, test_txt_path,
                   ckpt, input, output, edit, cfg_text, cfg_image, seed, task, rephrase):
     '''
     Modified by Yulu Gan
@@ -131,16 +100,13 @@ def inference_det(resolution, steps, vae_ckpt, split, config,
         start                   = time.time()
         
         image_name              = image_name.strip()
-        
         img_info, clses         = preproc_coco(input)
-        
         image_id                = image_name.split(".")[0] #000001234
         img_id                  = image_id.lstrip("0") #1234
             
         img_path = os.path.join(input, 'val2017/{}.jpg'.format(image_id))
         
         if img_id not in img_info:
-            
             continue
 
         for cid in img_info[img_id]:
@@ -197,7 +163,6 @@ def inference_det(resolution, steps, vae_ckpt, split, config,
                 x = torch.clamp((x + 1.0) / 2.0, min=0.0, max=1.0)
                 x = 255.0 * rearrange(x, "1 c h w -> h w c")
                 edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
-            
 
             if os.path.exists(output_path) == False:
                 os.makedirs(output_path)
@@ -205,7 +170,6 @@ def inference_det(resolution, steps, vae_ckpt, split, config,
             edited_image.save(output_path+'/{}_{}_pred.jpg'.format(image_id + "_" + cname, task))
 
             end = time.time()
-            
             print("One image done. Inferenct time cost:{}".format(end - start))
 
 

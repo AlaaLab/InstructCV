@@ -149,41 +149,6 @@ def preproc_coco():
     return img_info, clses
 
 
-def ShapeDetection(img):
-    imgContour = img.copy()
-
-    imgGray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)  #转灰度图
-    ret, binary = cv2.threshold(imgGray, 15, 255, 0)
-
-    kernel = np.ones((5,5), np.uint8) 
-    binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
-
-    imgCanny = cv2.Canny(binary, 60, 60)  #Canny算子边缘检测
-
-    contours, hierarchy = cv2.findContours(imgCanny, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)  #寻找轮廓点
-
-    bboxs = []
-    for obj in contours:
-        area = cv2.contourArea(obj)  #计算轮廓内区域的面积
-        if area < 10:#可调参
-            continue
-        perimeter = cv2.arcLength(obj,True)  #计算轮廓周长
-
-        approx = cv2.approxPolyDP(obj, 0.05*perimeter, True)  #获取轮廓角点坐标 #可调参
-        CornerNum = len(approx)   #轮廓角点的数量
-        if CornerNum != 4:
-            continue
-
-        x, y, w, h = cv2.boundingRect(approx)  #获取坐标值和宽度、高度
-
-        bbox = (x,y, x+w,y+h)
-        bboxs.append(bbox)
-
-        cv2.rectangle(imgContour, (x,y), (x+w,y+h), (0,0,255), 2)  #绘制边界框
-
-    return imgContour, bboxs
-
-
 def iou(gt_img, pred_img):
     h, w, c = pred_img.shape
 
@@ -518,89 +483,90 @@ def generate_coco_gt(coco_root, save_root):
     return
 
 
-def generate_ade20k_gt(ade20k_root, save_ade_root, cls_ade_dict):
+class genGT(object):
     
-    print('Begin to generate ADE20k ground truth')
-    
-    # img_list                    = os.listdir(os.path.join(ade20k_root, "images/testing"))
-    
-    # for img_name in img_list:
-    
-    for img_name in open(os.path.join(ade20k_root,"test_part9.txt")):
-    
-        img_name = img_name.strip()
+    def __init__(self, dataset_root, save_root, task, split=None, test_txt_path=None):
         
-        img_path                     = os.path.join(ade20k_root, "images/validation", img_name)
-        seg_path                     = os.path.join(ade20k_root, "annotations/validation", img_name.split(".")[0]+".png")
-        anno                         = Image.open(seg_path)
-        anno                         = np.array(anno)
+        for i in range(len(CLASSES)):
+            self.cls_ade_dict[i] = CLASSES[i]
         
-        clses = np.unique(anno)
+        self.dataset_root   = dataset_root
+        self.save_root      = save_root
+        self.split          = split
+        self.task           = task
+        self.test_txt_path  = test_txt_path
         
-        for cls in clses: # e.g., cls=1
+    def generate_ade20k_gt(self):
+        
+        print('Begin to generate ADE20k ground truth')
+        
+        for img_name in open(os.path.join(self.dataset_root, self.split)):
+        
+            img_name = img_name.strip()
             
-            img                      = Image.open(img_path) #original image
-            seg_img                  = Image.new('RGB',(img.size[0],img.size[1]))
-            seg_img                  = np.array(seg_img)
-
-            #find where equals cls in anno
-            r, c                     = np.where(anno == cls) #r,c are arraries
+            img_path                     = os.path.join(self.dataset_root, "images/validation", img_name)
+            seg_path                     = os.path.join(self.dataset_root, "annotations/validation", img_name.split(".")[0]+".png")
+            anno                         = Image.open(seg_path)
+            anno                         = np.array(anno)
             
-            for i in range(len(r)):
+            clses = np.unique(anno)
+            
+            for cls in clses: # e.g., cls=1
                 
-                seg_img[r[i],c[i],:] = (255,255,255)
+                img                      = Image.open(img_path) #original image
+                seg_img                  = Image.new('RGB',(img.size[0],img.size[1]))
+                seg_img                  = np.array(seg_img)
 
-            seg_img = Image.fromarray(seg_img)
-            
-            cls_name = cls_ade_dict[cls]
-            
-            if cls_name == "background":
-                continue
-            
-            out_name                 = img_name+ "_" + cls_name + "_seg"
-            output_path              = os.path.join(save_ade_root, out_name)
-            
-            if os.path.exists(output_path) == False:
-                os.makedirs(output_path)
-
-            seg_img.save(output_path + '/{}_gt.jpg'.format(out_name))
-    
-    return
-
-
-def generate_nyuv2_gt(nyuv2_root, save_root):
-    
-    print('Begin to generate NYU_V2 ground truth')
-
-    test_txt_path = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/data/nyu_mdet/nyu_test.txt'
-    
-    with open(test_txt_path) as file:  
-
-        for line in file:
-            
-            img_path_part   = line.strip().split(" ")[0] # kitchen/rgb_00045.jpg
-            
-            file_name       = img_path_part.split("/")[0] # kitchen
-            
-            print(img_path_part)
-
-            img_name        = img_path_part.split("/")[1] # rgb_00045.jpg
-
-            img_id          = file_name + "_" + img_name.split(".")[0] # kitchen_rgb_00045
-            
-            dep_path_part = file_name + "/vli_depth_" + img_name.split("_")[-1].replace("jpg","png") # kitchen_0028b/vli_depth_00045.jpg
-            dep_path      = os.path.join(nyuv2_root, dep_path_part)
-            
-            depth_img   = Image.open(dep_path).convert("RGB")
-            
-            output_path         = os.path.join(save_root, img_id + "_" + "depes")
+                #find where equals cls in anno
+                r, c                     = np.where(anno == cls) #r,c are arraries
                 
-            if os.path.exists(output_path) == False:
-                os.makedirs(output_path)
+                for i in range(len(r)):
                     
-            depth_img.save(output_path+'/{}_{}_gt.jpg'.format(img_id, "depes"))
-    
-    return
+                    seg_img[r[i],c[i],:] = (255,255,255)
+
+                seg_img = Image.fromarray(seg_img)
+                
+                cls_name = self.cls_ade_dict[cls]
+                
+                if cls_name == "background":
+                    continue
+                
+                out_name                 = img_name+ "_" + cls_name + self.task
+                output_path              = os.path.join(self.save_root, out_name)
+                
+                if os.path.exists(output_path) == False:
+                    os.makedirs(output_path)
+
+                seg_img.save(output_path + '/{}_gt.jpg'.format(out_name))
+        
+        return
+
+    def generate_nyuv2_gt(self):
+        
+        print('Begin to generate NYU_V2 ground truth')
+        
+        with open(self.test_txt_path) as file:  
+
+            for line in file:
+                
+                img_path_part   = line.strip().split(" ")[0] # kitchen/rgb_00045.jpg
+                file_name       = img_path_part.split("/")[0] # kitchen
+                img_name        = img_path_part.split("/")[1] # rgb_00045.jpg
+                img_id          = file_name + "_" + img_name.split(".")[0] # kitchen_rgb_00045
+                
+                dep_path_part   = file_name + "/vli_depth_" + img_name.split("_")[-1].replace("jpg","png") # kitchen_0028b/vli_depth_00045.jpg
+                dep_path        = os.path.join(self.dataset_root, dep_path_part)
+                
+                depth_img       = Image.open(dep_path).convert("RGB")
+                
+                output_path     = os.path.join(self.save_root, img_id + "_" + self.task)
+                    
+                if os.path.exists(output_path) == False:
+                    os.makedirs(output_path)
+                        
+                depth_img.save(output_path+'/{}_{}_gt.jpg'.format(img_id, self.task))
+        
+        return
 
 
 def get_color(color_dict, image_path):
@@ -773,9 +739,13 @@ if __name__ == "__main__":
     for i in range(len(CLASSES)):
         cls_ade_dict[i] = CLASSES[i]
     
+    #TODO merge generating gt into edit_cli.py
+    
     # generate_ade20k_gt(args.ade20k_root, args.save_ade_root, cls_ade_dict)
     
     # generate_nyuv2_gt(args.nyuv2_root, args.save_root)
+    
+    # generate_sunrgbd_gt(args.sunrgbd_root, args.save_root)
     
     # generate_pets_gt(args.oxford_pets_root, args.save_root, args.tasks)
     

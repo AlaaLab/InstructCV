@@ -1,3 +1,13 @@
+# Copyright (c) 2023, Yulu Gan
+# Licensed under the BSD 3-clause license (see LICENSE.txt)
+# ---------------------------------------------------------------------------------
+# ** Description **  Script for inferencing the segmantation task.
+# ---------------------------------------------------------------------------------
+# References:
+# Instruct-pix2pix: https://github.com/timothybrooks/instruct-pix2pix/blob/main/edit_cli.py
+# ---------------------------------------------------------------------------------
+
+
 from __future__ import annotations
 
 import math
@@ -19,36 +29,11 @@ from omegaconf import OmegaConf
 from PIL import Image, ImageOps
 from torch import autocast
 from dataset_creation.rephrase_prompts import Rephrase
+from evaluate.evaluate_cls_seg_det import genGT, CLASSES
 
 sys.path.append("./stable_diffusion")
 
 from stable_diffusion.ldm.util import instantiate_from_config
-
-CLASSES = (
-        'background', 'wall', 'building', 'sky', 'floor', 'tree', 'ceiling', 'road', 'bed ',
-        'windowpane', 'grass', 'cabinet', 'sidewalk', 'person', 'earth',
-        'door', 'table', 'mountain', 'plant', 'curtain', 'chair', 'car',
-        'water', 'painting', 'sofa', 'shelf', 'house', 'sea', 'mirror', 'rug',
-        'field', 'armchair', 'seat', 'fence', 'desk', 'rock', 'wardrobe',
-        'lamp', 'bathtub', 'railing', 'cushion', 'base', 'box', 'column',
-        'signboard', 'chest of drawers', 'counter', 'sand', 'sink',
-        'skyscraper', 'fireplace', 'refrigerator', 'grandstand', 'path',
-        'stairs', 'runway', 'case', 'pool table', 'pillow', 'screen door',
-        'stairway', 'river', 'bridge', 'bookcase', 'blind', 'coffee table',
-        'toilet', 'flower', 'book', 'hill', 'bench', 'countertop', 'stove',
-        'palm', 'kitchen island', 'computer', 'swivel chair', 'boat', 'bar',
-        'arcade machine', 'hovel', 'bus', 'towel', 'light', 'truck', 'tower',
-        'chandelier', 'awning', 'streetlight', 'booth', 'television receiver',
-        'airplane', 'dirt track', 'apparel', 'pole', 'land', 'bannister',
-        'escalator', 'ottoman', 'bottle', 'buffet', 'poster', 'stage', 'van',
-        'ship', 'fountain', 'conveyer belt', 'canopy', 'washer', 'plaything',
-        'swimming pool', 'stool', 'barrel', 'basket', 'waterfall', 'tent',
-        'bag', 'minibike', 'cradle', 'oven', 'ball', 'food', 'step', 'tank',
-        'trade name', 'microwave', 'pot', 'animal', 'bicycle', 'lake',
-        'dishwasher', 'screen', 'blanket', 'sculpture', 'hood', 'sconce',
-        'vase', 'traffic light', 'tray', 'ashcan', 'fan', 'pier', 'crt screen',
-        'plate', 'monitor', 'bulletin board', 'shower', 'radiator', 'glass',
-        'clock', 'flag')
 
 
 class CFGDenoiser(nn.Module):
@@ -91,7 +76,7 @@ def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
     return model
 
 
-def inference_seg(resolution, steps, vae_ckpt, split, config, 
+def inference_seg(resolution, steps, vae_ckpt, split, config, test_txt_path,
                   ckpt, input, output, edit, cfg_text, cfg_image, seed, task, rephrase):
     '''
     Modified by Yulu Gan
@@ -110,8 +95,9 @@ def inference_seg(resolution, steps, vae_ckpt, split, config,
 
     seed = random.randint(0, 100000) if seed is None else seed
     
+    genGT(input, output, task, split).generate_ade20k_gt()
     
-    for image_name in open(os.path.join(input, split)):
+    for image_name in open(os.path.join(input, split)): # Read paths to files from txt
         
         image_name = image_name.strip()
         
@@ -190,9 +176,6 @@ def inference_seg(resolution, steps, vae_ckpt, split, config,
                 os.makedirs(output_path)
                     
             edited_image.save(output_path+'/{}_{}_pred.jpg'.format(img_id, task))
-            
-            # save_name = img_id + "_test_" + args.task + '.jpg'
-            # edited_image.save(args.output + save_name)
             
             end = time.time()
             

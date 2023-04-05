@@ -309,20 +309,20 @@ def proc_oxford_pets(oxford_pets_root, tasks):
         
     return seeds
 
-def preproc_coco():
+def preproc_coco(root):
     
     print('begin to pre-process coco dataset...')
-    clses = {}
-    coco_path = os.path.join(args.coco_root, 'annotations/instances_val2017.json')
-    coco_fp = open(coco_path)
-    anno_js = json.loads(coco_fp.readline())
+    clses                   = {}
+    coco_path               = os.path.join(root, 'annotations/instances_val2017.json')
+    coco_fp                 = open(coco_path)
+    anno_js                 = json.loads(coco_fp.readline())
 
     for cate in anno_js['categories']:
-        cid = cate['id']
-        cname = cate['name']
-        clses[cid] = cname
+        
+        cid                 = cate['id']
+        cname               = cate['name']
+        clses[cid]          = cname
 
-    print(clses)
 
     for key in anno_js:
         print(key)
@@ -356,7 +356,7 @@ def proc_coco(coco_root, tasks):
     
     seeds = []
     n = 0
-    img_info, clses = preproc_coco()
+    img_info, clses = preproc_coco(coco_root)
     
     for image_id in img_info:
         

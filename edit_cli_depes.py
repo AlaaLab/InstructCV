@@ -1,3 +1,12 @@
+# Copyright (c) 2023, Yulu Gan
+# Licensed under the BSD 3-clause license (see LICENSE.txt)
+# ---------------------------------------------------------------------------------
+# ** Description **  Script for inferencing the depes task.
+# ---------------------------------------------------------------------------------
+# References:
+# Instruct-pix2pix: https://github.com/timothybrooks/instruct-pix2pix/blob/main/edit_cli.py
+# ---------------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import math
@@ -15,6 +24,7 @@ import torch.nn as nn
 from einops import rearrange
 from omegaconf import OmegaConf
 from PIL import Image, ImageOps
+from evaluate.evaluate_cls_seg_det import genGT
 from torch import autocast
 
 sys.path.append("./stable_diffusion")
@@ -62,7 +72,7 @@ def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
     return model
 
 
-def inference_depes(resolution, steps, vae_ckpt, split, config, 
+def inference_depes(resolution, steps, vae_ckpt, split, test_txt_path, config, 
                   ckpt, input, output, edit, cfg_text, cfg_image, seed, task, rephrase):
     '''
     Modified by Yulu Gan
@@ -82,7 +92,7 @@ def inference_depes(resolution, steps, vae_ckpt, split, config,
 
     seed = random.randint(0, 100000) if seed is None else seed
     
-    test_txt_path = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/data/nyu_mdet/nyu_test.txt'
+    genGT(input, output, task, test_txt_path).generate_nyuv2_gt()
     
     with open(test_txt_path) as file:  
 

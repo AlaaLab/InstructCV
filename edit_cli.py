@@ -1,4 +1,4 @@
-# Copyright (c) 2022, Yulu Gan
+# Copyright (c) 2023, Yulu Gan
 # Licensed under the BSD 3-clause license (see LICENSE.txt)
 # ---------------------------------------------------------------------------------
 # ** Description ** Script for inferencing the four vision tasks.
@@ -25,7 +25,8 @@ def main():
     parser.add_argument("--cfg_text", default=7.5, type=float)
     parser.add_argument("--vae_ckpt", default=None)
     parser.add_argument("--cfg_image", default=1.5, type=float)
-    parser.add_argument("--split", default="", type=str)
+    parser.add_argument("--split", default="", type=str, help="e.g., test_part0.txt")
+    parser.add_argument("--test_txt_path", default="/lustre/grp/gyqlab/lism/brt/language-vision-interface/data/nyu_mdet/nyu_test.txt", type=str)
     parser.add_argument("--seed", type=int)
     parser.add_argument("--task", default="", type=str)
     parser.add_argument("--rephrase", action='store_true', default=False, help="Disable rephrasing prompts")
@@ -44,7 +45,8 @@ def main():
                                      "split": args.split,
                                      "seed": args.seed,
                                      "task": args.task,
-                                     "rephrase": args.rephrase
+                                     "rephrase": args.rephrase,
+                                     "test_txt_path": args.test_txt_path
                                      })
     
     #TODO: enable batch-level input

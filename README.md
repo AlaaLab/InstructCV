@@ -125,6 +125,7 @@ Download the dataset [here](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.
 Or, you can download the processed dataset follow the instructions [here](https://github.com/zhyever/Monocular-Depth-Estimation-Toolbox/blob/main/docs/dataset_prepare.md#NYU).
 </details>
 
+
 <details open>
 <summary>MS-COCO - Object Detection</summary>
 
@@ -143,6 +144,14 @@ Download the dataset [here](http://data.csail.mit.edu/places/ADEchallenge/ADECha
 Download the dataset [here](https://www.robots.ox.ac.uk/~vgg/data/pets/)
 </details>
 <br/>
+
+External dataset for testing:
+<details open>
+<summary>SUNRGBD - Depth estimation</summary>
+
+Download the dataset [here](https://rgbd.cs.princeton.edu/) and download the split file from this [here](https://github.com/zhyever/Monocular-Depth-Estimation-Toolbox/tree/main/splits). We remove NYUv2 part.
+
+</details>
 
 ## Build our training data
 
