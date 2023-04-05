@@ -21,132 +21,8 @@ from fnmatch import fnmatch
 import numpy as np
 import math
 from PIL import Image, ImageDraw
+from dataset_creation.format_dataset import preproc_coco, get_bbox_img, CLASSES, get_seg_img
 
-CLASSES = (
-        'background', 'wall', 'building', 'sky', 'floor', 'tree', 'ceiling', 'road', 'bed ',
-        'windowpane', 'grass', 'cabinet', 'sidewalk', 'person', 'earth',
-        'door', 'table', 'mountain', 'plant', 'curtain', 'chair', 'car',
-        'water', 'painting', 'sofa', 'shelf', 'house', 'sea', 'mirror', 'rug',
-        'field', 'armchair', 'seat', 'fence', 'desk', 'rock', 'wardrobe',
-        'lamp', 'bathtub', 'railing', 'cushion', 'base', 'box', 'column',
-        'signboard', 'chest of drawers', 'counter', 'sand', 'sink',
-        'skyscraper', 'fireplace', 'refrigerator', 'grandstand', 'path',
-        'stairs', 'runway', 'case', 'pool table', 'pillow', 'screen door',
-        'stairway', 'river', 'bridge', 'bookcase', 'blind', 'coffee table',
-        'toilet', 'flower', 'book', 'hill', 'bench', 'countertop', 'stove',
-        'palm', 'kitchen island', 'computer', 'swivel chair', 'boat', 'bar',
-        'arcade machine', 'hovel', 'bus', 'towel', 'light', 'truck', 'tower',
-        'chandelier', 'awning', 'streetlight', 'booth', 'television receiver',
-        'airplane', 'dirt track', 'apparel', 'pole', 'land', 'bannister',
-        'escalator', 'ottoman', 'bottle', 'buffet', 'poster', 'stage', 'van',
-        'ship', 'fountain', 'conveyer belt', 'canopy', 'washer', 'plaything',
-        'swimming pool', 'stool', 'barrel', 'basket', 'waterfall', 'tent',
-        'bag', 'minibike', 'cradle', 'oven', 'ball', 'food', 'step', 'tank',
-        'trade name', 'microwave', 'pot', 'animal', 'bicycle', 'lake',
-        'dishwasher', 'screen', 'blanket', 'sculpture', 'hood', 'sconce',
-        'vase', 'traffic light', 'tray', 'ashcan', 'fan', 'pier', 'crt screen',
-        'plate', 'monitor', 'bulletin board', 'shower', 'radiator', 'glass',
-        'clock', 'flag')
-
-
-def get_seg_img(root, img_id):
-    
-    img_path = os.path.join(root, 'annotations/trimaps', '%s.png' % img_id)
-    seg = Image.open(img_path).convert("RGB")
-    seg = np.array(seg)
-    seg -= 2
-    seg_img = Image.fromarray(seg).convert("RGB")
-    
-    return seg_img
-
-
-def get_bbox_img(root, img_id, bbox, dataset):
-    
-    if dataset == 'oxford-pets':
-        
-        xml_file = os.path.join(root, './data/oxford-pets/annotations/xmls', '%s.xml' % img_id.replace('-', '_'))
-        if os.path.exists(xml_file) == False:
-            return None, bbox
-
-        tree = ET.parse(xml_file)
-        obj = tree.find('object')
-        bndbox = obj.find('bndbox')
-
-        bbox = [int(bndbox.find('xmin').text),
-            int(bndbox.find('ymin').text),
-            int(bndbox.find('xmax').text),
-            int(bndbox.find('ymax').text)]
-
-        img_path = os.path.join(root, './data/oxford-pets/images', '%s.jpg' % img_id.replace('-', '_'))
-
-        img = Image.open(img_path).convert("RGB")
-        #box_img = img.copy()
-        box_img = Image.new('RGB', img.size, (0,0,0))
-        a = ImageDraw.ImageDraw(box_img)
-        #a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill=None, outline='red', width=6)
-        a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill='white', outline='white', width=1)
-    
-    elif dataset == 'MSCOCO':
-        
-        img_path = os.path.join(root, 'val2017', '%s.jpg' % img_id)
-
-        img = Image.open(img_path).convert("RGB")
-        # box_img = Image.new('RGB', img.size, (0,0,0))
-
-        # a = ImageDraw.ImageDraw(box_img)
-            
-        box_img = img.copy()
-        a = ImageDraw.ImageDraw(box_img)
-        
-        for box in bbox:
-
-            a.rectangle(((box[0], box[1]), (box[2], box[3])), fill=None, outline="black", width=5)
-
-        del a
-
-    return box_img, bbox
-
-
-def preproc_coco():
-    
-    print('begin to pre-process coco dataset...')
-    clses = {}
-    coco_path = os.path.join(args.coco_root, 'annotations/instances_val2017.json')
-    coco_fp = open(coco_path)
-    anno_js = json.loads(coco_fp.readline())
-
-    for cate in anno_js['categories']:
-        cid = cate['id']
-        cname = cate['name']
-        clses[cid] = cname
-
-    print(clses)
-
-    for key in anno_js:
-        print(key)
-
-    img_info = {}
-    coco_anno = anno_js['annotations']
-
-    for anno in coco_anno:
-        image_id = str(anno['image_id'])
-        box = list(anno['bbox'])
-        cbox = [box[0], box[1], box[0]+box[2], box[1]+box[3]]
-        cid = anno['category_id']
-        segmentation = anno['segmentation']
-        iscrowd = anno['iscrowd']
-
-        if image_id not in img_info:
-            img_info[image_id] = {}
-
-        if cid not in img_info[image_id]:
-            img_info[image_id][cid] = {'bbox': [], 'segmentation': []}
-
-        img_info[image_id][cid]['bbox'].append(cbox)
-        if iscrowd == 0:
-            img_info[image_id][cid]['segmentation'].append(segmentation)
-    
-    return img_info, clses
 
 
 def iou(gt_img, pred_img):
@@ -451,37 +327,6 @@ def generate_pets_gt(oxford_pets_root, save_root, tasks):
     return
 
 
-def generate_coco_gt(coco_root, save_root):
-    
-    print('Begin to generate COCO ground truth: box.json and g.t img')
-    
-    img_info, clses       = preproc_coco()
-    
-    for img_name in open(os.path.join(coco_root,"test_part0.txt")):
-    
-        img_name              = img_name.strip()
-        image_id              = img_name.split(".")[0] #000001234
-        id                    = image_id.lstrip("0") #1234
-        
-        for cid in img_info[id]:
-            
-            cname = clses[cid] #target_name  
-            bbox  = img_info[id][cid]['bbox']
-            
-            # save det image
-            output_path = os.path.join(save_root, image_id + '_{}_det'.format(cname))
-            det_img, bbox = get_bbox_img(coco_root, image_id, bbox, dataset='MSCOCO')
-            det_img.save(os.path.join(output_path, "{}_{}_det_gt.jpg".format(image_id, cname)))
-            
-            # save g.t box
-            bbox_info = {'bbox': bbox}
-            bbox_file = open(os.path.join(output_path, 'bbox.json'), 'w')
-            bbox_file.write(json.dumps(bbox_info))
-            bbox_file.close()
-    
-        
-    return
-
 
 class genGT(object):
     
@@ -568,7 +413,39 @@ class genGT(object):
         
         return
 
-
+    def generate_coco_gt(self):
+        '''
+        Generate coco gt bbox.json and images with g.t. bboxes.
+        '''
+        
+        print('Begin to generate COCO ground truth: box.json and g.t img')
+        
+        img_info, clses       = preproc_coco(self.dataset_root)
+        
+        for img_name in open(os.path.join(self.dataset_root,self.split)):
+        
+            img_name              = img_name.strip()
+            image_id              = img_name.split(".")[0] #000001234
+            id                    = image_id.lstrip("0") #1234
+            
+            for cid in img_info[id]:
+                
+                cname = clses[cid] #target_name  
+                bbox  = img_info[id][cid]['bbox']
+                
+                # save det image
+                output_path = os.path.join(self.save_root, image_id + '_{}_det'.format(cname))
+                det_img, bbox = get_bbox_img(self.dataset_root, image_id, bbox, dataset='MSCOCO')
+                det_img.save(os.path.join(output_path, "{}_{}_det_gt.jpg".format(image_id, cname)))
+                
+                # save g.t box.json
+                bbox_info = {'bbox': bbox}
+                bbox_file = open(os.path.join(output_path, 'bbox.json'), 'w')
+                bbox_file.write(json.dumps(bbox_info))
+                bbox_file.close()
+           
+        return
+    
 def get_color(color_dict, image_path):
     
     img = cv2.imread(image_path)
@@ -718,6 +595,7 @@ def evaluate_cls(cls_pred_root):
 
 
 
+
 if __name__ == "__main__":
 
     parser = ArgumentParser()
@@ -802,12 +680,7 @@ if __name__ == "__main__":
             box_fp                  = open(os.path.join(test_path, det_p, 'bbox.json'))
             box_pr                  = open(os.path.join(test_path, det_p, 'pred_bbox.json'))
             gt_bbox                 = json.loads(box_fp.readline())['bbox']
-            # imgContour, bboxs = ShapeDetection(pred_img)
-
-            # box_fp = open(os.path.join(test_path, det_p, 'pred_bbox.json'), 'w')
-            # pred_box = {'pred_bbox': bboxs}
-            # box_fp.write(json.dumps(pred_box))
-            # box_fp.close()
+            
             bboxs                   = json.loads(box_pr.readline())['pred_bbox']
             pred_bboxes             = cal_bboxes_iou(gt_bbox, bboxs)
             ap                      = calc_ap(gt_img, pred_img, gt_bbox, pred_bboxes)

@@ -9,6 +9,7 @@ from edit_cli_depes import inference_depes
 from edit_cli_det import inference_det
 from edit_cli_seg import inference_seg
 from edit_cli_seg_fs1000 import inference_seg_fs1000
+from edit_cli_depes_sunrgbd import inference_sunrgbd_depes
 from argparse import ArgumentParser
 
 
@@ -29,6 +30,7 @@ def main():
     parser.add_argument("--test_txt_path", default="/lustre/grp/gyqlab/lism/brt/language-vision-interface/data/nyu_mdet/nyu_test.txt", type=str)
     parser.add_argument("--seed", type=int)
     parser.add_argument("--task", default="", type=str)
+    parser.add_argument("--eval", action='store_true', default=False, help="Disable evaluation")
     parser.add_argument("--rephrase", action='store_true', default=False, help="Disable rephrasing prompts")
     args = parser.parse_args()
     
@@ -46,7 +48,8 @@ def main():
                                      "seed": args.seed,
                                      "task": args.task,
                                      "rephrase": args.rephrase,
-                                     "test_txt_path": args.test_txt_path
+                                     "test_txt_path": args.test_txt_path,
+                                     "eval": args.eval
                                      })
     
     #TODO: enable batch-level input
@@ -65,6 +68,9 @@ def main():
     
     if args.task == "fs1000_seg":
         inference_seg_fs1000(**inference_params)
+        
+    if args.task == "sunrgbd_depes":
+        inference_sunrgbd_depes(**inference_params)
     
 
 if __name__ == "__main__":

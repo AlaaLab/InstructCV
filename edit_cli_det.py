@@ -29,6 +29,10 @@ from omegaconf import OmegaConf
 from PIL import Image, ImageOps
 from torch import autocast
 from dataset_creation.format_dataset import preproc_coco
+from dataset_creation.format_dataset import CLASSES
+from evaluate.evaluate_cls_seg_det import genGT
+from evaluate.postproc_det2 import postDet
+from evaluate.dataDeal_json import deal_annojson, deal_predjson
 
 sys.path.append("./stable_diffusion")
 
@@ -76,7 +80,7 @@ def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
     return model
 
 
-def inference_det(resolution, steps, vae_ckpt, split, config, test_txt_path,
+def inference_det(resolution, steps, vae_ckpt, split, config, test_txt_path, eval,
                   ckpt, input, output, edit, cfg_text, cfg_image, seed, task, rephrase):
     '''
     Modified by Yulu Gan
@@ -95,7 +99,7 @@ def inference_det(resolution, steps, vae_ckpt, split, config, test_txt_path,
 
     seed = random.randint(0, 100000) if seed is None else seed
     
-    for image_name in open(os.path.join(input,split)): #"test_part0.txt"
+    for image_name in open(os.path.join(input, split)): #"test_part0.txt"
         
         start                   = time.time()
         
@@ -171,6 +175,12 @@ def inference_det(resolution, steps, vae_ckpt, split, config, test_txt_path,
 
             end = time.time()
             print("One image done. Inferenct time cost:{}".format(end - start))
+    
+    if eval:#after split 0-9 are done, run codes as follows
+        
+        postDet().generate_exc_bbox() #generate extracted(w/o filtered) pred_bbox.json & .jpg
+        genGT(input, output, task).generate_coco_gt() #generate g.t. bbox.json & .jpg
+        
 
 
 if __name__ == "__main__":

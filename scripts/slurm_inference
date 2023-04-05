@@ -53,4 +53,8 @@
 # for fs-1000
 # python edit_cli.py --resolution 256 --ckpt logs/train_all100kdata_new/checkpoints/epoch=000051.ckpt --input data/fewshot_data/fewshot_data --output outputs/imgs_test_fs1000/ --edit "segment the %" --task fs1000_seg
 ## unified-io
-python baselines/unified-io-inference/demo_script_seg_fs1000.py
+# python baselines/unified-io-inference/demo_script_seg_fs1000.py
+
+# for sunrgbd
+python edit_cli.py --test_txt_path data/UNRGBD_val_splits.txt --resolution 256 --ckpt logs/train_all100kdata_new/checkpoints/epoch=000051.ckpt --input data/ --output outputs/imgs_test_sunrgbd/ --edit "Estimate the depth of this image" --task sunrgbd_depes
+## unified-io

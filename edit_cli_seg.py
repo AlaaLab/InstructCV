@@ -76,7 +76,7 @@ def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
     return model
 
 
-def inference_seg(resolution, steps, vae_ckpt, split, config, test_txt_path,
+def inference_seg(resolution, steps, vae_ckpt, split, config, test_txt_path, eval,
                   ckpt, input, output, edit, cfg_text, cfg_image, seed, task, rephrase):
     '''
     Modified by Yulu Gan

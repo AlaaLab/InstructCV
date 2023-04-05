@@ -92,7 +92,7 @@ def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
     return model
 
 
-def inference_seg_fs1000(resolution, steps, vae_ckpt, split, config, 
+def inference_seg_fs1000(resolution, steps, vae_ckpt, split, config, eval,
                   ckpt, input, output, edit, cfg_text, cfg_image, seed, task, rephrase):
     '''
     Modified by Yulu Gan

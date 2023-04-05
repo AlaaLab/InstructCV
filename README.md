@@ -153,6 +153,14 @@ Download the dataset [here](https://rgbd.cs.princeton.edu/) and download the spl
 
 </details>
 
+
+<details open>
+<summary>PASCAL VOC2012 - Depth estimation</summary>
+
+Download the dataset [here](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar)
+
+</details>
+
 ## Build our training data
 
 Next, we are going to process these datasets to build our training data. You can run the following commands.

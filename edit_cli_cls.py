@@ -64,7 +64,7 @@ def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
     return model
 
 
-def inference_cls(resolution, steps, vae_ckpt, split, config, 
+def inference_cls(resolution, steps, vae_ckpt, split, config, eval,
                   ckpt, input, output, edit, cfg_text, cfg_image, seed, task, rephrase):
     '''
     Modified by Yulu Gan

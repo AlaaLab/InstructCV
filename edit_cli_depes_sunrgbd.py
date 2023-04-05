@@ -72,7 +72,7 @@ def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
     return model
 
 
-def inference_depes(resolution, steps, vae_ckpt, split, test_txt_path, config, eval,
+def inference_sunrgbd_depes(resolution, steps, vae_ckpt, split, test_txt_path, config, eval,
                   ckpt, input, output, edit, cfg_text, cfg_image, seed, task, rephrase):
     '''
     Modified by Yulu Gan
@@ -92,7 +92,7 @@ def inference_depes(resolution, steps, vae_ckpt, split, test_txt_path, config, e
 
     seed = random.randint(0, 100000) if seed is None else seed
     
-    genGT(input, output, task, test_txt_path).generate_nyuv2_gt()
+    # genGT(input, output, task, test_txt_path).generate_nyuv2_gt()
     
     with open(test_txt_path) as file:  
 
@@ -100,18 +100,15 @@ def inference_depes(resolution, steps, vae_ckpt, split, test_txt_path, config, e
         
             start = time.time()
             
-            img_path_part   = line.strip().split(" ")[0] # kitchen/rgb_00045.jpg
+            img_path_part   = line.strip().split(" ")[0] # SUNRGBD/kv2/kinect2data/000002_2014-05-26_14-23-37_260595134347_rgbf000103-resize/image/0000103.jpg
             
-            file_name       = img_path_part.split("/")[0] # kitchen
+            file_name       = img_path_part.split("/")[-4] # kinect2data
             
-            img_name        = img_path_part.split("/")[1] # rgb_00045.jpg
+            img_name        = img_path_part.split("/")[-1] # 0000103.jpg
 
-            img_id          = file_name + "_" + img_name.split(".")[0] # kitchen_rgb_00045
+            img_id          = file_name + "_" + img_name.split(".")[0] # kinect2data_0000103
             
-            dep_path_part = file_name + "/rgb_" + img_name.split("_")[-1] # kitchen_0028b/rgb_00045.jpg
-            dep_path      = os.path.join('data/nyu_mdet', dep_path_part)
-            
-            input_image = Image.open(dep_path).convert("RGB")
+            input_image = Image.open(os.path.join(input,img_path_part)).convert("RGB")
             input_image = resize(input_image)
             
             width, height = input_image.size

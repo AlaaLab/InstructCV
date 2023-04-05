@@ -156,36 +156,12 @@ def get_bbox_img(root, img_id, bbox, dataset):
             
         box_img = img.copy()
         a = ImageDraw.ImageDraw(box_img)
+        
         for box in bbox:
-            #random color
-            # color_r = random.choice(lcolor)
-            a.rectangle(((box[0], box[1]), (box[2], box[3])), fill=None, outline="red", width=4)
+
+            a.rectangle(((box[0], box[1]), (box[2], box[3])), fill=None, outline="red", width=5)
 
         del a
-        
-        # for box in bbox:
-        #     box = list(map(int, box[:]))
-        #     area             = (box[2]-box[0] +1) * (box[3]-box[1]+1)
-        #     areas[count]     = area
-        #     sorted_area      = sorted(areas.items(), key=lambda x: x[1])#[(0, 1176.4155), (1, 21471)]
-        #     count           += 1
-        
-        # for i in range(len(sorted_area)):    
-
-        # #a.rectangle(box, fill=None, outline='red', width=4)
-        #     random.shuffle(lcolor)
-        #     color_bbox = np.random.choice(lcolor)
-        #     # box = list(map(int, box[:]))
-
-        #     if area > 1000 and count >= 5:#可调参
-        #         continue
-        #     a = ImageDraw.ImageDraw(box_img)
-        #     print("sorted_area[i][0]]", sorted_area[i][0])
-        #     print("sorted_area", sorted_area)
-        #     a.rectangle(bbox[sorted_area[i][0]], fill=color_bbox, outline=None, width=2)
-        #     count_ += 1
-
-        #     del a
 
     return box_img, bbox
 
