@@ -56,18 +56,27 @@ def read_pred_img(img_name, h, w):
     
     return np_img
 
-def compute_errors(gt, pred):
+def compute_errors(pred, gt):
     '''
     Modified by Yulu Gan. 13, March, 2023
     Ignore noise
     '''
 
     # remove noise areas (noise caused by the camera)
-    gen                     = np.ones(gt.shape)
-    flag                    = np.bitwise_and(gen.astype(np.uint8), gt.astype(np.uint8))
-    flag                    = np.bitwise_and(flag.astype(np.uint8), pred.astype(np.uint8))
-    gt_new                  = flag * gt
-    pred_new                = flag * pred
+    # gen                     = np.ones(gt.shape)
+    # flag                    = np.bitwise_and(gen.astype(np.uint8), gt.astype(np.uint8))
+    # flag                    = np.bitwise_and(flag.astype(np.uint8), pred.astype(np.uint8))
+    # gt_new                  = flag * gt
+    # pred_new                = flag * pred
+    gen = np.multiply(pred, gt)
+    gen[gen>0]=1
+    gt_new = gt*gen
+    pred_new = pred*gen
+    
+    # print("np.max(gt_new)",np.max(gt))
+    # print("np.max(gt_new)",np.min(gt))
+    # print("np.max(gt_pred)",np.max(pred))
+    # print("np.max(gt_pred)",np.min(pred))
     
     mask                    = (abs(gt_new)<=10e-4).astype(int).astype(np.float64)
     gt_new_nozero           = mask + gt_new # 0 -> 1
@@ -89,7 +98,7 @@ def compute_errors(gt, pred):
     
 if __name__ == "__main__":
     
-    test_path = "./data/image_pairs_evaluation_dep"
+    test_path = "./outputs/imgs_test_sunrgbd_unifiedio"
     file_name = os.listdir(test_path)
     rmse_l    = []
     a1_l        = []
@@ -118,15 +127,20 @@ if __name__ == "__main__":
         
         gt, h, w = read_gt_img(gt_path)
         
-        
-        gt = gt[:,:,:,0].squeeze()
-        gt = gt * 10 / 255
+
+        gt = gt[:,:,:].squeeze()
+        # gt = gt / 8000 # for sunrgbd
+        gt = gt / 8000
 
         pred = read_pred_img(pred_path, h, w)
         pred = pred[:,:,:,0].squeeze()
-        pred = pred * 10 / 255
+        # pred = pred * 10 / 255
+        pred = pred * 10
         
-        result                  = compute_errors(pred, gt)
+        if math.isinf(np.max(gt)) == True:
+            continue
+        
+        result            = compute_errors(pred, gt)
         
         rmse_l.append(result["rmse"])
         abs_rel_l.append(result["abs_rel"])

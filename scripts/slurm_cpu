@@ -8,4 +8,4 @@
 #SBATCH --nodes=1 
 #SBATCH -t 120:00:00
 #source activate esmfold
-python data/format_dataset.py
+python evaluate/postproc_det2.py

@@ -38,7 +38,7 @@
 # python edit_cli_depes.py --resolution 256 --ckpt logs/train_all100kdata_new/checkpoints/epoch=000051.ckpt --input data/nyu_mdet/ --output "data/image_pairs_evaluation_dep" --edit "Estimate the depth of this image" --task depes
 
 ## for ade20k
-# python edit_cli_seg.py --resolution 256 --split "test_part0.txt" --ckpt logs/train_all100kdata_new/checkpoints/epoch=000071.ckpt --input /lustre/grp/gyqlab/lism/brt/language-vision-interface/data/ADEChallengeData2016/ --output outputs/imgs_test_ade20k/ --edit "segment the %" --task seg
+python edit_cli.py --resolution 256 --split "test_part0.txt" --ckpt logs/train_all100kdata_add_coco_pet_seg/checkpoints/epoch=000016.ckpt --input /lustre/grp/gyqlab/lism/brt/language-vision-interface/data/ADEChallengeData2016/ --output outputs/imgs_test_ade20k/ --edit "segment the %" --task seg
 
 ## for coco
 # python edit_cli_det.py --split "test_part0.txt" --ckpt logs/train_all100kdata_new/checkpoints/epoch=000051.ckpt --input data/coco/ --output outputs/imgs_test_coco/ --edit "detect the %" --task det
@@ -51,10 +51,10 @@
 # CUDA_VISIBLE_DEVICES=0 python baselines/unified-io-inference/demo_script.py
 
 # for fs-1000
-# python edit_cli.py --resolution 256 --ckpt logs/train_all100kdata_new/checkpoints/epoch=000051.ckpt --input data/fewshot_data/fewshot_data --output outputs/imgs_test_fs1000/ --edit "segment the %" --task fs1000_seg
+# python edit_cli.py --resolution 256 --ckpt logs/train_all100kdata_add_coco_pet_seg/checkpoints/epoch=000009.ckpt --input data/fewshot_data/fewshot_data --output outputs/imgs_test_fs1000/ --edit "segment the %" --task fs1000_seg
 ## unified-io
 # python baselines/unified-io-inference/demo_script_seg_fs1000.py
 
 # for sunrgbd
-python edit_cli.py --test_txt_path data/UNRGBD_val_splits.txt --resolution 256 --ckpt logs/train_all100kdata_new/checkpoints/epoch=000051.ckpt --input data/ --output outputs/imgs_test_sunrgbd/ --edit "Estimate the depth of this image" --task sunrgbd_depes
+# CUDA_VISIBLE_DEVICES=4 python edit_cli.py --test_txt_path data/SUNRGBD/SUNRGBD_val_splits4.txt --resolution 256 --ckpt logs/train_all100kdata_new/checkpoints/epoch=000051.ckpt --input data/ --output outputs/imgs_test_sunrgbd/ --edit "Estimate the depth of this image" --task sunrgbd_depes
 ## unified-io

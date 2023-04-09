@@ -32,7 +32,7 @@ from dataset_creation.format_dataset import preproc_coco
 from dataset_creation.format_dataset import CLASSES
 from evaluate.evaluate_cls_seg_det import genGT
 from evaluate.postproc_det2 import postDet
-from evaluate.dataDeal_json import deal_annojson, deal_predjson
+from evaluate.Evaluate_AR import Eval
 
 sys.path.append("./stable_diffusion")
 

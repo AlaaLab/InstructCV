@@ -21,7 +21,10 @@ from fnmatch import fnmatch
 import numpy as np
 import math
 from PIL import Image, ImageDraw
-from dataset_creation.format_dataset import preproc_coco, get_bbox_img, CLASSES, get_seg_img
+import sys
+import shutil
+sys.path.append("./dataset_creation")
+from format_dataset import preproc_coco, get_bbox_img, CLASSES, get_seg_img, CLASSES_VOC,COLOR_VOC
 
 
 
@@ -43,7 +46,7 @@ def iou(gt_img, pred_img):
     return iou
 
 
-def cal_bboxes_iou(gt_bboxes, pred_bboxes):
+def cal_bboxes_iou(test_path, src_ann_item, src_pred_item, ann_bbox_item, pred_bbox_item):
     """Compute the iou of two boxes.
     Parameters
     ----------
@@ -58,61 +61,87 @@ def cal_bboxes_iou(gt_bboxes, pred_bboxes):
     iou: float.
         The iou of bbox1 and bbox2.
     """
+    for det_p in os.listdir(test_path): #ADE_train_00000001.jpg_ashcan_seg
+        if det_p in ['.DS_Store', 'seeds.json']:
+            continue
 
-    pred_bboxes_ = []
+        box_fp                  = open(os.path.join(test_path, det_p, src_ann_item))
+        box_pr                  = open(os.path.join(test_path, det_p, "pred_bbox.json"))
+        gt_bboxes               = json.loads(box_fp.readline())[ann_bbox_item]    
+        pred_bboxes                   = json.loads(box_pr.readline())[pred_bbox_item]
+        
+        pred_bboxes_ = []
 
-    for i in range(len(gt_bboxes)):
-        
-        iou_dict     = {}
-        xmin1, ymin1, xmax1, ymax1 = gt_bboxes[i]
-        area1 = (xmax1 - xmin1 + 1) * (ymax1 - ymin1 + 1)
-        
-        for j in range(len(pred_bboxes)):
+        for i in range(len(gt_bboxes)):
+
+            iou_dict     = {}
+            xmin1, ymin1, xmax1, ymax1 = gt_bboxes[i]
+            area1 = (xmax1 - xmin1 + 1) * (ymax1 - ymin1 + 1)
             
-            if len(pred_bboxes[j]) == 5:# add those are confident to be a rectangle
-                pred_bboxes_.append(pred_bboxes[iou_dict[0][0]])
+            for j in range(len(pred_bboxes)):
+                
+                # if len(pred_bboxes[j]) == 5:# add those are confident to be a rectangle
+                #     pred_bboxes_.append(pred_bboxes[iou_dict[0][0]])
+                #     continue
+            
+                xmin2, ymin2, xmax2, ymax2 = pred_bboxes[j]
+
+                # Get the coordinates of the vertex of the intersection of rectangular boxes (intersection)
+                xx1 = np.max([xmin1, xmin2])
+                yy1 = np.max([ymin1, ymin2])
+                xx2 = np.min([xmax1, xmax2])
+                yy2 = np.min([ymax1, ymax2])
+
+                area2 = (xmax2 - xmin2 + 1) * (ymax2 - ymin2 + 1) # Calculate the area of two rectangular boxes
+            
+                inter_area = (np.max([0, xx2 - xx1])) * (np.max([0, yy2 - yy1])) # Calculate the intersection area
+                
+                # Calculate the iou
+                iou = 0
+                iou = inter_area / (area1 + area2 - inter_area + 1e-6)
+                iou_dict[str(j)] = iou
+
+            iou_dict = sorted(iou_dict.items(), key=lambda x: x[1], reverse=True)
+            # pred_bboxes_.append(pred_bboxes[int(iou_dict[0][0])])
+            # print("iou_dict", len(iou_dict))
+            if len(iou_dict) == 0:
+                json_results = {}
+                json_results['pred_bbox'] = pred_bboxes_
+                json.dump(json_results,open(os.path.join(test_path, det_p, "pred_bbox2.json"),'w'))
                 continue
-        
-            xmin2, ymin2, xmax2, ymax2 = pred_bboxes[j]
+            if iou_dict[0][1] > 0.5:
+                pred_bboxes_.append(pred_bboxes[int(iou_dict[0][0])])
+            json_results = {}
+            json_results['pred_bbox'] = pred_bboxes_
+            json.dump(json_results,open(os.path.join(test_path, det_p, "pred_bbox2.json"),'w'))
 
-            # Get the coordinates of the vertex of the intersection of rectangular boxes (intersection)
-            xx1 = np.max([xmin1, xmin2])
-            yy1 = np.max([ymin1, ymin2])
-            xx2 = np.min([xmax1, xmax2])
-            yy2 = np.min([ymax1, ymax2])
-
-            area2 = (xmax2 - xmin2 + 1) * (ymax2 - ymin2 + 1) # Calculate the area of two rectangular boxes
-        
-            inter_area = (np.max([0, xx2 - xx1])) * (np.max([0, yy2 - yy1])) # Calculate the intersection area
-            
-            # Calculate the iou
-            iou = 0
-            iou = inter_area / (area1 + area2 - inter_area + 1e-6)
-            iou_dict[str(j)] = iou
-
-        iou_dict = sorted(iou_dict.items(), key=lambda x: x[1], reverse=True)
-        # pred_bboxes_.append(pred_bboxes[int(iou_dict[0][0])])
-        # print("iou_dict", len(iou_dict))
-        if len(iou_dict) == 0:
-            return pred_bboxes_
-        if iou_dict[0][1] > 0.5:
-            pred_bboxes_.append(pred_bboxes[int(iou_dict[0][0])])
-                
-                
     return pred_bboxes_
 
 
 def calc_iou(gt_img_path, pred_img):
     
     epsilon         = 1e-6
-    h, w            = pred_img.size
-    gt_img          = Image.open(gt_img_path)
+    h, w, c         = pred_img.shape
+    gt_img          = Image.open(gt_img_path).convert('RGB')
+
     resize          = transforms.Resize([w,h])
     gt_img          = resize(gt_img)
-    gt_img          = np.asarray(gt_img)
+    gt_img          = np.asarray(gt_img)[:,:,0]
+    pred_img        = np.asarray(pred_img)[:,:,0]
+
+    # TODO: we can adjust the 125 to a more suitble value
+    gt_copy         = gt_img.copy()
+    gt_copy.flags.writeable     = True
+    gt_copy[gt_copy>125] = 255
+    gt_copy[gt_copy<=125] = 0
+    pred_copy       = pred_img.copy()
+    pred_copy.flags.writeable   = True
+    pred_copy[pred_copy>125] = 255
+    pred_copy[pred_copy<=125] = 0
     
-    intersection    = np.sum((gt_img) & (pred_img))
-    union           = np.sum((gt_img) | (pred_img))
+    
+    intersection    = np.sum((gt_img) & (pred_copy))
+    union           = np.sum((gt_img) | (pred_copy))
 
     iou             = (intersection + epsilon) / (union + epsilon)
 
@@ -218,69 +247,6 @@ def calc_ap(gt_img, pred_img, gt_bbox, bboxs):
     return ap
 
 
-def calc_cate_ap(cate_bb):
-
-    BBGT = []
-
-    bbox_idx = {}
-    gtbbox_idx = {}
-    BBGTS = []
-    i = 0
-    for img_id in cate_bb:
-        bboxs = cate_bb[img_id]['predbbox']
-        gt_bbox = cate_bb[img_id]['gtbox']
-        BBGTS += gt_bbox
-        for bbox in bboxs:
-            bbox_idx[i] = np.array(bbox, np.float32)
-            gtbbox_idx[i] = np.array(gt_bbox, dtype=np.float32).reshape(-1, 4)
-            i += 1
-
-
-    if i == 0:
-        return 0.
-
-    blen = i
-
-    tp = np.zeros(blen)
-    fp = np.zeros(blen)
-    for x in range(blen):
-        BBGT = gtbbox_idx[x]
-        #bb  = np.array(bboxs[i][0]*w_ratio, bboxs[i][1]*h_ratio,bboxs[i][2]*w_ratio, bboxs[i][3]*h_ratio], np.float32)
-        bb  = np.array(bbox_idx[x], np.float32)
-        iou = calc_box_iou(bb, BBGT)
-        if iou >= 0.5:
-            tp[x] = 1.
-        else:
-            fp[x] = 1
-
-    recall = sum(tp)/(float(len(BBGTS)) + 1e-6)
-    precision = sum(tp)/(float(blen) + 1e-6)
-
-    fp = np.cumsum(fp)
-    tp = np.cumsum(tp)
-    rec = tp / (float(len(BBGTS)) + 1e-6)
-
-    prec = tp / np.maximum(tp + fp, np.finfo(np.float64).eps)
-    ap = voc_ap(rec, prec, use_07_metric=True)
-
-    return ap
-
-
-def calc_miou():
-    
-    gt_img = cv2.imread(os.path.join(test_path, det_p, det_p+'_1.jpg'))  # groundtruth
-
-    pred_img = cv2.imread(os.path.join(test_path, det_p, det_p+'_1.jpg'))
-    iou = calc_iou(gt_img, pred_img)
-    cls_iou[img_id][cls] = iou
-    
-    ious = []
-    for img_id in cls_iou:
-        ious.append(np.mean(list(cls_iou[img_id].values())))
-
-
-    print('the mIoU is {}'.format(np.mean(ious)))
-
 
 def generate_pets_gt(oxford_pets_root, save_root, tasks):
     
@@ -332,15 +298,16 @@ class genGT(object):
     
     def __init__(self, dataset_root, save_root, task, split=None, test_txt_path=None):
         
+        self.cls_ade_dict    = {}
         for i in range(len(CLASSES)):
             self.cls_ade_dict[i] = CLASSES[i]
         
-        self.dataset_root   = dataset_root
-        self.save_root      = save_root
-        self.split          = split
-        self.task           = task
-        self.test_txt_path  = test_txt_path
-        
+        self.dataset_root    = dataset_root
+        self.save_root       = save_root
+        self.split           = split
+        self.task            = task
+        self.test_txt_path   = test_txt_path
+
     def generate_ade20k_gt(self):
         
         print('Begin to generate ADE20k ground truth')
@@ -359,7 +326,7 @@ class genGT(object):
             for cls in clses: # e.g., cls=1
                 
                 img                      = Image.open(img_path) #original image
-                seg_img                  = Image.new('RGB',(img.size[0],img.size[1]))
+                seg_img                  = Image.new('RGB',(img.size[0],img.size[1]),color=0)
                 seg_img                  = np.array(seg_img)
 
                 #find where equals cls in anno
@@ -376,13 +343,13 @@ class genGT(object):
                 if cls_name == "background":
                     continue
                 
-                out_name                 = img_name+ "_" + cls_name + self.task
+                out_name                 = img_name+ "_" + cls_name + "_" + self.task
                 output_path              = os.path.join(self.save_root, out_name)
                 
                 if os.path.exists(output_path) == False:
                     os.makedirs(output_path)
 
-                seg_img.save(output_path + '/{}_gt.jpg'.format(out_name))
+                seg_img.save(output_path + '/{}_gt.png'.format(out_name))
         
         return
 
@@ -445,7 +412,83 @@ class genGT(object):
                 bbox_file.close()
            
         return
-    
+
+    def generate_sunrgbd_gt(self):
+        
+        print('Begin to generate SUNRGBD ground truth')
+        
+        with open(self.test_txt_path) as file:  
+
+            for line in file:
+                
+                img_path_part   = line.strip().split(" ")[0] # SUNRGBD/kv2/kinect2data/000002_2014-05-26_14-23-37_260595134347_rgbf000103-resize/image/0000103.jpg
+                file_name       = img_path_part.split("/")[-4] # kinect2data
+                img_name        = img_path_part.split("/")[-1] # 0000103.jpg
+                img_id          = file_name + "_" + img_name.split(".")[0] # kitchen_rgb_00045
+                gt_path_part    = line.strip().split(" ")[1]
+                gt_path         = os.path.join(self.dataset_root, gt_path_part)
+                gt_id           = gt_path_part.split("/")[-4] + "_" + gt_path_part.split("/")[-1].split(".")[0]
+                
+                # depth_img       = Image.open(gt_path).convert("RGB")
+                
+                output_path     = os.path.join(self.save_root, img_id + "_" + self.task)
+                    
+                if os.path.exists(output_path) == False:
+                    os.makedirs(output_path)
+                    
+                shutil.copy(gt_path, output_path + '/{}_{}_gt.jpg'.format(gt_id, self.task))
+
+                # depth_img.save(output_path+'/{}_{}_gt.jpg'.format(gt_id, self.task))
+        
+        return
+
+    def generate_voc_gt(self):
+        print('Begin to generate ADE20k ground truth')
+        #TODO: copy from ade20k, need to be modified
+        for img_name in open(os.path.join(self.dataset_root, self.split)):
+        
+            img_name = img_name.strip()
+            
+            img_path                     = os.path.join(self.dataset_root, "images/validation", img_name)
+            seg_path                     = os.path.join(self.dataset_root, "annotations/validation", img_name.split(".")[0]+".png")
+            anno                         = Image.open(seg_path)
+            anno                         = np.array(anno)
+            
+            clses = np.unique(anno)
+            
+            for cls in clses: # e.g., cls=1
+                
+                img                      = Image.open(img_path) #original image
+                seg_img                  = Image.new('RGB',(img.size[0],img.size[1]))
+                seg_img                  = np.array(seg_img)
+
+                #find where equals cls in anno
+                r, c                     = np.where(anno == cls) #r,c are arraries
+                
+                for i in range(len(r)):
+                    
+                    seg_img[r[i],c[i],:] = (255,255,255)
+
+                seg_img = Image.fromarray(seg_img)
+                
+                cls_name = self.cls_ade_dict[cls]
+                
+                if cls_name == "background":
+                    continue
+                
+                out_name                 = img_name+ "_" + cls_name + self.task
+                output_path              = os.path.join(self.save_root, out_name)
+                
+                if os.path.exists(output_path) == False:
+                    os.makedirs(output_path)
+
+                seg_img.save(output_path + '/{}_gt.jpg'.format(out_name))
+        
+        return 
+
+
+
+   
 def get_color(color_dict, image_path):
     
     img = cv2.imread(image_path)
@@ -595,7 +638,6 @@ def evaluate_cls(cls_pred_root):
 
 
 
-
 if __name__ == "__main__":
 
     parser = ArgumentParser()
@@ -632,7 +674,7 @@ if __name__ == "__main__":
     # calc acc
     # acc = evaluate_cls(args.cls_pred_root)
     
-    test_path = './outputs/imgs_test_fs1000'
+    test_path = './outputs/imgs_test_ade20k'
     cls_iou = {}
     cls_ap = {}
     cate_bb = {}
@@ -656,7 +698,7 @@ if __name__ == "__main__":
         if cls not in cate_bb:
             cate_bb[cls] = {}
 
-        gt_img_root = os.path.join(test_path, det_p, det_p+'_gt.jpg')
+        gt_img_root = os.path.join(test_path, det_p, det_p+'_gt.png')
         # gt_img = cv2.imread(os.path.join(test_path, det_p, det_p+'_gt.jpg'))  # groundtruth
         # gt_img = Image.open(os.path.join(test_path, det_p, det_p+'_gt.jpg'))  # groundtruth
         if task_type == 'seg':
@@ -664,7 +706,7 @@ if __name__ == "__main__":
             if not os.path.exists(pred_path):
                 continue
             
-            pred_img  = Image.open(pred_path)
+            pred_img  = cv2.imread(pred_path)
             iou = calc_iou(gt_img_root, pred_img)
             cls_iou[img_id][cls] = iou
 
@@ -704,7 +746,7 @@ if __name__ == "__main__":
     
 
 
-    # print('the mIoU is {}'.format(np.mean(ious)))
+    print('the mIoU is {}'.format(np.mean(ious)))
 
 
     # APs = []

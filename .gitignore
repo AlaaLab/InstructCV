@@ -44,7 +44,8 @@ stable_diffusion_bak
 data/image_pairs*
 outputs/
 __pycache__/
-
+ann_final.json
+pred_final.json
 
 
 # OS generated files

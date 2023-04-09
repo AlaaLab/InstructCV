@@ -85,101 +85,101 @@ def inference_seg(resolution, steps, vae_ckpt, split, config, test_txt_path, eva
     2. Make outputs' size are the closest as inputs
     '''
 
-    resize = transforms.Resize((resolution,resolution))
-    config = OmegaConf.load(config)
-    model = load_model_from_config(config, ckpt, vae_ckpt)
-    model.eval().cuda()
-    model_wrap = K.external.CompVisDenoiser(model)
-    model_wrap_cfg = CFGDenoiser(model_wrap)
-    null_token = model.get_learned_conditioning([""])
+    # resize = transforms.Resize((resolution,resolution))
+    # config = OmegaConf.load(config)
+    # model = load_model_from_config(config, ckpt, vae_ckpt)
+    # model.eval().cuda()
+    # model_wrap = K.external.CompVisDenoiser(model)
+    # model_wrap_cfg = CFGDenoiser(model_wrap)
+    # null_token = model.get_learned_conditioning([""])
 
     seed = random.randint(0, 100000) if seed is None else seed
     
     genGT(input, output, task, split).generate_ade20k_gt()
     
-    for image_name in open(os.path.join(input, split)): # Read paths to files from txt
+    # for image_name in open(os.path.join(input, split)): # Read paths to files from txt
         
-        image_name = image_name.strip()
+    #     image_name = image_name.strip()
         
-        start = time.time()
+    #     start = time.time()
         
-        img_path            = os.path.join(input, "images/validation", image_name)
-        anno_path           = os.path.join(input, "annotations/validation", image_name.replace("jpg","png"))
+    #     img_path            = os.path.join(input, "images/validation", image_name)
+    #     anno_path           = os.path.join(input, "annotations/validation", image_name.replace("jpg","png"))
 
-        # get classes name
-        anno                = Image.open(anno_path)
-        anno                = np.array(anno)
-        clses               = np.unique(anno)
+    #     # get classes name
+    #     anno                = Image.open(anno_path)
+    #     anno                = np.array(anno)
+    #     clses               = np.unique(anno)
         
-        for cls in clses:
+    #     for cls in clses:
             
-            if cls == 0:
-                continue
+    #         if cls == 0:
+    #             continue
             
-            cls_name = CLASSES[cls]
+    #         cls_name = CLASSES[cls]
             
-            img_id  = image_name + "_" + cls_name
+    #         img_id  = image_name + "_" + cls_name
     
-            prompts = edit
-            if rephrase:
-                prompts  = Rephrase(prompts).do()
-            prompts = prompts.replace("%", cls_name)
-            print("prompts:", prompts)
+    #         prompts = edit
+    #         if rephrase:
+    #             prompts  = Rephrase(prompts).do()
+    #         prompts = prompts.replace("%", cls_name)
+    #         print("prompts:", prompts)
         
-            if edit == "":
-                input_image.save(output)
-                return
+    #         if edit == "":
+    #             input_image.save(output)
+    #             return
 
-            with torch.no_grad(), autocast("cuda"), model.ema_scope():
+    #         with torch.no_grad(), autocast("cuda"), model.ema_scope():
                 
-                input_image = Image.open(img_path).convert("RGB")
-                input_image = resize(input_image)
+    #             input_image = Image.open(img_path).convert("RGB")
+    #             input_image = resize(input_image)
 
-                width, height = input_image.size
-                factor = resolution / max(width, height)
-                factor = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
-                width = int((width * factor) // 64) * 64
-                height = int((height * factor) // 64) * 64
-                input_image = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
+    #             width, height = input_image.size
+    #             factor = resolution / max(width, height)
+    #             factor = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
+    #             width = int((width * factor) // 64) * 64
+    #             height = int((height * factor) // 64) * 64
+    #             input_image = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
                 
-                cond = {}
+    #             cond = {}
                 
-                cond["c_crossattn"] = [model.get_learned_conditioning([prompts])] #modified: edit -> prompts
-                input_image = 2 * torch.tensor(np.array(input_image)).float() / 255 - 1
-                input_image = rearrange(input_image, "h w c -> 1 c h w").to(model.device)
-                cond["c_concat"] = [model.encode_first_stage(input_image).mode()]
+    #             cond["c_crossattn"] = [model.get_learned_conditioning([prompts])] #modified: edit -> prompts
+    #             input_image = 2 * torch.tensor(np.array(input_image)).float() / 255 - 1
+    #             input_image = rearrange(input_image, "h w c -> 1 c h w").to(model.device)
+    #             cond["c_concat"] = [model.encode_first_stage(input_image).mode()]
 
-                uncond = {}
-                uncond["c_crossattn"] = [null_token]
-                uncond["c_concat"] = [torch.zeros_like(cond["c_concat"][0])]
+    #             uncond = {}
+    #             uncond["c_crossattn"] = [null_token]
+    #             uncond["c_concat"] = [torch.zeros_like(cond["c_concat"][0])]
 
-                sigmas = model_wrap.get_sigmas(steps)
+    #             sigmas = model_wrap.get_sigmas(steps)
 
-                extra_args = {
-                    "cond": cond,
-                    "uncond": uncond,
-                    "text_cfg_scale": cfg_text,
-                    "image_cfg_scale": cfg_image,
-                }
-                torch.manual_seed(seed)
-                z = torch.randn_like(cond["c_concat"][0]) * sigmas[0]
-                z = K.sampling.sample_euler_ancestral(model_wrap_cfg, z, sigmas, extra_args=extra_args)
-                x = model.decode_first_stage(z)
-                x = torch.clamp((x + 1.0) / 2.0, min=0.0, max=1.0)
-                x = 255.0 * rearrange(x, "1 c h w -> h w c")
-                edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
+    #             extra_args = {
+    #                 "cond": cond,
+    #                 "uncond": uncond,
+    #                 "text_cfg_scale": cfg_text,
+    #                 "image_cfg_scale": cfg_image,
+    #             }
+    #             torch.manual_seed(seed)
+    #             z = torch.randn_like(cond["c_concat"][0]) * sigmas[0]
+    #             z = K.sampling.sample_euler_ancestral(model_wrap_cfg, z, sigmas, extra_args=extra_args)
+    #             x = model.decode_first_stage(z)
+    #             x = torch.clamp((x + 1.0) / 2.0, min=0.0, max=1.0)
+    #             x = 255.0 * rearrange(x, "1 c h w -> h w c")
+    #             edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
             
             
-            output_path         = os.path.join(output, img_id + "_" + task)
+    #         output_path         = os.path.join(output, img_id + "_" + task)
 
-            if os.path.exists(output_path) == False:
-                os.makedirs(output_path)
+    #         if os.path.exists(output_path) == False:
+    #             os.makedirs(output_path)
                     
-            edited_image.save(output_path+'/{}_{}_pred.jpg'.format(img_id, task))
+    #         edited_image.save(output_path+'/{}_{}_pred.jpg'.format(img_id, task))
             
-            end = time.time()
+    #         end = time.time()
             
-            print("One image done. Inferenct time cost:{}".format(end - start))
+    #         print("One image done. Inferenct time cost:{}".format(end - start))
 
 
 if __name__ == "__main__":

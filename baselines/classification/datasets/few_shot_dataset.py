@@ -27,7 +27,25 @@ from datasets.caltech101 import Caltech101
 #
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
-
+'''
+1: 'pink primrose'
+2: 'hard-leaved pocket orchid'
+3: 'canterbury bells'
+4: 'sweet pea'
+5: 'english marigold'
+6: 'tiger lily'
+7: 'moon orchid'
+8: 'bird of paradise'
+9: 'monkshood'
+10: 'globe thistle'
+11: 'snapdragon'
+12: 'colt's foot'
+13: 'king protea'
+14: 'spear thistle'
+15: 'yellow iris'
+16: 'globe-flower'
+17: 'purple coneflower'
+'''
 
 from PIL import ImageEnhance
 

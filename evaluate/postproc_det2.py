@@ -90,29 +90,29 @@ class postDet(object):
             approx = cv2.approxPolyDP(obj, 0.02 * perimeter, True)  # get the coordinates of the contour corner points
             x, y, w, h = cv2.boundingRect(approx)  # get coordinate values and width and height
 
-            if perimeter < 20:  # remove small contour areas
+            if perimeter < 10:  # remove small contour areas
                 for i in np.arange(x, x + w, 1):
                     for j in np.arange(y, y + h, 1):
                         binary[j, i] = 0
             
-            if area != 0 and perimeter != 0 and area / perimeter > 0.95:  # remove non-square
-                conut = 0
-                for i in np.arange(x, x + w, 1):
-                    for j in np.arange(y, y + h, 1):
-                        if binary[j, i] != 0:
-                            conut = conut + 1
+            # if area != 0 and perimeter != 0 and area / perimeter > 0.95:  # remove non-square
+            #     conut = 0
+            #     for i in np.arange(x, x + w, 1):
+            #         for j in np.arange(y, y + h, 1):
+            #             if binary[j, i] != 0:
+            #                 conut = conut + 1
 
-                if conut > 0.8 * w * h: # remove noise in square
-                    for i in np.arange(x, x + w, 1):
-                        for j in np.arange(y, y + h, 1):
-                            binary[j, i] = 0
+            #     if conut > 0.8 * w * h: # remove noise in square
+            #         for i in np.arange(x, x + w, 1):
+            #             for j in np.arange(y, y + h, 1):
+            #                 binary[j, i] = 0
 
-                            bbox[0] = x
-                            bbox[1] = y
-                            bbox[2] = x+w
-                            bbox[3] = y+h
-                            bbox[4] = 1 #confidence =1 when we are sure there has a rectangle
-                            bboxes.append(list(bbox))
+            #                 bbox[0] = x
+            #                 bbox[1] = y
+            #                 bbox[2] = x+w
+            #                 bbox[3] = y+h
+            #                 bbox[4] = 1 #confidence =1 when we are sure there has a rectangle
+            #                 bboxes.append(list(bbox))
             
             else:
                 cv2.rectangle(output, (x, y), (x + w, y + h), (0, 255, 255), 1)  # draw the bounding box

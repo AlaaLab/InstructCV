@@ -91,8 +91,7 @@ def inference_sunrgbd_depes(resolution, steps, vae_ckpt, split, test_txt_path, c
     null_token = model.get_learned_conditioning([""])
 
     seed = random.randint(0, 100000) if seed is None else seed
-    
-    # genGT(input, output, task, test_txt_path).generate_nyuv2_gt()
+    genGT(input, output, task, split, test_txt_path).generate_sunrgbd_gt()
     
     with open(test_txt_path) as file:  
 
@@ -101,11 +100,8 @@ def inference_sunrgbd_depes(resolution, steps, vae_ckpt, split, test_txt_path, c
             start = time.time()
             
             img_path_part   = line.strip().split(" ")[0] # SUNRGBD/kv2/kinect2data/000002_2014-05-26_14-23-37_260595134347_rgbf000103-resize/image/0000103.jpg
-            
             file_name       = img_path_part.split("/")[-4] # kinect2data
-            
             img_name        = img_path_part.split("/")[-1] # 0000103.jpg
-
             img_id          = file_name + "_" + img_name.split(".")[0] # kinect2data_0000103
             
             input_image = Image.open(os.path.join(input,img_path_part)).convert("RGB")
@@ -166,4 +162,4 @@ def inference_sunrgbd_depes(resolution, steps, vae_ckpt, split, test_txt_path, c
 
 
 if __name__ == "__main__":
-    inference_depes()
+    inference_sunrgbd_depes()

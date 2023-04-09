@@ -46,6 +46,15 @@ CLASSES = (
         'plate', 'monitor', 'bulletin board', 'shower', 'radiator', 'glass',
         'clock', 'flag')
 
+#for coco
+CLASSES_COCO = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant',
+               'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe',
+               'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat',
+               'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
+               'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant',
+               'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink',
+               'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush')
+
 Pet_CLASSES = ('Abyssinian', 'american bulldog', 'american pit bull terrier', 'basset hound', 'beagle','Bengal',
                'Birman', 'Bombay', 'boxer', 'British Shorthair', 'chihuahua', 'Egyptian Mau', 'english cocker spaniel',
                'english setter', 'german shorthaired', 'great pyrenees', 'havanese', 'japanese chin',
@@ -62,6 +71,17 @@ COLOR = ((0, 0, 0), (120, 120, 120), (180, 120, 120), (6, 230, 230), (80, 50, 50
             (255, 7, 71), (255, 9, 224), (9, 7, 230), (220, 220, 220),
             (255, 9, 92), (112, 9, 255), (8, 255, 214), (7, 255, 224),
             (255, 184, 6), (10, 255, 71), (255, 41, 10),(255, 0, 0))
+
+#for VOC
+CLASSES_VOC = ("background", "aeroplane", "bicycle", "bird", "boat", "bottle",
+               "bus", "car", "cat", "chair", "cow", "diningtable","dog",
+               "horse", "motorbike", "person", "pottedplant", "sheep", "sofa",
+               "train", "tvmonitor")
+
+COLOR_VOC = ((0,0,0), (128,0,0), (0,128,0), (128,128,0), (0,0,128),(128,0,128),
+             (0,128,128), (128,128,128), (64,0,0), (192,0,0), (64,128,0), (192,128,0),(64,0,128),
+             (192,9,128), (64,128,128), (192,128,128), (0,64,0), (128,64,0),(0,192,0),(0,192,0),
+             (128,192,0), (0,64,128))
 
 
 def get_bbox_prompt(cname):
@@ -147,7 +167,7 @@ def get_bbox_img(root, img_id, bbox, dataset):
     
     elif dataset == 'MSCOCO':
         
-        img_path = os.path.join(root, 'val2017', '%s.jpg' % img_id)
+        img_path = os.path.join(root, 'train2017', '%s.jpg' % img_id)
 
         img = Image.open(img_path).convert("RGB")
         # box_img = Image.new('RGB', img.size, (0,0,0))
@@ -186,9 +206,9 @@ def generate_sample(img, img_id, out_img, prompt, task_type):
     if os.path.exists(output_path) == False:
         os.mkdir(output_path)
 
-    img.save(output_path+'/{}_{}_0.jpg'.format(img_id, task_type))
+    img.save(output_path+'/{}_{}_0.png'.format(img_id, task_type))
     # pdb.set_trace()
-    out_img.save(output_path + '/{}_{}_1.jpg'.format(img_id, task_type))
+    out_img.save(output_path + '/{}_{}_1.png'.format(img_id, task_type))
     
 
     seed = [img_id+'_{}'.format(task_type), [img_id+'_{}'.format(task_type)]]
@@ -273,7 +293,7 @@ def proc_oxford_pets(oxford_pets_root, tasks):
                 seed = generate_sample(img, img_id, output_img, prompt, task_type)
                 seeds.append(seed)
 
-                output_path = os.path.join('./image_pairs', img_id + '_det')
+                output_path = os.path.join(args.save_root, img_id + '_det')
                 bbox_info = {'bbox': bbox}
                 bbox_file = open(os.path.join(output_path, 'bbox.json'), 'w')
                 bbox_file.write(json.dumps(bbox_info))
@@ -289,7 +309,7 @@ def preproc_coco(root):
     
     print('begin to pre-process coco dataset...')
     clses                   = {}
-    coco_path               = os.path.join(root, 'annotations/instances_val2017.json')
+    coco_path               = os.path.join(root, 'annotations/instances_train2017.json')
     coco_fp                 = open(coco_path)
     anno_js                 = json.loads(coco_fp.readline())
 
@@ -341,7 +361,7 @@ def proc_coco(coco_root, tasks):
             cname = clses[cid] #target_name
             
             img_id = image_id.zfill(12)
-            img_path = os.path.join(coco_root, 'val2017/{}.jpg'.format(img_id))
+            img_path = os.path.join(coco_root, 'train2017/{}.jpg'.format(img_id))
             img = Image.open(img_path).convert("RGB")
             #print(box, [box[0], box[1], box[0]+box[2], box[1]+box[3]])
             
@@ -367,7 +387,7 @@ def proc_coco(coco_root, tasks):
                     seed = generate_sample(img, img_id, det_img, prompt, task_type='det_{}'.format(cname))
                     seeds.append(seed)
                     
-                    output_path = os.path.join('./image_pairs', img_id + '_det_{}'.format(cname))
+                    output_path = os.path.join(args.save_root, img_id + '_det_{}'.format(cname))
                     bbox_info = {'bbox': bbox}
                     bbox_file = open(os.path.join(output_path, 'bbox.json'), 'w')
                     bbox_file.write(json.dumps(bbox_info))
@@ -408,8 +428,8 @@ def proc_coco(coco_root, tasks):
                             s = np.array(s).reshape(-1, 2)     # [n_points, 2]
                             cv2.fillPoly(gt, s.astype(np.int32)[np.newaxis, :, :], (255, 255, 255))
 
-                    # prompt = {'edit': 'segment the {}'.format(cname)}
-                    prompt  = get_seg_prompt(cname)
+                    prompt = {'edit': 'segment the {}'.format(cname)}
+                    # prompt  = get_seg_prompt(cname)
                     
                     seg_img = Image.fromarray(cv2.cvtColor(gt,cv2.COLOR_BGR2RGB)).convert("RGB")
                     seed = generate_sample(img, img_id, seg_img, prompt, task_type='seg_{}'.format(cname))
@@ -572,7 +592,7 @@ def proc_adechan2016(ade_root, cls_ade_dict):
             img = Image.open(img_path).convert('RGB') #original image
             # seg_img = Image.new('RGB', img.size, (0,0,0))
             
-            seg_img = Image.new('RGB',(img.size[0],img.size[1]))
+            seg_img = Image.new('RGB',(img.size[0],img.size[1]), color=0)
             seg_img = np.array(seg_img)
 
             #find where equals cls in anno
@@ -638,31 +658,6 @@ def prompts_chat():
     prompt_chat_loc = list(flag.keys())
     
     return prompt_chat, prompt_chat_loc
-    
-    
-    
-    
-    return
-  
-def chat():
-    
-    print("111")
-    prompt, prompt_loc = prompts_chat()
-    print("222")
-    chatbot = Chatbot(config={
-    "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ik1UaEVOVUpHTkVNMVFURTRNMEZCTWpkQ05UZzVNRFUxUlRVd1FVSkRNRU13UmtGRVFrRXpSZyJ9.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL3Byb2ZpbGUiOnsiZW1haWwiOiJnYW55dWx1QHN0dS5wa3UuZWR1LmNuIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImdlb2lwX2NvdW50cnkiOiJVUyJ9LCJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsidXNlcl9pZCI6InVzZXItdWNXcFN6NXg4eXpEZXJRaWRkNDl6dXk3In0sImlzcyI6Imh0dHBzOi8vYXV0aDAub3BlbmFpLmNvbS8iLCJzdWIiOiJnb29nbGUtb2F1dGgyfDEwMTQ1NDA2MzgxNTg3MTI3MjMxNiIsImF1ZCI6WyJodHRwczovL2FwaS5vcGVuYWkuY29tL3YxIiwiaHR0cHM6Ly9vcGVuYWkub3BlbmFpLmF1dGgwYXBwLmNvbS91c2VyaW5mbyJdLCJpYXQiOjE2NzczMTI3NDgsImV4cCI6MTY3ODUyMjM0OCwiYXpwIjoiVGRKSWNiZTE2V29USHROOTVueXl3aDVFNHlPbzZJdEciLCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIG1vZGVsLnJlYWQgbW9kZWwucmVxdWVzdCBvcmdhbml6YXRpb24ucmVhZCBvZmZsaW5lX2FjY2VzcyJ9.mrBudWPXnpW-s3esfdROKglho1XjmrS9OhB5TyX0Nf7J-Wf6-1tsjN3HbMJsJVMdOEqyB0z2H6TZ66_a5qkTsO07LAuwFc0scPlx1HhD9MX213M21XFW0MT2anDkCyxVV9KSAfv_cb8j0wolnkNl3oC9TJjHmbcU89YdoB7d22amLClfD1pzLPuOiOnRb_eB3qE7Eoep3eY7Smjp7hlRGKhfU_fuTbKUOwX1EXODm7aGCGU-j9BCb_9CXDAPVGMLMuvPo2Zx8z2RUgxgEq0Not86eSsJbtxZbSyLUq9grlgYyI63WMpXn7ZZLSQyTAaVi-eYpicl7meswi01DtnqtA"
-    })
-    print("333")
-    for i in range(len(prompt)):
-        prompt_ask = "rephrase randomly: " + prompt[i] + '.'
-        for data in chatbot.ask(
-            prompt_ask,
-    ):
-            response = data["message"]
-            
-        print(response)
-    
-    return
 
 
 if __name__ == "__main__":
@@ -675,7 +670,6 @@ if __name__ == "__main__":
     parser.add_argument("--coco_root", default='./data/coco', type=str)
     parser.add_argument("--nyuv2_root", default='./data/nyu_mdet', type=str)
     parser.add_argument("--ade_root", default='./data/ADEChallengeData2016', type=str)
-    parser.add_argument("--tasks", default=['det'], type=list)
     args = parser.parse_args()
     
     cls_ade_dict, pet_to_color, clses           = {}, {}, {}
@@ -741,17 +735,17 @@ if __name__ == "__main__":
 
     #     target_name = ' '.join(img_id.split('_')[:-1]).strip()
     #     clses[cls_label] = target_name #store target_name and cls_label
-    
+    tasks = ['seg','cls']
     
     if fnmatch(args.dataset, "coco"):
-        proc_coco(args.coco_root, tasks=args.tasks)
+        proc_coco(args.coco_root, tasks)
     
     elif fnmatch(args.dataset, "oxford_pets"):
-        proc_oxford_pets(args.oxford_pets_root, args.tasks)
+        proc_oxford_pets(args.oxford_pets_root, tasks)
 
     elif fnmatch(args.dataset, "nyuv2"):
         proc_nyuv2_all(args.nyuv2_root)
     
     elif fnmatch(args.dataset, "ade20k"):
-        proc_adechan2016(args.ade_root)
+        proc_adechan2016(args.ade_root, cls_ade_dict)
     
