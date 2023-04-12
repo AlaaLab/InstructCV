@@ -10,6 +10,9 @@ from edit_cli_det import inference_det
 from edit_cli_seg import inference_seg
 from edit_cli_seg_fs1000 import inference_seg_fs1000
 from edit_cli_depes_sunrgbd import inference_sunrgbd_depes
+from edit_cli_seg_voc import inference_seg_voc
+from edit_cli_det_voc import inference_det_voc
+
 from argparse import ArgumentParser
 
 
@@ -71,7 +74,12 @@ def main():
         
     if args.task == "sunrgbd_depes":
         inference_sunrgbd_depes(**inference_params)
+        
+    if args.task == "voc_seg":
+        inference_seg_voc(**inference_params)
     
+    if args.task == "voc_det":
+        inference_det_voc(**inference_params)
 
 if __name__ == "__main__":
     main()

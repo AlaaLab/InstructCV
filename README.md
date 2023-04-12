@@ -155,10 +155,14 @@ Download the dataset [here](https://rgbd.cs.princeton.edu/) and download the spl
 
 
 <details open>
-<summary>PASCAL VOC2012 - Depth estimation</summary>
+<summary>PASCAL VOC2012 - Segmentation & Detection</summary>
 
 Download the dataset [here](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar)
 
+We need to transfer the voc format to the coco one by running:
+```shell
+python data/VOCdevkit/VOC2012/voc2coco.py
+```
 </details>
 
 ## Build our training data

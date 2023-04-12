@@ -2,7 +2,7 @@
 #SBATCH -o %j.out
 #SBATCH -e %j.err
 #SBATCH --gres=gpu:8
-#SBATCH -p gpu31
+#SBATCH -p gpu32
 #SBATCH --qos=normal
 #SBATCH -J test
 #SBATCH --nodes=1 
@@ -14,3 +14,4 @@
 
 python main.py --name add_coco_pet_seg --base configs/train_all100kdata.yaml --train --gpus 0,1,2,3,4,5,6,7
 # python main.py --name new --base configs/train_coco_det_black.yaml --train --gpus 0,1,2,3,4,5,6,7
+# python main.py --name new --base configs/train_coco_det.yaml --train --gpus 0,1,2,3,4,5,6,7

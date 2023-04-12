@@ -11,6 +11,7 @@ import torchvision
 from einops import rearrange
 from PIL import Image
 from torch.utils.data import Dataset
+from fnmatch import fnmatch
 
 
 class EditDataset(Dataset):
@@ -49,14 +50,23 @@ class EditDataset(Dataset):
         return len(self.seeds)
 
     def __getitem__(self, i: int) -> dict[str, Any]:
+        '''
+        Modified by Yulu Gan, Apr 10 ,2023
+        enable different postfix for image_0 and image_1. png for depes/seg label, jpg for else
+        '''
+        
         name, seeds = self.seeds[i]
         propt_dir = Path(self.path, name)
         seed = seeds[torch.randint(0, len(seeds), ()).item()]
         with open(propt_dir.joinpath("prompt.json"),'r') as fp:
             prompt = json.load(fp)["edit"]
 
-        image_0 = Image.open(propt_dir.joinpath(f"{seed}_0.jpg"))
-        image_1 = Image.open(propt_dir.joinpath(f"{seed}_1.jpg"))
+        if fnmatch(seed, "*det*") or fnmatch(seed, "*cls*"):
+            image_0 = Image.open(propt_dir.joinpath(f"{seed}_0.jpg"))
+            image_1 = Image.open(propt_dir.joinpath(f"{seed}_1.jpg"))
+        else:
+            image_0 = Image.open(propt_dir.joinpath(f"{seed}_0.jpg"))
+            image_1 = Image.open(propt_dir.joinpath(f"{seed}_1.png"))
 
         reize_res = torch.randint(self.min_resize_res, self.max_resize_res + 1, ()).item()
         image_0 = image_0.resize((reize_res, reize_res), Image.Resampling.LANCZOS)

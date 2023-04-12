@@ -24,7 +24,7 @@ from PIL import Image, ImageDraw
 import sys
 import shutil
 sys.path.append("./dataset_creation")
-from format_dataset import preproc_coco, get_bbox_img, CLASSES, get_seg_img, CLASSES_VOC,COLOR_VOC
+from format_dataset import preproc_coco, preproc_voc, get_bbox_img, CLASSES, get_seg_img, CLASSES_VOC, COLOR_VOC
 
 
 
@@ -120,10 +120,9 @@ def cal_bboxes_iou(test_path, src_ann_item, src_pred_item, ann_bbox_item, pred_b
 
 def calc_iou(gt_img_path, pred_img):
     
-    epsilon         = 1e-6
+    epsilon         = 1e-6   
     h, w, c         = pred_img.shape
     gt_img          = Image.open(gt_img_path).convert('RGB')
-
     resize          = transforms.Resize([w,h])
     gt_img          = resize(gt_img)
     gt_img          = np.asarray(gt_img)[:,:,0]
@@ -132,16 +131,16 @@ def calc_iou(gt_img_path, pred_img):
     # TODO: we can adjust the 125 to a more suitble value
     gt_copy         = gt_img.copy()
     gt_copy.flags.writeable     = True
-    gt_copy[gt_copy>125] = 255
-    gt_copy[gt_copy<=125] = 0
+    gt_copy[gt_copy>10] = 255
+    gt_copy[gt_copy<=10] = 0
     pred_copy       = pred_img.copy()
     pred_copy.flags.writeable   = True
-    pred_copy[pred_copy>125] = 255
-    pred_copy[pred_copy<=125] = 0
+    pred_copy[pred_copy>10] = 255
+    pred_copy[pred_copy<=10] = 0
     
     
-    intersection    = np.sum((gt_img) & (pred_copy))
-    union           = np.sum((gt_img) | (pred_copy))
+    intersection    = np.sum((gt_copy) & (pred_copy))
+    union           = np.sum((gt_copy) | (pred_copy))
 
     iou             = (intersection + epsilon) / (union + epsilon)
 
@@ -296,17 +295,22 @@ def generate_pets_gt(oxford_pets_root, save_root, tasks):
 
 class genGT(object):
     
+    COLOR_VOC = COLOR_VOC
+    
     def __init__(self, dataset_root, save_root, task, split=None, test_txt_path=None):
         
-        self.cls_ade_dict    = {}
+        self.cls_ade_dict,  self.cls_voc_dict   = {},{}
         for i in range(len(CLASSES)):
             self.cls_ade_dict[i] = CLASSES[i]
+        
+        for i in range(len(CLASSES_VOC)):
+            self.cls_voc_dict[i] = CLASSES_VOC[i]
         
         self.dataset_root    = dataset_root
         self.save_root       = save_root
         self.split           = split
         self.task            = task
-        self.test_txt_path   = test_txt_path
+        self.test_txt_path   = "/lustre/grp/gyqlab/lism/brt/language-vision-interface/data/nyu_mdet/nyu_test.txt"
 
     def generate_ade20k_gt(self):
         
@@ -356,7 +360,7 @@ class genGT(object):
     def generate_nyuv2_gt(self):
         
         print('Begin to generate NYU_V2 ground truth')
-        
+        print(self.test_txt_path)
         with open(self.test_txt_path) as file:  
 
             for line in file:
@@ -376,7 +380,7 @@ class genGT(object):
                 if os.path.exists(output_path) == False:
                     os.makedirs(output_path)
                         
-                depth_img.save(output_path+'/{}_{}_gt.jpg'.format(img_id, self.task))
+                depth_img.save(output_path+'/{}_{}_gt.png'.format(img_id, self.task))
         
         return
 
@@ -441,49 +445,91 @@ class genGT(object):
                 # depth_img.save(output_path+'/{}_{}_gt.jpg'.format(gt_id, self.task))
         
         return
-
-    def generate_voc_gt(self):
-        print('Begin to generate ADE20k ground truth')
-        #TODO: copy from ade20k, need to be modified
-        for img_name in open(os.path.join(self.dataset_root, self.split)):
+          
+    def color_replace(self, img, color):
         
-            img_name = img_name.strip()
-            
-            img_path                     = os.path.join(self.dataset_root, "images/validation", img_name)
-            seg_path                     = os.path.join(self.dataset_root, "annotations/validation", img_name.split(".")[0]+".png")
-            anno                         = Image.open(seg_path)
-            anno                         = np.array(anno)
-            
-            clses = np.unique(anno)
-            
-            for cls in clses: # e.g., cls=1
-                
-                img                      = Image.open(img_path) #original image
-                seg_img                  = Image.new('RGB',(img.size[0],img.size[1]))
-                seg_img                  = np.array(seg_img)
+        color = color[::-1]
+        img = cv2.imread(img)
+        lower = np.array(color)
+        upper = np.array(color)
+        mask = cv2.inRange(img, lower, upper)
+        img[mask > 0] = [255, 255, 255]
+        img[mask == 0] = [0, 0, 0]
+        return img
 
-                #find where equals cls in anno
-                r, c                     = np.where(anno == cls) #r,c are arraries
-                
-                for i in range(len(r)):
-                    
-                    seg_img[r[i],c[i],:] = (255,255,255)
 
-                seg_img = Image.fromarray(seg_img)
-                
-                cls_name = self.cls_ade_dict[cls]
-                
-                if cls_name == "background":
+    def get_colors(self, image_path):
+        
+        img = cv2.imread(image_path)
+        b, g, r = cv2.split(img)
+        colors = set()
+        for i in range(img.shape[0]):
+            for j in range(img.shape[1]):
+                colors.add((r[i][j], g[i][j], b[i][j]))
+        return list(colors)
+    
+    def generate_voc_gt(self):
+        print('Begin to generate VOC ground truth')
+        
+        for line in open(os.path.join(self.dataset_root, self.split)):
+        
+            line = line.strip()
+            img_path_part = line.split(" ")[0]
+            gt_path_part  = line.split(" ")[1]
+            img_name    = img_path_part.split("/")[1].split(".")[0]
+            
+            img_path                     = os.path.join(self.dataset_root, img_path_part)
+            seg_path                     = os.path.join(self.dataset_root, gt_path_part)
+
+            colors = self.get_colors(seg_path)
+            for color in colors:
+                idx = COLOR_VOC.index(list(color))
+                if idx == 0 or idx == 21:
                     continue
-                
-                out_name                 = img_name+ "_" + cls_name + self.task
-                output_path              = os.path.join(self.save_root, out_name)
-                
+                cls_name = CLASSES_VOC[idx]
+                seg_img = self.color_replace(seg_path, color)
+
+                img_name = seg_path.split(".")[0].split("/")[-1]
+                out_name = img_name + "_" + cls_name + "_" + "seg"
+
+                output_path = os.path.join(self.save_root, out_name)
+                print("output_path", output_path)
                 if os.path.exists(output_path) == False:
                     os.makedirs(output_path)
-
-                seg_img.save(output_path + '/{}_gt.jpg'.format(out_name))
+                cv2.imwrite(output_path + '/{}_gt.png'.format(out_name), seg_img)
+        return
+    
+    def generate_voc_det_gt(self):
+        '''
+        Generate voc gt bbox.json and images with g.t. bboxes.
+        '''
         
+        print('Begin to generate COCO ground truth: box.json and g.t img')
+        
+        img_info, clses       = preproc_voc(self.dataset_root)
+        
+        for img_name in open(os.path.join(self.dataset_root,self.split)):
+        
+            img_name              = img_name.strip()
+            image_id              = img_name.split(".")[0] #000001234
+            id                    = image_id.lstrip("0") #1234
+            pdb.set_trace()
+            for cid in img_info[id]:
+                
+                cname = clses[cid] #target_name  
+                bbox  = img_info[id][cid]['bbox']
+                
+                # save det image
+                output_path = os.path.join(self.save_root, image_id + '_{}_det'.format(cname))
+                det_img, bbox = get_bbox_img(self.dataset_root, image_id, bbox, dataset='MSCOCO')
+                det_img.save(os.path.join(output_path, "{}_{}_det_gt.jpg".format(image_id, cname)))
+                
+                # save g.t box.json
+                bbox_info = {'bbox': bbox}
+                bbox_file = open(os.path.join(output_path, 'bbox.json'), 'w')
+                bbox_file.write(json.dumps(bbox_info))
+                bbox_file.close()
+           
         return 
 
 
@@ -630,10 +676,7 @@ def evaluate_cls(cls_pred_root):
     acc                     =true / count
     
     print("acc:", acc)
-        
-    
-    
-    
+
     return
 
 
@@ -658,23 +701,12 @@ if __name__ == "__main__":
     
     for i in range(len(CLASSES)):
         cls_ade_dict[i] = CLASSES[i]
-    
-    #TODO merge generating gt into edit_cli.py
-    
-    # generate_ade20k_gt(args.ade20k_root, args.save_ade_root, cls_ade_dict)
-    
-    # generate_nyuv2_gt(args.nyuv2_root, args.save_root)
-    
-    # generate_sunrgbd_gt(args.sunrgbd_root, args.save_root)
-    
-    # generate_pets_gt(args.oxford_pets_root, args.save_root, args.tasks)
-    
-    # generate_coco_gt(args.coco_root, args.save_root)
+
     
     # calc acc
     # acc = evaluate_cls(args.cls_pred_root)
     
-    test_path = './outputs/imgs_test_ade20k'
+    test_path = './outputs/imgs_test_ade20k_epoch20'
     cls_iou = {}
     cls_ap = {}
     cate_bb = {}
@@ -702,11 +734,13 @@ if __name__ == "__main__":
         # gt_img = cv2.imread(os.path.join(test_path, det_p, det_p+'_gt.jpg'))  # groundtruth
         # gt_img = Image.open(os.path.join(test_path, det_p, det_p+'_gt.jpg'))  # groundtruth
         if task_type == 'seg':
-            pred_path = os.path.join(test_path, det_p, det_p+'_pred.jpg')
+            pred_path = os.path.join(test_path, det_p, det_p+'_pred.png')
             if not os.path.exists(pred_path):
                 continue
             
             pred_img  = cv2.imread(pred_path)
+            if pred_img is None:
+                continue
             iou = calc_iou(gt_img_root, pred_img)
             cls_iou[img_id][cls] = iou
 

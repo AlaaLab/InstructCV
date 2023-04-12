@@ -74,14 +74,16 @@ COLOR = ((0, 0, 0), (120, 120, 120), (180, 120, 120), (6, 230, 230), (80, 50, 50
 
 #for VOC
 CLASSES_VOC = ("background", "aeroplane", "bicycle", "bird", "boat", "bottle",
-               "bus", "car", "cat", "chair", "cow", "diningtable","dog",
-               "horse", "motorbike", "person", "pottedplant", "sheep", "sofa",
-               "train", "tvmonitor")
+               "bus", "car", "cat", "chair", "cow", "dining table", "dog",
+               "horse", "motorbike", "person", "potted plant", "sheep", "sofa",
+               "train", "tvmonitor", "border")
 
-COLOR_VOC = ((0,0,0), (128,0,0), (0,128,0), (128,128,0), (0,0,128),(128,0,128),
-             (0,128,128), (128,128,128), (64,0,0), (192,0,0), (64,128,0), (192,128,0),(64,0,128),
-             (192,9,128), (64,128,128), (192,128,128), (0,64,0), (128,64,0),(0,192,0),(0,192,0),
-             (128,192,0), (0,64,128))
+COLOR_VOC = [[0, 0, 0], [128, 0, 0], [0, 128, 0], [128, 128, 0], [0, 0, 128], [128, 0, 128],
+             [0, 128, 128], [128, 128, 128], [64, 0, 0], [
+                 192, 0, 0], [64, 128, 0], [192, 128, 0], [64, 0, 128],
+             [192, 0, 128], [64, 128, 128], [192, 128, 128], [
+                 0, 64, 0], [128, 64, 0], [0, 192, 0],
+             [128, 192, 0], [0, 64, 128], [224, 224, 192]]
 
 
 def get_bbox_prompt(cname):
@@ -173,13 +175,13 @@ def get_bbox_img(root, img_id, bbox, dataset):
         # box_img = Image.new('RGB', img.size, (0,0,0))
 
         # a = ImageDraw.ImageDraw(box_img)
-            
+
         box_img = img.copy()
         a = ImageDraw.ImageDraw(box_img)
         
         for box in bbox:
 
-            a.rectangle(((box[0], box[1]), (box[2], box[3])), fill=None, outline="red", width=5)
+            a.rectangle(((box[0], box[1]), (box[2], box[3])), fill=None, outline="red", width=4)
 
         del a
 
@@ -206,11 +208,10 @@ def generate_sample(img, img_id, out_img, prompt, task_type):
     if os.path.exists(output_path) == False:
         os.mkdir(output_path)
 
-    img.save(output_path+'/{}_{}_0.png'.format(img_id, task_type))
+    img.save(output_path+'/{}_{}_0.jpg'.format(img_id, task_type))
     # pdb.set_trace()
     out_img.save(output_path + '/{}_{}_1.png'.format(img_id, task_type))
     
-
     seed = [img_id+'_{}'.format(task_type), [img_id+'_{}'.format(task_type)]]
 
     promt_file = open(os.path.join(output_path, 'prompt.json'), 'w')
@@ -346,6 +347,47 @@ def preproc_coco(root):
 
     return img_info, clses
 
+def preproc_voc(root):
+    
+    print('begin to pre-process voc dataset...')
+    clses                   = {}
+    coco_path               = os.path.join(root, 'data/convert/coco/val.json')
+    coco_fp                 = open(coco_path)
+    anno_js                 = json.loads(coco_fp.readline())
+
+    for cate in anno_js['categories']:
+        
+        cid                 = cate['id']
+        cname               = cate['name']
+        clses[cid]          = cname
+
+
+    for key in anno_js:
+        print(key)
+
+    img_info = {}
+    coco_anno = anno_js['annotations']
+
+    for anno in coco_anno:
+        image_id = str(anno['image_id'])
+        box = list(anno['bbox'])
+        cbox = [box[0], box[1], box[0]+box[2], box[1]+box[3]]
+        cid = anno['category_id']
+        segmentation = anno['segmentation']
+        iscrowd = anno['iscrowd']
+
+        if image_id not in img_info:
+            img_info[image_id] = {}
+
+        if cid not in img_info[image_id]:
+            img_info[image_id][cid] = {'bbox': [], 'segmentation': []}
+
+        img_info[image_id][cid]['bbox'].append(cbox)
+        if iscrowd == 0:
+            img_info[image_id][cid]['segmentation'].append(segmentation)
+
+    return img_info, clses
+
 def proc_coco(coco_root, tasks):
     
     print('begin to process coco dataset...')
@@ -354,7 +396,23 @@ def proc_coco(coco_root, tasks):
     n = 0
     img_info, clses = preproc_coco(coco_root)
     
+    #split process ------------------------------
+    image_list=[]
     for image_id in img_info:
+        image_list.append(image_id)
+    image_list = sorted(image_list)
+    print("len(image_list)", len(image_list))
+    # image_list = image_list[0:20000]
+    # image_list = image_list[20000:40000]
+    # image_list = image_list[40000:60000]
+    # image_list = image_list[60000:80000]
+    image_list = image_list[80000:100000]
+    # image_list = image_list[100000:len(image_list)]
+    
+    for image_id in image_list:
+    #--------------------------------------------
+    ## origin
+    # for image_id in img_info:
         
         for cid in img_info[image_id]:
             
@@ -735,7 +793,7 @@ if __name__ == "__main__":
 
     #     target_name = ' '.join(img_id.split('_')[:-1]).strip()
     #     clses[cls_label] = target_name #store target_name and cls_label
-    tasks = ['seg','cls']
+    tasks = ['seg']
     
     if fnmatch(args.dataset, "coco"):
         proc_coco(args.coco_root, tasks)

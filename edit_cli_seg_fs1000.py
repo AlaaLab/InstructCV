@@ -123,8 +123,8 @@ def inference_seg_fs1000(resolution, steps, vae_ckpt, split, config, eval,
             
             img_id              = img_name.split(".")[0]
             ge_path             = os.path.join(output, file_name + img_id)
-            gt_save_path        = os.path.join(ge_path, img_id + "_gt.jpg")
-            pred_save_path      = os.path.join(ge_path, img_id + "_pred.jpg")
+            gt_save_path        = os.path.join(ge_path, img_id + "_gt.png")
+            pred_save_path      = os.path.join(ge_path, img_id + "_pred.png")
             
             
             if os.path.exists(ge_path) == False:

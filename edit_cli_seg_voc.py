@@ -1,35 +1,53 @@
-# Copyright (c) 2023, Yulu Gan
-# Licensed under the BSD 3-clause license (see LICENSE.txt)
-# ---------------------------------------------------------------------------------
-# ** Description **  Script for inferencing the depes task.
-# ---------------------------------------------------------------------------------
-# References:
-# Instruct-pix2pix: https://github.com/timothybrooks/instruct-pix2pix/blob/main/edit_cli.py
-# ---------------------------------------------------------------------------------
-
 from __future__ import annotations
 
 import math
 import random
 import sys
 import os
+import pdb
 import time
-from argparse import ArgumentParser
+from fnmatch import fnmatch
 from torchvision import transforms
+from argparse import ArgumentParser
+
 import einops
+import shutil
 import k_diffusion as K
 import numpy as np
 import torch
 import torch.nn as nn
+import cv2
 from einops import rearrange
 from omegaconf import OmegaConf
 from PIL import Image, ImageOps
-from evaluate.evaluate_cls_seg_det import genGT
 from torch import autocast
+from evaluate.evaluate_cls_seg_det import genGT, COLOR_VOC, CLASSES_VOC
 
 sys.path.append("./stable_diffusion")
 
 from stable_diffusion.ldm.util import instantiate_from_config
+
+
+def color_replace(img, color):
+    color = color[::-1]
+    img = cv2.imread(img)
+    lower = np.array(color)
+    upper = np.array(color)
+    mask = cv2.inRange(img, lower, upper)
+    img[mask > 0] = [255, 255, 255]
+    img[mask == 0] = [0, 0, 0]
+    return img
+
+
+def get_colors(image_path):
+    
+    img = cv2.imread(image_path)
+    b, g, r = cv2.split(img)
+    colors = set()
+    for i in range(img.shape[0]):
+        for j in range(img.shape[1]):
+            colors.add((r[i][j], g[i][j], b[i][j]))
+    return list(colors)
 
 
 class CFGDenoiser(nn.Module):
@@ -72,15 +90,14 @@ def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
     return model
 
 
-def inference_depes(resolution, steps, vae_ckpt, split, test_txt_path, config, eval,
+def inference_seg_voc(resolution, steps, vae_ckpt, split, config, eval, test_txt_path,
                   ckpt, input, output, edit, cfg_text, cfg_image, seed, task, rephrase):
     '''
     Modified by Yulu Gan
-    6th, March, 2022
+    March 31, 2022
     1. Support multiple images inference
     2. Make outputs' size are the closest as inputs
     '''
-
 
     resize = transforms.Resize((resolution,resolution))
     config = OmegaConf.load(config)
@@ -91,47 +108,48 @@ def inference_depes(resolution, steps, vae_ckpt, split, test_txt_path, config, e
     null_token = model.get_learned_conditioning([""])
 
     seed = random.randint(0, 100000) if seed is None else seed
-    
-    genGT(input, output, task, test_txt_path).generate_nyuv2_gt()
-    
-    with open(test_txt_path) as file:  
+    genGT(input, output, task, split).generate_voc_gt()
 
-        for line in file:
+    for line in open(os.path.join(input, split)):
+    
+        line = line.strip()
+        img_path_part = line.split(" ")[0]
+        gt_path_part  = line.split(" ")[1]
+        img_name    = img_path_part.split("/")[1].split(".")[0]
         
-            start = time.time()
+        img_path                     = os.path.join(input, img_path_part)
+        seg_path                     = os.path.join(input, gt_path_part)    
+        
+        colors = get_colors(seg_path)
+        for color in colors:
+            idx = COLOR_VOC.index(list(color))
+            if idx == 0 or idx == 21:
+                continue
+            cname = CLASSES_VOC[idx]
             
-            img_path_part   = line.strip().split(" ")[0] # kitchen/rgb_00045.jpg
-            
-            file_name       = img_path_part.split("/")[0] # kitchen
-            
-            img_name        = img_path_part.split("/")[1] # rgb_00045.jpg
-
-            img_id          = file_name + "_" + img_name.split(".")[0] # kitchen_rgb_00045
-            
-            dep_path_part = file_name + "/rgb_" + img_name.split("_")[-1] # kitchen_0028b/rgb_00045.jpg
-            dep_path      = os.path.join('data/nyu_mdet', dep_path_part)
-            
-            input_image = Image.open(dep_path).convert("RGB")
-            input_image = resize(input_image)
-            
-            width, height = input_image.size
-            factor = resolution / max(width, height)
-            factor = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
-            width = int((width * factor) // 64) * 64
-            height = int((height * factor) // 64) * 64
-            input_image = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
-            
-            prompts = edit
-            # prompts = prompts.replace("%", file_name)
-            print("prompts:", prompts)
-
-            if edit == "":
-                input_image.save(output)
-                return
-
+            img_name = seg_path.split(".")[0].split("/")[-1]
+            out_name = img_name + "_" + cname + "_" + "seg"
+            output_path = os.path.join(output, out_name)
+            pred_save_path = output_path + '/{}_pred.png'.format(out_name)
+        
+            prompts             = edit.replace("%", cname)
+            start               = time.time()
+        
             with torch.no_grad(), autocast("cuda"), model.ema_scope():
+                
+                input_image = Image.open(img_path).convert("RGB")
+                input_image = resize(input_image)
+
+                width, height = input_image.size
+                factor = resolution / max(width, height)
+                factor = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
+                width = int((width * factor) // 64) * 64
+                height = int((height * factor) // 64) * 64
+                input_image = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
+                
                 cond = {}
-                cond["c_crossattn"] = [model.get_learned_conditioning([prompts])]
+                
+                cond["c_crossattn"] = [model.get_learned_conditioning([prompts])] #modified: args.edit -> prompts
                 input_image = 2 * torch.tensor(np.array(input_image)).float() / 255 - 1
                 input_image = rearrange(input_image, "h w c -> 1 c h w").to(model.device)
                 cond["c_concat"] = [model.encode_first_stage(input_image).mode()]
@@ -155,13 +173,8 @@ def inference_depes(resolution, steps, vae_ckpt, split, test_txt_path, config, e
                 x = torch.clamp((x + 1.0) / 2.0, min=0.0, max=1.0)
                 x = 255.0 * rearrange(x, "1 c h w -> h w c")
                 edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
-            
-            output_path = os.path.join(output, img_id + "_" + task)
                 
-            if os.path.exists(output_path) == False:
-                os.makedirs(output_path)
-                    
-            edited_image.save(output_path+'/{}_{}_pred.png'.format(img_id, task))
+            edited_image.save(pred_save_path)
             
             end = time.time()
             
@@ -169,4 +182,4 @@ def inference_depes(resolution, steps, vae_ckpt, split, test_txt_path, config, e
 
 
 if __name__ == "__main__":
-    inference_depes()
+    inference_seg_voc()
