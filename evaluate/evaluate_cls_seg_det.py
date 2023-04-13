@@ -504,24 +504,28 @@ class genGT(object):
         Generate voc gt bbox.json and images with g.t. bboxes.
         '''
         
-        print('Begin to generate COCO ground truth: box.json and g.t img')
+        print('Begin to generate VOC ground truth: box.json and g.t img')
         
-        img_info, clses       = preproc_voc(self.dataset_root)
+        img_info, clses,img_id_map  = preproc_voc(self.dataset_root)
+        split_path                  = os.path.join(self.dataset_root,self.split)
         
-        for img_name in open(os.path.join(self.dataset_root,self.split)):
-        
-            img_name              = img_name.strip()
-            image_id              = img_name.split(".")[0] #000001234
-            id                    = image_id.lstrip("0") #1234
-            pdb.set_trace()
-            for cid in img_info[id]:
-                
+        for line in open(split_path):
+            line                    = line.strip()
+            img_name                = line.split(" ")[0].split("/")[1] #2007_000033.jpg
+            image_id                = img_name.split('.')[0]
+            id                      = img_id_map[img_name]          
+            
+            for cid in img_info[str(id)]:# img_info:0-1499
                 cname = clses[cid] #target_name  
-                bbox  = img_info[id][cid]['bbox']
+                bbox  = img_info[str(id)][cid]['bbox']
                 
                 # save det image
                 output_path = os.path.join(self.save_root, image_id + '_{}_det'.format(cname))
-                det_img, bbox = get_bbox_img(self.dataset_root, image_id, bbox, dataset='MSCOCO')
+                det_img, bbox = get_bbox_img(self.dataset_root, image_id, bbox, dataset='VOC')
+                
+                if os.path.exists(output_path) == False:
+                    os.makedirs(output_path)
+                    
                 det_img.save(os.path.join(output_path, "{}_{}_det_gt.jpg".format(image_id, cname)))
                 
                 # save g.t box.json
@@ -696,7 +700,7 @@ if __name__ == "__main__":
     parser.add_argument("--tasks", default=['seg', 'det'], nargs='+')
     
     args                             = parser.parse_args()
-    cls_iou, cls_ade_dict, cls_ap    = {}, {},{}
+    cls_iou, cls_ade_dict, cls_ap    = {}, {}, {}
     n                                = 0
     
     for i in range(len(CLASSES)):
@@ -706,7 +710,7 @@ if __name__ == "__main__":
     # calc acc
     # acc = evaluate_cls(args.cls_pred_root)
     
-    test_path = './outputs/imgs_test_ade20k_epoch20'
+    test_path = './outputs/imgs_test_ade20k'
     cls_iou = {}
     cls_ap = {}
     cate_bb = {}

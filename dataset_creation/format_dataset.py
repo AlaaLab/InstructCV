@@ -144,7 +144,6 @@ def get_seg_img(root, img_id):
 def get_bbox_img(root, img_id, bbox, dataset):
     
     if dataset == 'oxford-pets':
-        
         xml_file = os.path.join(root, './data/oxford-pets/annotations/xmls', '%s.xml' % img_id.replace('-', '_'))
         if os.path.exists(xml_file) == False:
             return None, bbox
@@ -168,7 +167,6 @@ def get_bbox_img(root, img_id, bbox, dataset):
         a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill='white', outline='white', width=1)
     
     elif dataset == 'MSCOCO':
-        
         img_path = os.path.join(root, 'train2017', '%s.jpg' % img_id)
 
         img = Image.open(img_path).convert("RGB")
@@ -181,8 +179,19 @@ def get_bbox_img(root, img_id, bbox, dataset):
         
         for box in bbox:
 
-            a.rectangle(((box[0], box[1]), (box[2], box[3])), fill=None, outline="red", width=4)
+            a.rectangle(((box[0], box[1]), (box[2], box[3])), fill=None, outline="red", width=5)
 
+        del a
+    
+    
+    elif dataset == 'VOC':
+        img_path = os.path.join(root, 'JPEGImages', '%s.jpg' % img_id)
+        img = Image.open(img_path).convert("RGB")
+        box_img = img.copy()
+        a = ImageDraw.ImageDraw(box_img)
+        for box in bbox:
+
+            a.rectangle(((box[0], box[1]), (box[2], box[3])), fill=None, outline="red", width=5)
         del a
 
     return box_img, bbox
@@ -210,7 +219,7 @@ def generate_sample(img, img_id, out_img, prompt, task_type):
 
     img.save(output_path+'/{}_{}_0.jpg'.format(img_id, task_type))
     # pdb.set_trace()
-    out_img.save(output_path + '/{}_{}_1.png'.format(img_id, task_type))
+    out_img.save(output_path + '/{}_{}_1.jpg'.format(img_id, task_type))
     
     seed = [img_id+'_{}'.format(task_type), [img_id+'_{}'.format(task_type)]]
 
@@ -310,7 +319,7 @@ def preproc_coco(root):
     
     print('begin to pre-process coco dataset...')
     clses                   = {}
-    coco_path               = os.path.join(root, 'annotations/instances_train2017.json')
+    coco_path               = os.path.join(root, 'annotations/instances_val2017.json')
     coco_fp                 = open(coco_path)
     anno_js                 = json.loads(coco_fp.readline())
 
@@ -348,15 +357,20 @@ def preproc_coco(root):
     return img_info, clses
 
 def preproc_voc(root):
+    '''
+    Return: 
+        -- img_info: dict. {'id':{'bbox':... , 'segmentation':...}}
+        -- clses: dict. all classes
+        -- img_id_map: dict. map relationship between id (1-1499) and img name 
+    '''
     
     print('begin to pre-process voc dataset...')
-    clses                   = {}
-    coco_path               = os.path.join(root, 'data/convert/coco/val.json')
-    coco_fp                 = open(coco_path)
-    anno_js                 = json.loads(coco_fp.readline())
+    clses, img_id_map       = {},{}
+    voc_path                = os.path.join(root, 'data/val.json')
+    voc_fp                  = open(voc_path)
+    anno_js                 = json.loads(voc_fp.readline())
 
     for cate in anno_js['categories']:
-        
         cid                 = cate['id']
         cname               = cate['name']
         clses[cid]          = cname
@@ -364,7 +378,12 @@ def preproc_voc(root):
 
     for key in anno_js:
         print(key)
-
+    
+    for item in anno_js['images']:
+        iid                 = item['id']
+        fname               = item['file_name']
+        img_id_map[fname]   = iid
+        
     img_info = {}
     coco_anno = anno_js['annotations']
 
@@ -386,7 +405,7 @@ def preproc_voc(root):
         if iscrowd == 0:
             img_info[image_id][cid]['segmentation'].append(segmentation)
 
-    return img_info, clses
+    return img_info, clses, img_id_map
 
 def proc_coco(coco_root, tasks):
     
@@ -396,21 +415,21 @@ def proc_coco(coco_root, tasks):
     n = 0
     img_info, clses = preproc_coco(coco_root)
     
-    #split process ------------------------------
+    #----------------split process----------------
     image_list=[]
     for image_id in img_info:
         image_list.append(image_id)
     image_list = sorted(image_list)
     print("len(image_list)", len(image_list))
-    # image_list = image_list[0:20000]
+    image_list = image_list[0:20000]
     # image_list = image_list[20000:40000]
     # image_list = image_list[40000:60000]
     # image_list = image_list[60000:80000]
-    image_list = image_list[80000:100000]
+    # image_list = image_list[80000:100000]
     # image_list = image_list[100000:len(image_list)]
-    
     for image_id in image_list:
-    #--------------------------------------------
+    #----------------split process----------------
+    
     ## origin
     # for image_id in img_info:
         
@@ -644,7 +663,6 @@ def proc_adechan2016(ade_root, cls_ade_dict):
         anno = np.array(anno)
         
         clses = np.unique(anno)
-        # pdb.set_trace()
         
         for cls in clses: # e.g., cls=1
             img = Image.open(img_path).convert('RGB') #original image
@@ -741,18 +759,18 @@ if __name__ == "__main__":
     
     # get colors for cls
     colors                                      = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 
-                                   'purple':(128,0,128), 'white':(255,255,255), 'black':(0, 0, 0),
-                                   'AliceBlue':(240,248,255), 'Aqua': (0,206,209), 'Peru':(205, 133, 63),
-                                   'Brown':(165,42,42), 'DarkGray':(169,169,169), 'Gold':(255,215,0),
-                                   'Violet':(238,130,238), 'SlateBlue':(230,230,250), 'Orange':(255,128,0),
-                                   'Maroon':(128,0,0), 'LightSlateGray':(119,136,153), 'Indigo':(75,0,130),
-                                   'DarkKhaki':(189,183,107), 'Coral':(255,127,80),'RosyBrown':(188,143,143),
-                                   'LightSalmon':(255,160,122), 'Azure':(240,255,255),'Beige':(245,245,220),
-                                   'CadetBlue':(95,158,160),'DarkBlue':(0,0,139),'Firebrick':(178,34,34),
-                                   'Silver':(192,192,192),'YellowGreen':(154,205,50),'LightPink':(255,182,193),
-                                   'Snow':(255,250,250),'Sienna':(160,82,45),'Salmon':(250,128,114),
-                                   'PowderBlue':(176,224,230),'PeachPuff':(255,218,155),'DarkRed':(139,0,0),
-                                   'Olive':(128,128,0)}
+                                                    'purple':(128,0,128), 'white':(255,255,255), 'black':(0, 0, 0),
+                                                    'AliceBlue':(240,248,255), 'Aqua': (0,206,209), 'Peru':(205, 133, 63),
+                                                    'Brown':(165,42,42), 'DarkGray':(169,169,169), 'Gold':(255,215,0),
+                                                    'Violet':(238,130,238), 'SlateBlue':(230,230,250), 'Orange':(255,128,0),
+                                                    'Maroon':(128,0,0), 'LightSlateGray':(119,136,153), 'Indigo':(75,0,130),
+                                                    'DarkKhaki':(189,183,107), 'Coral':(255,127,80),'RosyBrown':(188,143,143),
+                                                    'LightSalmon':(255,160,122), 'Azure':(240,255,255),'Beige':(245,245,220),
+                                                    'CadetBlue':(95,158,160),'DarkBlue':(0,0,139),'Firebrick':(178,34,34),
+                                                    'Silver':(192,192,192),'YellowGreen':(154,205,50),'LightPink':(255,182,193),
+                                                    'Snow':(255,250,250),'Sienna':(160,82,45),'Salmon':(250,128,114),
+                                                    'PowderBlue':(176,224,230),'PeachPuff':(255,218,155),'DarkRed':(139,0,0),
+                                                    'Olive':(128,128,0)}
     lcolor                                      = list(colors.keys())
 
     
@@ -793,7 +811,7 @@ if __name__ == "__main__":
 
     #     target_name = ' '.join(img_id.split('_')[:-1]).strip()
     #     clses[cls_label] = target_name #store target_name and cls_label
-    tasks = ['seg']
+    tasks = ['det']
     
     if fnmatch(args.dataset, "coco"):
         proc_coco(args.coco_root, tasks)

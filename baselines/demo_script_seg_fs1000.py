@@ -31,7 +31,7 @@ def main():
   save_root                 = "/lustre/grp/gyqlab/lism/brt/language-vision-interface/outputs/imgs_test_fs1000_bsln"
   task                      = "fs_seg"
   
-  for file_path in open(os.path.join(fs1000_root,"test_part0.txt")):# neck_brace/10.jpg
+  for file_path in open(os.path.join(fs1000_root,"test_part9.txt")):# neck_brace/10.jpg
       
       file_path               = file_path.strip()
       img_name                = file_path.split("/")[1]
@@ -45,42 +45,48 @@ def main():
       if os.path.exists(ge_path) == False:
           os.makedirs(ge_path)
         
-      if fnmatch(file_path, "*jpg"):
+      # if fnmatch(file_path, "*jpg"):
   
-          img_path = os.path.join(fs1000_root, file_path)
-        
+      #     img_path = os.path.join(fs1000_root, file_path)
+      import pdb; pdb.set_trace()
       if fnmatch(file_path, "*png"):
             
           shutil.copy(os.path.join(fs1000_root, file_path), gt_save_path)
           continue
 
-      prompts             = "What is the segmentation of \"*\" ?"
-      cname               = cls_name.replace("_"," ")
-      prompts             = prompts.replace("*", cname)
-      print("prompt:", prompts)
-      start               = time.time()
+      # prompts             = "What is the segmentation of \"*\" ?"
+      # cname               = cls_name.replace("_"," ")
+      # prompts             = prompts.replace("*", cname)
+      # print("prompt:", prompts)
+      # start               = time.time()
       
-      with Image.open(img_path) as img:
-          image = np.array(img.convert('RGB'))
+      # with Image.open(img_path) as img:
+      #     image = np.array(img.convert('RGB'))
 
-        # out = model.run([image], [prompts], 
-        #           output_text_len=1, generate_image=True, num_decodes=None)
-        # depth_image = out["mask"][0]
+      #   # out = model.run([image], [prompts], 
+      #   #           output_text_len=1, generate_image=True, num_decodes=None)
+      #   # depth_image = out["mask"][0]
         
-          out   = model.object_segmentation(image, cname)
-          depth_image = np.expand_dims(np.stack(out["mask"]), -1)
-          depth_image = depth_image[0].squeeze()
+      #     out   = model.object_segmentation(image, cname)
+          
+      #     if len(out["mask"]) == 0 or out["mask"] is []:
+      #       img = np.zeros((256, 256, 3), np.uint8)
+      #       cv2.imwrite(pred_save_path, img)
+      #       continue
+          
+      #     depth_image = np.expand_dims(np.stack(out["mask"]), -1)
+      #     depth_image = depth_image[0].squeeze()
       
-          print("type:",type(depth_image))
-          print("shape:",len(depth_image.shape))
+      #     print("type:",type(depth_image))
+      #     print("shape:",len(depth_image.shape))
           
-          depth_image = Image.fromarray(depth_image)
-          depth_image.save(pred_save_path)
-          # cv2.imwrite(pred_save_path, depth_image)
+      #     depth_image = Image.fromarray(depth_image)
+      #     depth_image.save(pred_save_path)
+      #     # cv2.imwrite(pred_save_path, depth_image)
 
-          end = time.time()
+      #     end = time.time()
           
-          print("one image done, cost time:{}".format(end - start))
+      #     print("one image done, cost time:{}".format(end - start))
 
 
 if __name__ == "__main__":
