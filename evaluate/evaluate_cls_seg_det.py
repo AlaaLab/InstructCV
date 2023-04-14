@@ -83,7 +83,9 @@ def cal_bboxes_iou(test_path, src_ann_item, src_pred_item, ann_bbox_item, pred_b
                 # if len(pred_bboxes[j]) == 5:# add those are confident to be a rectangle
                 #     pred_bboxes_.append(pred_bboxes[iou_dict[0][0]])
                 #     continue
-            
+                if len(pred_bboxes[j]) == 0:
+                    continue
+
                 xmin2, ymin2, xmax2, ymax2 = pred_bboxes[j]
 
                 # Get the coordinates of the vertex of the intersection of rectangular boxes (intersection)
@@ -109,7 +111,7 @@ def cal_bboxes_iou(test_path, src_ann_item, src_pred_item, ann_bbox_item, pred_b
                 json_results['pred_bbox'] = pred_bboxes_
                 json.dump(json_results,open(os.path.join(test_path, det_p, "pred_bbox2.json"),'w'))
                 continue
-            if iou_dict[0][1] > 0.5:
+            if iou_dict[0][1] > 0.2:
                 pred_bboxes_.append(pred_bboxes[int(iou_dict[0][0])])
             json_results = {}
             json_results['pred_bbox'] = pred_bboxes_
@@ -525,7 +527,7 @@ class genGT(object):
                 
                 if os.path.exists(output_path) == False:
                     os.makedirs(output_path)
-                    
+
                 det_img.save(os.path.join(output_path, "{}_{}_det_gt.jpg".format(image_id, cname)))
                 
                 # save g.t box.json

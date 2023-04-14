@@ -18,7 +18,7 @@ import time
 class postDet(object):
     
     def __init__(self, root = './data/coco',
-                 pred_root='./outputs/imgs_test_coco', vis=True):
+                 pred_root='./outputs/imgs_test_coco_new2', vis=True):
         
         self.root           = root
         self.pred_root      = pred_root
@@ -128,6 +128,7 @@ class postDet(object):
     def ext_coor(self, img_path):
 
         print("img_path", img_path)
+        img_name = img_path.split('_')[-2]
         img = cv2.imread(img_path)
         hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
         low_hsv = np.array([0,90,90 ])
@@ -187,11 +188,15 @@ class postDet(object):
             return [], img
         
         for i in range(len(point_new)):
-            cv2.rectangle(img_vis, (point_new[i][1], point_new[i][0]), (point_new[i][3], point_new[i][2]), (255, 0, 255), 3)
-            bbox = [int(point_new[i][1]),
-                    int(point_new[i][0]),
-                    int(point_new[i][3]),
-                    int(point_new[i][2])]
+            xx1 = point_new[i][1]
+            yy1 = point_new[i][0]
+            xx2 = point_new[i][3]
+            yy2 = point_new[i][2]
+            cv2.rectangle(img_vis, (xx1, yy1), (xx2, yy2), (0, 255, 0), 2)
+            
+            bbox = [int(xx1),int(yy1),int(xx2),int(yy2)]
+            cv2.putText(img_vis, img_name, (xx1 + 10, yy1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+
 
         return bbox, img_vis
     
@@ -205,9 +210,11 @@ class postDet(object):
         '''
         
         file_list                           = os.listdir(self.pred_root)
+        file_list                           = sorted(file_list)
+        print("len(file_list)", len(file_list)) #12808
         n                                   = 0
         
-        for file in file_list:
+        for file in file_list[0:2000]:
             
             file_path                       = os.path.join(self.pred_root, file)
             
@@ -216,11 +223,10 @@ class postDet(object):
             for img in img_list:
                 
                 # # resume
-                # if args.resume:
-                #     file_                       = file + "+exc.jpg"
-                #     print("pass,{}".format(file_))
-                #     if file_ in img_list:
-                #         continue
+                file_                       = file + "_exc.jpg"
+                if file_ in img_list:
+                    print("pass,{}".format(file_))
+                    continue
                 
                 
                 if fnmatch(img, "*pred.jpg"):

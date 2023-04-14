@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -o %j.out
 #SBATCH --gres=gpu:1
-#SBATCH -p gpu31
+#SBATCH -p gpu32
 #SBATCH --qos=normal
 #SBATCH -J test
 #SBATCH --nodes=1 
@@ -38,16 +38,16 @@
 # python edit_cli.py --resolution 256 --ckpt logs/train_all100kdata_add_coco_pet_seg/checkpoints/epoch=000015.ckpt --input data/nyu_mdet/ --output "outputs/imgs_test_nyuv2" --edit "Estimate the depth of this image" --task depes
 
 ## for ade20k
-CUDA_VISIBLE_DEVICES=4 python edit_cli.py --resolution 256 --split "test_part3.txt" --ckpt logs/train_all100kdata_add_coco_pet_seg/checkpoints/epoch=000038.ckpt --input /lustre/grp/gyqlab/lism/brt/language-vision-interface/data/ADEChallengeData2016/ --output outputs/imgs_test_ade20k/ --edit "segment the %" --task seg
+# CUDA_VISIBLE_DEVICES=4 python edit_cli.py --resolution 256 --split "test_part3.txt" --ckpt logs/train_all100kdata_add_coco_pet_seg/checkpoints/epoch=000038.ckpt --input /lustre/grp/gyqlab/lism/brt/language-vision-interface/data/ADEChallengeData2016/ --output outputs/imgs_test_ade20k/ --edit "segment the %" --task seg
 
 ## for voc seg
-CUDA_VISIBLE_DEVICES=2 python edit_cli.py --resolution 256 --split "val_part5.txt" --ckpt logs/train_all100kdata_add_coco_pet_seg/checkpoints/epoch=000038.ckpt --input /lustre/grp/gyqlab/lism/brt/language-vision-interface/data/VOCdevkit/VOC2012 --output outputs/imgs_test_voc  --edit "segment the %" --task voc_seg
+# CUDA_VISIBLE_DEVICES=2 python edit_cli.py --resolution 256 --split "val_part5.txt" --ckpt logs/train_all100kdata_add_coco_pet_seg/checkpoints/epoch=000038.ckpt --input /lustre/grp/gyqlab/lism/brt/language-vision-interface/data/VOCdevkit/VOC2012 --output outputs/imgs_test_voc  --edit "segment the %" --task voc_seg
 
 ## for voc det
 # python edit_cli.py --resolution 256 --split "val_part0.txt" --ckpt logs/train_all100kdata_add_coco_pet_seg/checkpoints/epoch=000030_.ckpt --input /lustre/grp/gyqlab/lism/brt/language-vision-interface/data/VOCdevkit/VOC2012 --output outputs/imgs_test_voc_det  --edit "detect the %" --task voc_det
 
 # for coco
-# CUDA_VISIBLE_DEVICES=7 python edit_cli.py --resolution 256 --split "test_part0.txt" --ckpt logs/train_all100kdata_add_coco_pet_seg/checkpoints/epoch=000038.ckpt --input data/coco --output ./outputs/imgs_test_coco_new/ --edit "detect the %" --task det
+python edit_cli.py --resolution 512 --split "test_part8.txt" --ckpt logs/train_all100kdata_add_coco_pet_seg/checkpoints/epoch=000030_.ckpt --input data/coco --output ./outputs/imgs_test_coco_new2/ --edit "detect the %" --task det
 
 # for unified-io 
 # CUDA_VISIBLE_DEVICES=0 python baselines/unified-io-inference/demo_script.py

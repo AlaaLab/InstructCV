@@ -13,7 +13,7 @@ import numpy as np
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 import sys
-# print(sys.path)
+sys.path.append("./")
 from evaluate.evaluate_cls_seg_det import cal_bboxes_iou
 from dataset_creation.format_dataset import CLASSES_COCO
 #can determine which CLASSES to test AR for by adjusting classes_coco

@@ -179,7 +179,7 @@ def get_bbox_img(root, img_id, bbox, dataset):
         
         for box in bbox:
 
-            a.rectangle(((box[0], box[1]), (box[2], box[3])), fill=None, outline="red", width=5)
+            a.rectangle(((box[0], box[1]), (box[2], box[3])), fill=None, outline="blue", width=4)
 
         del a
     
@@ -319,7 +319,7 @@ def preproc_coco(root):
     
     print('begin to pre-process coco dataset...')
     clses                   = {}
-    coco_path               = os.path.join(root, 'annotations/instances_val2017.json')
+    coco_path               = os.path.join(root, 'annotations/instances_train2017.json')
     coco_fp                 = open(coco_path)
     anno_js                 = json.loads(coco_fp.readline())
 

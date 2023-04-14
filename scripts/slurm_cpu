@@ -1,11 +1,2 @@
-#!/bin/bash
-#SBATCH -o %j.out
-#SBATCH --gres=gpu:1
-#SBATCH -p gpu31
-#SBATCH --qos=normal
-#SBATCH -J test
-#SBATCH -n 32
-#SBATCH --nodes=1 
-#SBATCH -t 120:00:00
-#source activate esmfold
+sleep 3h
 python evaluate/postproc_det2.py
