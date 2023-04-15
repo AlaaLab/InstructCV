@@ -92,7 +92,7 @@ def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
     return model
 
 
-def inference_seg_fs1000(resolution, steps, vae_ckpt, split, config, eval,
+def inference_seg_fs1000(resolution, steps, vae_ckpt, split, config, eval, test_txt_path,
                   ckpt, input, output, edit, cfg_text, cfg_image, seed, task, rephrase):
     '''
     Modified by Yulu Gan
@@ -133,15 +133,16 @@ def inference_seg_fs1000(resolution, steps, vae_ckpt, split, config, eval,
             if fnmatch(img_name, "*.jpg"):
         
                 img_path = os.path.join(file_path, img_name)
+                print("img_path", img_path)
                 
             if fnmatch(img_name, "*.png"):
                 
-                shutil.copy(os.path.join(file_path, img_name), gt_save_path)
-                print("one done")
+                # shutil.copy(os.path.join(file_path, img_name), gt_save_path)
+                # print("one done")
                 continue
             
-            if os.path.exists(ge_path) == True:
-                continue
+            # if os.path.exists(ge_path) == True:
+            #     continue
             
             if fnmatch(file_name, "*_*"):
                 cname               = file_name.split("_")[-1]

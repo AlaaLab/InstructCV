@@ -106,14 +106,12 @@ def inference_det_voc(resolution, steps, vae_ckpt, split, config, test_txt_path,
         id                      = img_id_map[img_name]  
         
         for cid in img_info[str(id)]:# img_info:0-1499
+            start = time.time()
             cname = clses[cid] #target_name  
             bbox  = img_info[str(id)][cid]['bbox']
             
             output_path = os.path.join(output, image_id + '_{}_det'.format(cname))
-            img_path    = os.path.join(input, 'JPEGImage', img_name)
-            
-            print("img_path:", img_path)
-            pdb.set_trace()
+            img_path    = os.path.join(input, 'JPEGImages', img_name)
             
             input_image         = Image.open(img_path).convert("RGB")
             input_image         = resize(input_image)
@@ -127,8 +125,6 @@ def inference_det_voc(resolution, steps, vae_ckpt, split, config, test_txt_path,
 
             prompts             = edit
             prompts             = prompts.replace("%", cname)
-            print("prompts:", prompts)
-            pdb.set_trace()
             
             if edit == "":
                 input_image.save(output)
@@ -165,6 +161,7 @@ def inference_det_voc(resolution, steps, vae_ckpt, split, config, test_txt_path,
             if os.path.exists(output_path) == False:
                 os.makedirs(output_path)
 
+            print(output_path)
             edited_image.save(output_path+'/{}_{}_pred.jpg'.format(image_id + "_" + cname, task))
 
             end = time.time()

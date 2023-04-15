@@ -167,7 +167,7 @@ def get_bbox_img(root, img_id, bbox, dataset):
         a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill='white', outline='white', width=1)
     
     elif dataset == 'MSCOCO':
-        img_path = os.path.join(root, 'train2017', '%s.jpg' % img_id)
+        img_path = os.path.join(root, 'val2017', '%s.jpg' % img_id)
 
         img = Image.open(img_path).convert("RGB")
         # box_img = Image.new('RGB', img.size, (0,0,0))
@@ -179,7 +179,7 @@ def get_bbox_img(root, img_id, bbox, dataset):
         
         for box in bbox:
 
-            a.rectangle(((box[0], box[1]), (box[2], box[3])), fill=None, outline="blue", width=4)
+            a.rectangle(((box[0], box[1]), (box[2], box[3])), fill=None, outline="red", width=4)
 
         del a
     
@@ -319,7 +319,7 @@ def preproc_coco(root):
     
     print('begin to pre-process coco dataset...')
     clses                   = {}
-    coco_path               = os.path.join(root, 'annotations/instances_train2017.json')
+    coco_path               = os.path.join(root, 'annotations/instances_val2017.json')
     coco_fp                 = open(coco_path)
     anno_js                 = json.loads(coco_fp.readline())
 
@@ -416,29 +416,29 @@ def proc_coco(coco_root, tasks):
     img_info, clses = preproc_coco(coco_root)
     
     #----------------split process----------------
-    image_list=[]
-    for image_id in img_info:
-        image_list.append(image_id)
-    image_list = sorted(image_list)
-    print("len(image_list)", len(image_list))
-    image_list = image_list[0:20000]
+    # image_list=[]
+    # for image_id in img_info:
+    #     image_list.append(image_id)
+    # image_list = sorted(image_list)
+    # print("len(image_list)", len(image_list))
+    # image_list = image_list[0:20000]
     # image_list = image_list[20000:40000]
     # image_list = image_list[40000:60000]
     # image_list = image_list[60000:80000]
-    # image_list = image_list[80000:100000]
+    # image_list = image_list[95000:100000]
     # image_list = image_list[100000:len(image_list)]
-    for image_id in image_list:
+    # for image_id in image_list:
     #----------------split process----------------
     
     ## origin
-    # for image_id in img_info:
+    for image_id in img_info:
         
         for cid in img_info[image_id]:
             
             cname = clses[cid] #target_name
             
             img_id = image_id.zfill(12)
-            img_path = os.path.join(coco_root, 'train2017/{}.jpg'.format(img_id))
+            img_path = os.path.join(coco_root, 'val2017/{}.jpg'.format(img_id))
             img = Image.open(img_path).convert("RGB")
             #print(box, [box[0], box[1], box[0]+box[2], box[1]+box[3]])
             
