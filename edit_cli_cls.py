@@ -64,7 +64,7 @@ def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
     return model
 
 
-def inference_cls(resolution, steps, vae_ckpt, split, config, eval,
+def inference_cls(resolution, steps, vae_ckpt, split, config, eval, test_txt_path,
                   ckpt, input, output, edit, cfg_text, cfg_image, seed, task, rephrase):
     '''
     Modified by Yulu Gan
@@ -83,16 +83,15 @@ def inference_cls(resolution, steps, vae_ckpt, split, config, eval,
 
     seed = random.randint(0, 100000) if seed is None else seed
     
-    for line in open('data/oxford-pets/annotations/test.txt'):
+    img_list = os.listdir(input)
+    for img_name in img_list:
         
         start = time.time()
+
+        img_id = img_name.split(".")[0]
+        target_name = 'person'
         
-        line = line.strip()
-        words = line.split(' ')
-        img_id = words[0] #Abyssinian_201
-        target_name = ' '.join(img_id.split('_')[:-1]).strip() #Abyssinian
-        
-        img_path = os.path.join(input, '%s.jpg' % img_id)
+        img_path = os.path.join(input, img_name)
         input_image = Image.open(img_path).convert("RGB")
         input_image = resize(input_image)
         

@@ -23,7 +23,7 @@
 # python edit_cli.py --input data/ade20k/images/ADE/training/cultural/apse__indoor/ADE_train_00001472.jpg --output imgs/ADE_train_00001472_seg.jpeg --edit "segment the person"
 
 ## for cls:
-# python edit_cli_cls.py --input /lustre/grp/gyqlab/lism/brt/language-vision-interface/data/oxford-pets/images --output /lustre/grp/gyqlab/lism/brt/language-vision-interface/imgs_test_oxford_pets/ --edit "show the corresponding color of this %"
+python edit_cli.py --ckpt /fsx/proj-lvi/language-vision-interface/logs/train_coco_cls_seg_det_cls/checkpoints/epoch=000005.ckpt --resolution 256 --input outputs/test_img --output outputs/img_test_cls --edit "Show white if the picture has %, otherwise show black" --task cls
 
 ## for depth estimation
 # python edit_cli_depes.py --input /lustre/grp/gyqlab/lism/brt/language-vision-interface/data/nyuv2/basement_0001a --output imgs_test_nyuv2/ --edit "Assess the image's depth by looking for visual cues and making an estimation."
