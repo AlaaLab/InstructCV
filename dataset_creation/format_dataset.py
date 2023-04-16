@@ -196,11 +196,11 @@ def get_bbox_img(root, img_id, bbox, dataset):
 
     return box_img, bbox
 
-def get_class_img(img, target_name, cls_label, color, is_pos):
+def get_class_img(img, target_name, color, is_pos):
     if is_pos:
         cls_img = Image.new('RGB', img.size, color)
     else:
-        cls_img = Image.new('RGB', img.size, (0,0,0))
+        cls_img = Image.new('RGB', img.size, color)
     return cls_img
 
 def generate_sample(img, img_id, out_img, prompt, task_type):
@@ -216,7 +216,8 @@ def generate_sample(img, img_id, out_img, prompt, task_type):
 
     if os.path.exists(output_path) == False:
         os.mkdir(output_path)
-
+    if img is None or out_img is None or prompt is None:
+        print("------erro-----")
     img.save(output_path+'/{}_{}_0.jpg'.format(img_id, task_type))
     # pdb.set_trace()
     out_img.save(output_path + '/{}_{}_1.jpg'.format(img_id, task_type))
@@ -411,36 +412,41 @@ def proc_coco(coco_root, tasks):
     
     print('begin to process coco dataset...')
     
-    seeds = []
-    n = 0
+    seeds           = []
+    n               = 0
     img_info, clses = preproc_coco(coco_root)
     
     #----------------split process----------------
-    # image_list=[]
-    # for image_id in img_info:
-    #     image_list.append(image_id)
-    # image_list = sorted(image_list)
-    # print("len(image_list)", len(image_list))
-    # image_list = image_list[0:20000]
-    # image_list = image_list[20000:40000]
-    # image_list = image_list[40000:60000]
-    # image_list = image_list[60000:80000]
-    # image_list = image_list[95000:100000]
+    image_list=[]
+    for image_id in img_info:
+        image_list.append(image_id)
+    image_list = sorted(image_list)
+    print("len(image_list)", len(image_list))
+    # image_list = image_list[0:1000]
+    # image_list = image_list[1000:2000]
+    # image_list = image_list[2000:3000]
+    # image_list = image_list[3000:4000]
+    image_list = image_list[4000:len(image_list)]
     # image_list = image_list[100000:len(image_list)]
-    # for image_id in image_list:
+    for image_id in image_list:
     #----------------split process----------------
     
     ## origin
-    for image_id in img_info:
+    # for image_id in img_info:#image_id:355677
         
         for cid in img_info[image_id]:
             
-            cname = clses[cid] #target_name
+            cname               = clses[cid] #target_name
+            cname_id            = list(img_info[str(image_id)].keys())
+            ncls_perimg         = [] # store g.t class names
             
-            img_id = image_id.zfill(12)
-            img_path = os.path.join(coco_root, 'val2017/{}.jpg'.format(img_id))
-            img = Image.open(img_path).convert("RGB")
-            #print(box, [box[0], box[1], box[0]+box[2], box[1]+box[3]])
+            for i in cname_id:
+                cname           = clses[i]
+                ncls_perimg.append(cname)
+            
+            img_id              = image_id.zfill(12) #000000355677
+            img_path            = os.path.join(coco_root, 'val2017/{}.jpg'.format(img_id))
+            img                 = Image.open(img_path).convert("RGB")
             
             for task in tasks:
                 
@@ -473,26 +479,42 @@ def proc_coco(coco_root, tasks):
                         
                     
                 elif task == 'cls':
-                    c = random.choice(lcolor)
-                    color = colors[c]
-                    cls_img = get_class_img(img, cname, cid+pet_cls_num, color, is_pos=True)
-            
-                    # prompt = {'edit': 'show {} if the picture has {}, otherwise show black'.format(c, cname)}
-                    prompt  = get_cls_prompt(c, cname)
-            
-                    seed = generate_sample(img, img_id, cls_img, prompt, task_type='cls_{}_pos'.format(cname))
-                    seeds.append(seed)
-                    for cls in clses:
-                        if cls == cls_label:
+                    ## origin
+                    # c = random.choice(lcolor)
+                    # color = colors[c]
+                    
+                    ##modified postive
+                    c     = 'white'
+                    color = (255,255,255)
+                    for cls_name in ncls_perimg:
+                        
+                        cls_img = get_class_img(img, cls_name, color, is_pos=True)
+                
+                        prompt  = get_cls_prompt(c, cls_name)
+                
+                        seed = generate_sample(img, img_id, cls_img, prompt, task_type='cls_{}_pos'.format(cls_name))
+                        seeds.append(seed)
+                    
+                    ## negative
+                    for nname in CLASSES_COCO:
+                        if nname in ncls_perimg:
+                            # print("it is a posible sample:{}".format(nname))
                             continue
+                        
                         if random.random() > neg_sample_rate:
                             continue
-                        nname = clses[cls]
-                        c = random.choice(lcolor)
-                        color = colors[c]
-                        output_img = get_class_img(img, nname, cls_label, color, is_pos=False)
-                
-                        # prompt = {'edit': 'show {} if the picture has {}, otherwise show black'.format(c, nname)}
+                        
+                        # print("it is a negative sample:{}".format(nname))
+                        
+                        ##origin
+                        # c = random.choice(lcolor)
+                        # color = colors[c]
+                        
+                        ##modified
+                        color = (0,0,0)
+                        
+                        output_img = get_class_img(img, nname, color, is_pos=False)
+
                         prompt  = get_cls_prompt(c, nname)
                         
                         seed = generate_sample(img, img_id, output_img, prompt, task_type='cls_{}_neg_{}'.format(cname, nname))
@@ -506,7 +528,6 @@ def proc_coco(coco_root, tasks):
                             cv2.fillPoly(gt, s.astype(np.int32)[np.newaxis, :, :], (255, 255, 255))
 
                     prompt = {'edit': 'segment the {}'.format(cname)}
-                    # prompt  = get_seg_prompt(cname)
                     
                     seg_img = Image.fromarray(cv2.cvtColor(gt,cv2.COLOR_BGR2RGB)).convert("RGB")
                     seed = generate_sample(img, img_id, seg_img, prompt, task_type='seg_{}'.format(cname))
@@ -749,7 +770,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     cls_ade_dict, pet_to_color, clses           = {}, {}, {}
-    neg_sample_rate                             = 0 # for cls. 0 means no negtive sample
+    neg_sample_rate                             = 0.08 # for cls. 0 means no negtive sample
     num_seg, num_det, num_dep_est               = 0, 0, 0
     seg_prompts, det_prompts, dep_est_prompts   = {}, {}, {}
     
@@ -758,19 +779,21 @@ if __name__ == "__main__":
         cls_ade_dict[i]                         = CLASSES[i]
     
     # get colors for cls
-    colors                                      = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 
-                                                    'purple':(128,0,128), 'white':(255,255,255), 'black':(0, 0, 0),
-                                                    'AliceBlue':(240,248,255), 'Aqua': (0,206,209), 'Peru':(205, 133, 63),
-                                                    'Brown':(165,42,42), 'DarkGray':(169,169,169), 'Gold':(255,215,0),
-                                                    'Violet':(238,130,238), 'SlateBlue':(230,230,250), 'Orange':(255,128,0),
-                                                    'Maroon':(128,0,0), 'LightSlateGray':(119,136,153), 'Indigo':(75,0,130),
-                                                    'DarkKhaki':(189,183,107), 'Coral':(255,127,80),'RosyBrown':(188,143,143),
-                                                    'LightSalmon':(255,160,122), 'Azure':(240,255,255),'Beige':(245,245,220),
-                                                    'CadetBlue':(95,158,160),'DarkBlue':(0,0,139),'Firebrick':(178,34,34),
-                                                    'Silver':(192,192,192),'YellowGreen':(154,205,50),'LightPink':(255,182,193),
-                                                    'Snow':(255,250,250),'Sienna':(160,82,45),'Salmon':(250,128,114),
-                                                    'PowderBlue':(176,224,230),'PeachPuff':(255,218,155),'DarkRed':(139,0,0),
-                                                    'Olive':(128,128,0)}
+    # colors                                      = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 
+    #                                                 'purple':(128,0,128), 'white':(255,255,255), 'black':(0, 0, 0),
+    #                                                 'AliceBlue':(240,248,255), 'Aqua': (0,206,209), 'Peru':(205, 133, 63),
+    #                                                 'Brown':(165,42,42), 'DarkGray':(169,169,169), 'Gold':(255,215,0),
+    #                                                 'Violet':(238,130,238), 'SlateBlue':(230,230,250), 'Orange':(255,128,0),
+    #                                                 'Maroon':(128,0,0), 'LightSlateGray':(119,136,153), 'Indigo':(75,0,130),
+    #                                                 'DarkKhaki':(189,183,107), 'Coral':(255,127,80),'RosyBrown':(188,143,143),
+    #                                                 'LightSalmon':(255,160,122), 'Azure':(240,255,255),'Beige':(245,245,220),
+    #                                                 'CadetBlue':(95,158,160),'DarkBlue':(0,0,139),'Firebrick':(178,34,34),
+    #                                                 'Silver':(192,192,192),'YellowGreen':(154,205,50),'LightPink':(255,182,193),
+    #                                                 'Snow':(255,250,250),'Sienna':(160,82,45),'Salmon':(250,128,114),
+    #                                                 'PowderBlue':(176,224,230),'PeachPuff':(255,218,155),'DarkRed':(139,0,0),
+    #                                                 'Olive':(128,128,0)}
+    colors                                      = {'white': (255, 0, 0)}
+    
     lcolor                                      = list(colors.keys())
 
     
@@ -811,7 +834,7 @@ if __name__ == "__main__":
 
     #     target_name = ' '.join(img_id.split('_')[:-1]).strip()
     #     clses[cls_label] = target_name #store target_name and cls_label
-    tasks = ['det']
+    tasks = ['cls']
     
     if fnmatch(args.dataset, "coco"):
         proc_coco(args.coco_root, tasks)

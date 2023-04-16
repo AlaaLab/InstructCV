@@ -1,2 +1,10 @@
-sleep 3h
-python evaluate/postproc_det2.py
+#!/bin/bash
+#SBATCH -o %j.out
+#SBATCH -A synth-derm
+#SBATCH --gres=gpu:1
+#SBATCH -p g40
+#SBATCH --qos=normal
+#SBATCH -J test
+#SBATCH --nodes=1
+#SBATCH -t 48:00:00
+python ./dataset_creation/format_dataset.py --dataset ./coco --save_root ./images_pairs
