@@ -47,30 +47,44 @@ CLASSES = (
         'clock', 'flag')
 
 #for coco
-CLASSES_COCO = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant',
-               'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe',
-               'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat',
-               'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
-               'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant',
-               'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink',
-               'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush')
+CLASSES_COCO = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',#6
+               'train', 'truck', 'boat', 'traffic light', 'fire hydrant',#11
+               'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog',#17
+               'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe',#24
+               'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee',#30
+               'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat',#35
+               'baseball glove', 'skateboard', 'surfboard', 'tennis racket',#39
+               'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',#46
+               'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot',#52
+               'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch',#58
+               'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop',#64
+               'mouse', 'remote', 'keyboard', 'cell phone', 'microwave',#69
+               'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock',#75
+               'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush')#80
 
-Pet_CLASSES = ('Abyssinian', 'american bulldog', 'american pit bull terrier', 'basset hound', 'beagle','Bengal',
-               'Birman', 'Bombay', 'boxer', 'British Shorthair', 'chihuahua', 'Egyptian Mau', 'english cocker spaniel',
-               'english setter', 'german shorthaired', 'great pyrenees', 'havanese', 'japanese chin',
-               'keeshond', 'leonberger', 'Maine Coon', 'miniature pinscher', 'newfoundland', 'Persian',
-               'pomeranian', 'pug', 'Ragdoll', 'Russian Blue', 'saint bernard', 'samoyed', 'scottish terrier',
-               'shiba inu', 'Siamese', 'Sphynx', 'staffordshire bull terrier', 'wheaten terrier', 'yorkshire terrier')
+Pet_CLASSES = ('Abyssinian', 'american bulldog', 'american pit bull terrier', 'basset hound', 'beagle','Bengal',#6
+               'Birman', 'Bombay', 'boxer', 'British Shorthair', 'chihuahua', 'Egyptian Mau', 'english cocker spaniel',#13
+               'english setter', 'german shorthaired', 'great pyrenees', 'havanese', 'japanese chin',#18
+               'keeshond', 'leonberger', 'Maine Coon', 'miniature pinscher', 'newfoundland', 'Persian',#24
+               'pomeranian', 'pug', 'Ragdoll', 'Russian Blue', 'saint bernard', 'samoyed', 'scottish terrier',#31
+               'shiba inu', 'Siamese', 'Sphynx', 'staffordshire bull terrier', 'wheaten terrier', 'yorkshire terrier')#37
 
-COLOR = ((0, 0, 0), (120, 120, 120), (180, 120, 120), (6, 230, 230), (80, 50, 50),
-            (4, 200, 3), (120, 120, 80), (140, 140, 140), (204, 5, 255),
-            (230, 230, 230), (4, 250, 7), (224, 5, 255), (235, 255, 7),
-            (150, 5, 61), (120, 120, 70), (8, 255, 51), (255, 6, 82),
-            (143, 255, 140), (204, 255, 4), (255, 51, 7), (204, 70, 3),
-            (0, 102, 200), (61, 230, 250), (255, 6, 51), (11, 102, 255),
-            (255, 7, 71), (255, 9, 224), (9, 7, 230), (220, 220, 220),
-            (255, 9, 92), (112, 9, 255), (8, 255, 214), (7, 255, 224),
-            (255, 184, 6), (10, 255, 71), (255, 41, 10),(255, 0, 0))
+# COLOR = ((0, 0, 0), (120, 120, 120), (180, 120, 120), (6, 230, 230), (80, 50, 50),
+#             (4, 200, 3), (120, 120, 80), (140, 140, 140), (204, 5, 255),
+#             (230, 230, 230), (4, 250, 7), (224, 5, 255), (235, 255, 7),
+#             (150, 5, 61), (120, 120, 70), (8, 255, 51), (255, 6, 82),
+#             (143, 255, 140), (204, 255, 4), (255, 51, 7), (204, 70, 3),
+#             (0, 102, 200), (61, 230, 250), (255, 6, 51), (11, 102, 255),
+#             (255, 7, 71), (255, 9, 224), (9, 7, 230), (220, 220, 220),
+#             (255, 9, 92), (112, 9, 255), (8, 255, 214), (7, 255, 224),
+#             (255, 184, 6), (10, 255, 71), (255, 41, 10),(255, 0, 0))
+
+COLOR   = ('red', 'green', 'blue', 'purple', 'white', 'black', 'AliceBlue', 'Aqua', 'Peru',#9
+            'Brown', 'DarkGray', 'Gold', 'Violet', 'SlateBlue', 'Orange',#15
+            'Maroon', 'LightSlateGray', 'Indigo','DarkKhaki', 'Coral','RosyBrown',#21
+            'LightSalmon', 'Azure','Beige','CadetBlue','DarkBlue','Firebrick',#27
+            'Silver','YellowGreen','LightPink','Snow','Sienna','Salmon','PowderBlue',#34
+            'PeachPuff','DarkRed','Olive')#37
 
 #for VOC
 CLASSES_VOC = ("background", "aeroplane", "bicycle", "bird", "boat", "bottle",
@@ -179,7 +193,7 @@ def get_bbox_img(root, img_id, bbox, dataset):
         
         for box in bbox:
 
-            a.rectangle(((box[0], box[1]), (box[2], box[3])), fill=None, outline="red", width=4)
+            a.rectangle(((box[0], box[1]), (box[2], box[3])), fill=None, outline="blue", width=4)
 
         del a
     
@@ -196,12 +210,55 @@ def get_bbox_img(root, img_id, bbox, dataset):
 
     return box_img, bbox
 
+    
 def get_class_img(img, target_name, color, is_pos):
+    
     if is_pos:
         cls_img = Image.new('RGB', img.size, color)
     else:
         cls_img = Image.new('RGB', img.size, color)
     return cls_img
+    
+    # if is_pos:
+    #     img_pos = img.copy()
+        
+    #     w,h = img_pos.size
+    #     # print("h,w:{},{}:".format(h,w))
+
+    #     boader = int(max(h/10,w/10)) # 线宽
+    #     inner  = int(max(h/8,w/8)) # 缩进距离
+
+    #     draw = ImageDraw.Draw(img_pos)
+
+    #     draw.rectangle([(0,0),(w,boader)], fill=color, outline=color, width=1)
+    #     draw.rectangle([(0,0),(boader,h)], fill=color, outline=color, width=1)
+    #     draw.rectangle([(w-boader,0),(w,h)], fill=color, outline=color, width=1)
+    #     draw.rectangle([(0,h-boader),(w,h)], fill=color, outline=color, width=1)
+        
+        
+        # draw.rectangle([(inner,inner),(w-inner,boader+inner)], fill='red', outline='red', width=1)
+        # draw.rectangle([(inner,inner),(boader+inner,h-inner)], fill='red', outline='red', width=1)
+        # draw.rectangle([(w-inner,inner),(w-inner+boader,h-inner+boader)], fill='red', outline='red', width=1)
+        # draw.rectangle([(0+inner,h-inner),(w-inner,h-inner+boader)], fill='red', outline='red', width=1)
+
+    # else:
+    #     img_pos = img.copy()
+        
+    #     w,h = img_pos.size
+    #     # print("h,w:{},{}:".format(h,w))
+
+    #     boader = int(max(h/10,w/10)) # 线宽
+    #     inner  = int(max(h/8,w/8)) # 缩进距离
+
+    #     draw = ImageDraw.Draw(img_pos)
+
+    #     draw.rectangle([(0,0),(w,boader)], fill=color, outline=color, width=1)
+    #     draw.rectangle([(0,0),(boader,h)], fill=color, outline=color, width=1)
+    #     draw.rectangle([(w-boader,0),(w,h)], fill=color, outline=color, width=1)
+    #     draw.rectangle([(0,h-boader),(w,h)], fill=color, outline=color, width=1)
+        
+    # return img_pos
+
 
 def generate_sample(img, img_id, out_img, prompt, task_type):
     '''
@@ -216,8 +273,7 @@ def generate_sample(img, img_id, out_img, prompt, task_type):
 
     if os.path.exists(output_path) == False:
         os.mkdir(output_path)
-    if img is None or out_img is None or prompt is None:
-        print("------erro-----")
+
     img.save(output_path+'/{}_{}_0.jpg'.format(img_id, task_type))
     # pdb.set_trace()
     out_img.save(output_path + '/{}_{}_1.jpg'.format(img_id, task_type))
@@ -230,12 +286,22 @@ def generate_sample(img, img_id, out_img, prompt, task_type):
 
     return seed
 
+
 def proc_oxford_pets(oxford_pets_root, tasks):
 
     n = 0
     seeds = []
+    
     for line in open(os.path.join(oxford_pets_root, 'annotations/trainval.txt')):
-        
+        line = line.strip()
+        words = line.split(' ')
+        img_id = words[0]
+        cls_label = words[1]
+
+        target_name = ' '.join(img_id.split('_')[:-1]).strip()
+        clses[cls_label] = target_name
+
+    for line in open(os.path.join(oxford_pets_root, 'annotations/trainval.txt')):
         line = line.strip()
         words = line.split(' ')
         img_id = words[0]
@@ -245,7 +311,7 @@ def proc_oxford_pets(oxford_pets_root, tasks):
 
         img_path = os.path.join(oxford_pets_root, 'images', '%s.jpg' % img_id)
         img = Image.open(img_path).convert("RGB")
-        
+
         for task_type in tasks:
             if task_type == 'seg':
                 output_img = get_seg_img(oxford_pets_root, img_id)
@@ -257,39 +323,56 @@ def proc_oxford_pets(oxford_pets_root, tasks):
                 seeds.append(seed)
 
             elif task_type == 'cls':
-                ## randomly set color
-                c = random.choice(lcolor)
-                color = colors[c]
-                
-                ## specific set color
-                # color = pet_to_color[target_name]
-                
-                output_img = get_class_img(img, target_name, cls_label, color, is_pos=True)
-                if output_img is None:
-                    assert "cls output image cannot be nonetype"
-                    
-                prompt = {'edit': 'show {} if the picture contain {}'.format(c, target_name)}
-                # fixed prompt:
-                # prompt = {'edit': 'show the corresponding color of this {}'.format(target_name)}
-                seed = generate_sample(img, img_id, output_img, prompt, task_type + '_pos')
-                seeds.append(seed)
                 
                 for cls in clses:
+                    # pdb.set_trace()
                     if cls == cls_label:
-                        continue
-                    if random.random() > neg_sample_rate:  # 负采样率
-                        continue
-                    nname = clses[cls]
-                    c = random.choice(lcolor)
-                    color = colors[c]
-                    output_img = get_class_img(img, nname, cls_label, color, is_pos=False)
-                    prompt = {'edit': 'show {} if the picture has {}, otherwise show black'.format(c, nname)}
-                    seed = generate_sample(img, img_id, output_img, prompt, task_type+'_neg_{}'.format(nname))
-                    seeds.append(seed)
-                n += 1
-                if n % 100 == 0:
-                    print('{} images processed!'.format(n))
-                continue
+                        ## randomly set color
+                        # c = random.choice(lcolor)
+                        
+                        for i in range(len(lcolor)):
+
+                            # c = lcolor[i]
+                            # color = colors[c]
+                            c = 'white'
+                        
+                            ## specific set color
+                            # color = pet_to_color[target_name] # {cat:red}
+
+                            output_img = get_class_img(img, target_name, c, is_pos=True)
+                            if output_img is None:
+                                assert "cls output image cannot be nonetype"
+                                
+                            prompt = {'edit': 'show {} if contains {} else black'.format(c, target_name)}
+                            # prompt = {'edit':'classify this image'}
+                            # fixed prompt:
+                            # prompt = {'edit': 'show the corresponding color of this {}'.format(target_name)}
+                            img_id2 = img_id + "_" + c
+                            seed = generate_sample(img, img_id2, output_img, prompt, task_type + '_pos')
+                            seeds.append(seed)
+                    
+                    # if cls == cls_label:
+                    #     continue
+                    else:
+                        if random.random() > neg_sample_rate:  # 负采样率
+                            continue
+                        nname = clses[cls]
+                        
+                        # c = random.choice(lcolor)
+                        # color = colors[c]
+                        c='black'
+                        
+                        # color = pet_to_color[nname]
+                        
+                        output_img = get_class_img(img, nname, c, is_pos=False)
+                        prompt = {'edit': 'show white if contains {} else black'.format(nname)}
+                        # prompt = {'edit':'classify this image'}
+                        seed = generate_sample(img, img_id, output_img, prompt, task_type+'_neg_{}'.format(nname))
+                        seeds.append(seed)
+                    n += 1
+                    if n % 100 == 0:
+                        print('{} images processed!'.format(n))
+                    continue
             
             else:
                     
@@ -422,11 +505,11 @@ def proc_coco(coco_root, tasks):
         image_list.append(image_id)
     image_list = sorted(image_list)
     print("len(image_list)", len(image_list))
-    # image_list = image_list[0:1000]
-    # image_list = image_list[1000:2000]
-    # image_list = image_list[2000:3000]
-    # image_list = image_list[3000:4000]
+    # image_list = image_list[0:2000]
+    # image_list = image_list[2000:4000]
     image_list = image_list[4000:len(image_list)]
+    # image_list = image_list[70000:90000]
+    # image_list = image_list[90000:100000]
     # image_list = image_list[100000:len(image_list)]
     for image_id in image_list:
     #----------------split process----------------
@@ -480,17 +563,22 @@ def proc_coco(coco_root, tasks):
                     
                 elif task == 'cls':
                     ## origin
-                    # c = random.choice(lcolor)
-                    # color = colors[c]
+                    c1 = random.choice(lcolor)
+                    c2 = random.choice(lcolor)
+                    while c1 == c2:
+                        c1 = random.choice(lcolor)
+                        c2 = random.choice(lcolor)
+                    color = colors[c1]
                     
                     ##modified postive
-                    c     = 'white'
-                    color = (255,255,255)
+                    # c     = 'white'
+                    # color = (255,255,255)
+                    
                     for cls_name in ncls_perimg:
                         
                         cls_img = get_class_img(img, cls_name, color, is_pos=True)
                 
-                        prompt  = get_cls_prompt(c, cls_name)
+                        prompt = {'edit': 'show {} if the picture contain {}, otherwise show {}'.format(c1, cls_name, c2)}
                 
                         seed = generate_sample(img, img_id, cls_img, prompt, task_type='cls_{}_pos'.format(cls_name))
                         seeds.append(seed)
@@ -507,15 +595,19 @@ def proc_coco(coco_root, tasks):
                         # print("it is a negative sample:{}".format(nname))
                         
                         ##origin
-                        # c = random.choice(lcolor)
-                        # color = colors[c]
+                        c1 = random.choice(lcolor)
+                        c2 = random.choice(lcolor)
+                        while c1 == c2:
+                            c1 = random.choice(lcolor)
+                            c2 = random.choice(lcolor)
+                        color = colors[c2]
                         
                         ##modified
-                        color = (0,0,0)
+                        # color = (0,0,0)
                         
                         output_img = get_class_img(img, nname, color, is_pos=False)
 
-                        prompt  = get_cls_prompt(c, nname)
+                        prompt = {'edit': 'show {} if the picture contain {}, otherwise show {}'.format(c1, nname, c2)}
                         
                         seed = generate_sample(img, img_id, output_img, prompt, task_type='cls_{}_neg_{}'.format(cname, nname))
 
@@ -770,7 +862,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     cls_ade_dict, pet_to_color, clses           = {}, {}, {}
-    neg_sample_rate                             = 0.08 # for cls. 0 means no negtive sample
+    neg_sample_rate                             = 0.05 # for cls. 0 means no negtive sample
     num_seg, num_det, num_dep_est               = 0, 0, 0
     seg_prompts, det_prompts, dep_est_prompts   = {}, {}, {}
     
@@ -792,39 +884,37 @@ if __name__ == "__main__":
     #                                                 'Snow':(255,250,250),'Sienna':(160,82,45),'Salmon':(250,128,114),
     #                                                 'PowderBlue':(176,224,230),'PeachPuff':(255,218,155),'DarkRed':(139,0,0),
     #                                                 'Olive':(128,128,0)}
-    colors                                      = {'white': (255, 0, 0)}
+    colors                                      = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255),
+                                                    'purple':(128,0,128), 'Orange':(255,128,0)}
     
     lcolor                                      = list(colors.keys())
 
-    
     for i, pet_name in enumerate(Pet_CLASSES):
-        
         c                                       = COLOR[i]
         pet_to_color[pet_name]                  = c #{cat: red,...}
-    print('pet_to_color:', pet_to_color)
 
     if os.path.exists(args.save_root)  == False:
         os.mkdir(args.save_root)
     
     #generate prompts dict
     
-    with open("./data/seg_prompts.txt") as file:
-        for item_seg in file:
-            sen_seg = item_seg.strip()
-            seg_prompts[num_seg] = sen_seg
-            num_seg += 1
+    # with open("./data/seg_prompts.txt") as file:
+    #     for item_seg in file:
+    #         sen_seg = item_seg.strip()
+    #         seg_prompts[num_seg] = sen_seg
+    #         num_seg += 1
     
-    with open("./data/det_prompts.txt") as file:
-        for item_det in file:
-            sen_det = item_det.strip()
-            det_prompts[num_det] = sen_det
-            num_det += 1
+    # with open("./data/det_prompts.txt") as file:
+    #     for item_det in file:
+    #         sen_det = item_det.strip()
+    #         det_prompts[num_det] = sen_det
+    #         num_det += 1
     
-    with open("./data/dep_est_prompts.txt") as file:
-        for item_dep_est in file:
-            sen_dep_est = item_dep_est.strip()
-            dep_est_prompts[num_dep_est] = sen_dep_est
-            num_dep_est += 1
+    # with open("./data/dep_est_prompts.txt") as file:
+    #     for item_dep_est in file:
+    #         sen_dep_est = item_dep_est.strip()
+    #         dep_est_prompts[num_dep_est] = sen_dep_est
+    #         num_dep_est += 1
 
     # for line in open(os.path.join(args.oxford_pets_root, 'annotations/trainval.txt')):
     #     line = line.strip()
@@ -834,7 +924,7 @@ if __name__ == "__main__":
 
     #     target_name = ' '.join(img_id.split('_')[:-1]).strip()
     #     clses[cls_label] = target_name #store target_name and cls_label
-    tasks = ['cls']
+    tasks = ['cls','det']
     
     if fnmatch(args.dataset, "coco"):
         proc_coco(args.coco_root, tasks)

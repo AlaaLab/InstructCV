@@ -5,9 +5,9 @@ import pdb
 from PIL import Image, ImageChops
 from torchvision import transforms
 
-ori_path = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/outputs/imgs_test_coco/000000001000.jpg'
-pre_path = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/outputs/imgs_test_coco_output/000000001000_test.jpg'
-save_path = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/outputs/imgs_test_coco_output/000000001001_test_sub.jpg'
+ori_path = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/outputs/img_test_cls/000000016598.jpg'
+pre_path = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/outputs/img_test_cls/000000016598_tie_det_pred.jpg'
+save_path = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/outputs/img_test_cls/666.jpg'
 
 def ShapeDetection(img):
     imgContour = img.copy()
@@ -50,10 +50,10 @@ def ShapeDetection(img):
     return imgContour, bboxs
 
 
-def image_diff(image1, image2, threshold=10):
+def image_diff(image1, image2, threshold=5):
     """Detect the differences between two images and ignore small differences.
     
-    Args:
+    Args
         image1 (numpy.ndarray): The first image as a NumPy array.
         image2 (numpy.ndarray): The second image as a NumPy array.
         threshold (int): The threshold for the pixel intensity difference between the two images. Defaults to 30.
@@ -92,7 +92,7 @@ def image_diff(image1, image2, threshold=10):
 # ori_img             = resize(ori_img)
 # ori_img             = np.array(ori_img)
 # det_img             = np.array(det_img)
-
+print("1")
 det_img         = cv2.imread(pre_path)
 ori_img         = cv2.imread(ori_path)
 # pdb.set_trace()
@@ -103,4 +103,4 @@ box_img             = image_diff(det_img, ori_img)
 # imgContour, bbox = ShapeDetection(box_img)
 box_img             = Image.fromarray(box_img)
 # cv2.imwrite((save_path+'_box.jpg'), imgContour)
-box_img.save(save_path+'_box.jpg')
+box_img.save(save_path)

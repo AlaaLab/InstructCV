@@ -400,7 +400,8 @@ class genGT(object):
             img_name              = img_name.strip()
             image_id              = img_name.split(".")[0] #000001234
             id                    = image_id.lstrip("0") #1234
-            
+            if id not in img_info:
+                continue
             for cid in img_info[id]:
                 
                 cname = clses[cid] #target_name  
@@ -712,7 +713,7 @@ if __name__ == "__main__":
     # calc acc
     # acc = evaluate_cls(args.cls_pred_root)
     
-    test_path = './outputs/imgs_test_ade20k'
+    test_path = './outputs/imgs_test_pets_seg'
     cls_iou = {}
     cls_ap = {}
     cate_bb = {}

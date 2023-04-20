@@ -47,7 +47,7 @@ class postDet(object):
         bgr_img                     = cv2.bilateralFilter(bgr_img, 0, 0, 30)   # bilateral filtering
         output_img                  = bgr_img
 
-        # extracting red areas using hsv channels
+        # extracting blue areas using hsv channels
         hsv = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2HSV)
         low_hsv = np.array([0, 120, 66])
         high_hsv = np.array([8, 255, 255])
@@ -131,15 +131,15 @@ class postDet(object):
         img_name = img_path.split('_')[-2]
         img = cv2.imread(img_path)
         hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
-        low_hsv = np.array([0,90,90 ])
-        high_hsv = np.array([10,255,255])
+        low_hsv = np.array([100,110,70])
+        high_hsv = np.array([140,255,255])
         mask1 = cv2.inRange(hsv,lowerb=low_hsv,upperb=high_hsv)
-        low_hsv = np.array([156,90,90])
-        high_hsv = np.array([180,255,255])
-        mask2 = cv2.inRange(hsv,lowerb=low_hsv,upperb=high_hsv)
-        mask = cv2.add(mask2,mask1)
+        # low_hsv = np.array([156,90,90])
+        # high_hsv = np.array([180,255,255])
+        # mask2 = cv2.inRange(hsv,lowerb=low_hsv,upperb=high_hsv)
+        # mask = cv2.add(mask2,mask1)
         kernel = np.ones((3,3),'uint8')
-        mask = cv2.morphologyEx(mask,cv2.MORPH_CLOSE,kernel,iterations=1)
+        mask = cv2.morphologyEx(mask1,cv2.MORPH_CLOSE,kernel,iterations=1)
         mask = cv2.copyMakeBorder(mask,50,50,50,50,cv2.BORDER_CONSTANT,value=0)
 
         points = []
@@ -187,6 +187,7 @@ class postDet(object):
         if len(point_new) == 0:
             return [], img
         
+        bboxes = []
         for i in range(len(point_new)):
             xx1 = point_new[i][1]
             yy1 = point_new[i][0]
@@ -195,10 +196,11 @@ class postDet(object):
             cv2.rectangle(img_vis, (xx1, yy1), (xx2, yy2), (0, 255, 0), 2)
             
             bbox = [int(xx1),int(yy1),int(xx2),int(yy2)]
+            bboxes.append(bbox)
             cv2.putText(img_vis, img_name, (xx1 + 10, yy1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
 
-        return bbox, img_vis
+        return bboxes, img_vis
     
 
     def generate_exc_bbox(self):
@@ -237,11 +239,12 @@ class postDet(object):
                 
                 # generate coordinates of bboxes (json)
                 gt_path                     = os.path.join(self.root, 'val2017', img.split("_")[0]+'.jpg')
-                bboxes, output              = self.extract_bbox(pred_img_path, gt_path)
+                # bboxes, output              = self.extract_bbox(pred_img_path, gt_path)
                 bboxes2, img_vis            = self.ext_coor(pred_img_path)
-                bboxes.append(bboxes2)
+                # bboxes.append(bboxes2)
                 
-                bbox_info                   = {'pred_bbox': bboxes}
+                # bbox_info                   = {'pred_bbox': bboxes}
+                bbox_info                   = {'pred_bbox': bboxes2}
                 bbox_file                   = open(os.path.join(file_path, 'pred_bbox.json'), 'w')
                 bbox_file.write(json.dumps(bbox_info))
                 bbox_file.close()

@@ -12,6 +12,8 @@ from edit_cli_seg_fs1000 import inference_seg_fs1000
 from edit_cli_depes_sunrgbd import inference_sunrgbd_depes
 from edit_cli_seg_voc import inference_seg_voc
 from edit_cli_det_voc import inference_det_voc
+from edit_cli_seg_pets import inference_seg_pets
+
 
 from argparse import ArgumentParser
 
@@ -35,6 +37,7 @@ def main():
     parser.add_argument("--task", default="", type=str)
     parser.add_argument("--eval", action='store_true', default=False, help="Disable evaluation")
     parser.add_argument("--rephrase", action='store_true', default=False, help="Disable rephrasing prompts")
+    parser.add_argument("--single_test", action='store_true', default=False, help="enable single image test")
     args = parser.parse_args()
     
     inference_params           = dict({"resolution": args.resolution, 
@@ -52,7 +55,8 @@ def main():
                                      "task": args.task,
                                      "rephrase": args.rephrase,
                                      "test_txt_path": args.test_txt_path,
-                                     "eval": args.eval
+                                     "eval": args.eval,
+                                     "single_test": args.single_test
                                      })
     
     #TODO: enable batch-level input
@@ -80,6 +84,9 @@ def main():
     
     if args.task == "voc_det":
         inference_det_voc(**inference_params)
+        
+    if args.task == "pet_seg":
+        inference_seg_pets(**inference_params)
 
 if __name__ == "__main__":
     main()

@@ -6,10 +6,12 @@ import sys
 import os
 import pdb
 import time
+from fnmatch import fnmatch
 from torchvision import transforms
 from argparse import ArgumentParser
 
 import einops
+import shutil
 import k_diffusion as K
 import numpy as np
 import torch
@@ -18,10 +20,18 @@ from einops import rearrange
 from omegaconf import OmegaConf
 from PIL import Image, ImageOps
 from torch import autocast
+from dataset_creation.format_dataset import get_seg_img
 
 sys.path.append("./stable_diffusion")
 
 from stable_diffusion.ldm.util import instantiate_from_config
+
+Pet_CLASSES = ('Abyssinian', 'american bulldog', 'american pit bull terrier', 'basset hound', 'beagle','Bengal',#6
+               'Birman', 'Bombay', 'boxer', 'British Shorthair', 'chihuahua', 'Egyptian Mau', 'english cocker spaniel',#13
+               'english setter', 'german shorthaired', 'great pyrenees', 'havanese', 'japanese chin',#18
+               'keeshond', 'leonberger', 'Maine Coon', 'miniature pinscher', 'newfoundland', 'Persian',#24
+               'pomeranian', 'pug', 'Ragdoll', 'Russian Blue', 'saint bernard', 'samoyed', 'scottish terrier',#31
+               'shiba inu', 'Siamese', 'Sphynx', 'staffordshire bull terrier', 'wheaten terrier', 'yorkshire terrier')#37
 
 
 class CFGDenoiser(nn.Module):
@@ -63,12 +73,50 @@ def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
         print(u)
     return model
 
+def generate_pets_gt(input, output):
+    
+    print("generating the gt.")
+    
+    clses = {}
+    seeds = []
+    
+    for line in open(os.path.join(input, 'annotations/test.txt')):
+        line = line.strip()
+        words = line.split(' ')
+        img_id = words[0]
+        cls_label = words[1]
 
-def inference_cls(resolution, steps, vae_ckpt, split, config, eval, test_txt_path, single_test,
+        cname = ' '.join(img_id.split('_')[:-1]).strip()
+        clses[cls_label] = cname
+
+    for line in open(os.path.join(input, 'annotations/test.txt')):
+        line = line.strip()
+        words = line.split(' ')
+        img_id = words[0]
+        cls_label = words[1]
+
+        cname = ' '.join(img_id.split('_')[:-1]).strip()
+        
+        output_img = get_seg_img(input, img_id)
+        ge_path             = os.path.join(output, img_id)
+        
+        if os.path.exists(ge_path)  == False:
+            os.makedirs(ge_path)
+            
+        gt_save_path        = os.path.join(ge_path, img_id + "_gt.png")
+        output_img.save(gt_save_path)
+        
+    print("done with generating the g.t.")
+
+    return 
+
+
+
+def inference_seg_pets(resolution, steps, vae_ckpt, split, config, eval, test_txt_path, single_test,
                   ckpt, input, output, edit, cfg_text, cfg_image, seed, task, rephrase):
     '''
     Modified by Yulu Gan
-    6th, March, 2022
+    March 31, 2022
     1. Support multiple images inference
     2. Make outputs' size are the closest as inputs
     '''
@@ -82,40 +130,40 @@ def inference_cls(resolution, steps, vae_ckpt, split, config, eval, test_txt_pat
     null_token = model.get_learned_conditioning([""])
 
     seed = random.randint(0, 100000) if seed is None else seed
+    generate_pets_gt(input,output)
     
-    img_list = os.listdir(input)
-    
-           
-    for img_name in img_list:
+    for line in open(os.path.join(input,'annotations/test.txt')):
         
-        start = time.time()
+        start               = time.time()
+        
+        line = line.strip()
+        words = line.split(' ')
+        img_id = words[0]
+        img_name =  img_id + ".jpg"
+        img_path = os.path.join(input, 'images', img_name)
+        
+        ge_path             = os.path.join(output, img_id)
+        pred_save_path      = os.path.join(ge_path, img_id + "_pred.png")
+        cname               = ' '.join(img_id.split('_')[:-1]).strip()
+        print("cname:", cname)
 
-        img_id = img_name.split(".")[0]
-        target_name = 'chair'
+        prompts             = edit.replace("%", cname)
         
-        img_path = os.path.join(input, img_name)
-        input_image = Image.open(img_path).convert("RGB")
-        input_image = resize(input_image)
-        
-        width, height = input_image.size
-        factor = resolution / max(width, height)
-        factor = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
-        width = int((width * factor) // 64) * 64
-        height = int((height * factor) // 64) * 64
-        input_image = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
-
-        prompts = edit
-        prompts = prompts.replace("%", target_name)
-        print("prompts:", prompts)
-        
-        if edit == "":
-            input_image.save(output)
-            return
-
         with torch.no_grad(), autocast("cuda"), model.ema_scope():
+            
+            input_image = Image.open(img_path).convert("RGB")
+            input_image = resize(input_image)
+
+            width, height = input_image.size
+            factor = resolution / max(width, height)
+            factor = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
+            width = int((width * factor) // 64) * 64
+            height = int((height * factor) // 64) * 64
+            input_image = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
+            
             cond = {}
             
-            cond["c_crossattn"] = [model.get_learned_conditioning([prompts])] #modified: edit -> prompts
+            cond["c_crossattn"] = [model.get_learned_conditioning([prompts])] #modified: args.edit -> prompts
             input_image = 2 * torch.tensor(np.array(input_image)).float() / 255 - 1
             input_image = rearrange(input_image, "h w c -> 1 c h w").to(model.device)
             cond["c_concat"] = [model.encode_first_stage(input_image).mode()]
@@ -139,19 +187,13 @@ def inference_cls(resolution, steps, vae_ckpt, split, config, eval, test_txt_pat
             x = torch.clamp((x + 1.0) / 2.0, min=0.0, max=1.0)
             x = 255.0 * rearrange(x, "1 c h w -> h w c")
             edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
-        
-        save_name = img_id + "_test_" + task + '.jpg'
-        
-        if os.path.exists(output) == False:
-            os.makedirs(output)
             
-        edited_image.save(os.path.join(output, save_name))
+        edited_image.save(pred_save_path)
         
         end = time.time()
-        
         
         print("One image done. Inferenct time cost:{}".format(end - start))
 
 
 if __name__ == "__main__":
-    inference_cls()
+    inference_seg_pets()
