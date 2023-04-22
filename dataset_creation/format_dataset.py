@@ -286,8 +286,73 @@ def generate_sample(img, img_id, out_img, prompt, task_type):
 
     return seed
 
+def proc_oxford_pets_binary(oxford_pets_root, tasks):
+    n = 0
+    seeds = []
 
-def proc_oxford_pets(oxford_pets_root, tasks):
+    for line in open(os.path.join(oxford_pets_root, 'annotations/trainval.txt')):
+        line = line.strip()
+        words = line.split(' ')
+        img_id = words[0]
+        cls_label = words[2]
+        
+        if cls_label == 1:
+            cls_name = 'cat'
+        else:
+            cls_name = 'dog'
+            
+        clses = ['cat', 'dog']
+
+        img_path = os.path.join(oxford_pets_root, 'images', '%s.jpg' % img_id)
+        img = Image.open(img_path).convert("RGB")
+
+        for cls in clses:
+            if cls == cls_name:
+                ## randomly set color
+                # c = random.choice(lcolor)
+                
+                for i in range(len(lcolor)):
+                    c = lcolor[i]#red
+                    color = colors[c]#(255,0,0)
+                
+                    ## specific set color
+                    # color = pet_to_color[target_name] # {cat:red}
+
+                    output_img = get_class_img(img, cls_name, c, is_pos=True)
+                    if output_img is None:
+                        assert "cls output image cannot be nonetype"
+                        
+                    prompt = {'edit': 'show {} if contains {} else black'.format(c, cls_name)}
+                    img_id2 = img_id + "_" + c
+                    seed = generate_sample(img, img_id2, output_img, prompt, 'cls_pos')
+                    seeds.append(seed)
+                
+            else:
+                if random.random() > neg_sample_rate:  # 负采样率
+                    continue
+                nname = cls
+                
+                c     = 'black'
+                
+                # color = pet_to_color[nname]
+                
+                output_img = get_class_img(img, nname, c, is_pos=False)
+                prompt = {'edit': 'show white if contains {} else black'.format(nname)}
+                seed = generate_sample(img, img_id, output_img, prompt, 'cls_neg_{}'.format(nname))
+                seeds.append(seed)
+            n += 1
+            if n % 100 == 0:
+                print('{} images processed!'.format(n))
+            continue
+
+        n +=1 
+        if n % 100 == 0:
+            print('{} images processed!'.format(n))
+        
+    return seeds
+    
+      
+def proc_oxford_pets_finegrained(oxford_pets_root, tasks):
 
     n = 0
     seeds = []
@@ -862,7 +927,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     cls_ade_dict, pet_to_color, clses           = {}, {}, {}
-    neg_sample_rate                             = 0.05 # for cls. 0 means no negtive sample
+    neg_sample_rate                             = 1000 # for cls. 0 means no negtive sample
     num_seg, num_det, num_dep_est               = 0, 0, 0
     seg_prompts, det_prompts, dep_est_prompts   = {}, {}, {}
     
@@ -884,8 +949,7 @@ if __name__ == "__main__":
     #                                                 'Snow':(255,250,250),'Sienna':(160,82,45),'Salmon':(250,128,114),
     #                                                 'PowderBlue':(176,224,230),'PeachPuff':(255,218,155),'DarkRed':(139,0,0),
     #                                                 'Olive':(128,128,0)}
-    colors                                      = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255),
-                                                    'purple':(128,0,128), 'Orange':(255,128,0)}
+    colors                                      = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255)}
     
     lcolor                                      = list(colors.keys())
 
@@ -924,13 +988,16 @@ if __name__ == "__main__":
 
     #     target_name = ' '.join(img_id.split('_')[:-1]).strip()
     #     clses[cls_label] = target_name #store target_name and cls_label
-    tasks = ['cls','det']
+    tasks = ['cls']
     
     if fnmatch(args.dataset, "coco"):
         proc_coco(args.coco_root, tasks)
     
-    elif fnmatch(args.dataset, "oxford_pets"):
-        proc_oxford_pets(args.oxford_pets_root, tasks)
+    elif fnmatch(args.dataset, "oxford_pets_fine"):
+        proc_oxford_pets_finegrained(args.oxford_pets_root, tasks)
+        
+    elif fnmatch(args.dataset, "oxford_pets_binary"):
+        proc_oxford_pets_binary(args.oxford_pets_root, tasks)
 
     elif fnmatch(args.dataset, "nyuv2"):
         proc_nyuv2_all(args.nyuv2_root)
