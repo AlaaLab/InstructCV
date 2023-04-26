@@ -23,7 +23,7 @@
 # python edit_cli.py --input data/ade20k/images/ADE/training/cultural/apse__indoor/ADE_train_00001472.jpg --output imgs/ADE_train_00001472_seg.jpeg --edit "segment the person"
 
 ## for cls:
-# python edit_cli.py --ckpt logs/train_all100kdata_test_cls/checkpoints/epoch=000000.ckpt --resolution 256 --input outputs/test_img --output outputs/img_test_cls --edit "show red if contains person, otherwise show green" --task cls
+# python edit_cli.py --ckpt logs/train_all100kdata_add_coco_pet_seg_blue/checkpoints/epoch=000020.ckpt --resolution 256 --input data/oxford-pets --output outputs/img_test_cls --edit "show red if contains dog, otherwise show purple" --split test.txt --task cls
 
 ## for depth estimation
 # python edit_cli_depes.py --input /lustre/grp/gyqlab/lism/brt/language-vision-interface/data/nyuv2/basement_0001a --output imgs_test_nyuv2/ --edit "Assess the image's depth by looking for visual cues and making an estimation."
@@ -63,3 +63,7 @@ CUDA_VISIBLE_DEVICES=7 python edit_cli.py --resolution 512 --split "test_part7.t
 
 # for pet seg
 CUDA_VISIBLE_DEVICES=7 python edit_cli.py --resolution 256 --ckpt logs/train_all100kdata_add_coco_pet_seg_blue/checkpoints/epoch=000020.ckpt --input data/oxford-pets --output ./outputs/imgs_test_pets_seg/ --edit "segment the %" --task pet_seg
+
+
+# for fig1
+python edit_cli.py --ckpt logs/train_all100kdata_add_coco_pet_seg/checkpoints/epoch=000030_.ckpt --resolution 512 --input outputs/test_one_img --output outputs/img_test_cls --edit "detect woody's face" --task det --single_test

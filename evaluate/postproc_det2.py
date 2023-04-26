@@ -14,6 +14,7 @@ import pdb
 import json
 from fnmatch import fnmatch
 import time
+import shutil
 
 class postDet(object):
     
@@ -24,6 +25,45 @@ class postDet(object):
         self.pred_root      = pred_root
         self.vis            = vis
          
+    def image_diff(self, pred_img_path, threshold=5):
+        """
+        Detect the differences between two images (original 
+        images and pred images) and ignore small differences.
+        
+        Args
+            image1 (numpy.ndarray): The first image as a NumPy array.
+            image2 (numpy.ndarray): The second image as a NumPy array.
+            threshold (int): The threshold for the pixel intensity difference between the two images. Defaults to 30.
+        
+        Returns:
+            numpy.ndarray: The difference image as a NumPy array.
+        """
+        ## generate original images
+        img_id           = pred_img_path.split("/")[-1].split("_")[0] #000000001503
+        pred_img_name    = img_id + ".jpg"
+        ori_img_path     = os.path.join(self.root, "val2017", pred_img_name)
+        image1           = cv2.imread(pred_img_path)
+        image2           = cv2.imread(ori_img_path)
+        
+        height, width, _ = image1.shape
+        image2 = cv2.resize(image2, (width, height))
+        
+        # Calculate the absolute difference between the two images
+        diff = cv2.absdiff(image1, image2)
+        
+        # Apply threshold to ignore small differences
+        mask = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
+        mask = cv2.threshold(mask, threshold, 255, cv2.THRESH_BINARY)[1]
+        
+        # Apply a morphological operation to remove small regions of noise
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+
+        # Apply the mask to the difference image
+        diff = cv2.bitwise_and(diff, diff, mask=mask)
+        
+        return diff, img_id
+
     def cnt_area(self, cnt):
         '''
         sorting contours by contour area size
@@ -202,7 +242,6 @@ class postDet(object):
 
         return bboxes, img_vis
     
-
     def generate_exc_bbox(self):
         '''
         generate extracted bboxes and visualization images. (pred_bbox.json & images)
@@ -219,16 +258,15 @@ class postDet(object):
         for file in file_list[0:2000]:
             
             file_path                       = os.path.join(self.pred_root, file)
-            
             img_list                        = os.listdir(file_path)
             
             for img in img_list:
                 
-                # # resume
-                file_                       = file + "_exc.jpg"
-                if file_ in img_list:
-                    print("pass,{}".format(file_))
-                    continue
+                # # # resume
+                # file_                       = file + "_exc.jpg"
+                # if file_ in img_list:
+                #     print("pass,{}".format(file_))
+                #     continue
                 
                 
                 if fnmatch(img, "*pred.jpg"):
@@ -236,10 +274,16 @@ class postDet(object):
 
                 else:
                     continue
-                
+
                 # generate coordinates of bboxes (json)
                 gt_path                     = os.path.join(self.root, 'val2017', img.split("_")[0]+'.jpg')
                 # bboxes, output              = self.extract_bbox(pred_img_path, gt_path)
+                diff, img_id                = self.image_diff(pred_img_path) #do subtract
+                
+                #for debugging: save diff image
+                # pdb.set_trace()
+                cv2.imwrite(os.path.join(file_path, '{}_diff.jpg'.format(img_id)), diff)
+                
                 bboxes2, img_vis            = self.ext_coor(pred_img_path)
                 # bboxes.append(bboxes2)
                 

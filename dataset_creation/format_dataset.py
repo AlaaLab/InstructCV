@@ -111,6 +111,7 @@ def get_bbox_prompt(cname):
 
     return prompts
 
+
 def get_seg_prompt(cname):
 
     prompts = {}
@@ -125,6 +126,7 @@ def get_seg_prompt(cname):
     prompts['edit'] = prompt
     return prompts
 
+
 def get_cls_prompt(c, cname):
     
     # fix prompt for init exp.
@@ -133,6 +135,7 @@ def get_cls_prompt(c, cname):
     
         
     return prompt
+
 
 def get_depth_prompt():
     
@@ -145,6 +148,7 @@ def get_depth_prompt():
 
     return prompt
 
+
 def get_seg_img(root, img_id):
     
     img_path = os.path.join(root, 'annotations/trimaps', '%s.png' % img_id)
@@ -154,6 +158,7 @@ def get_seg_img(root, img_id):
     seg_img = Image.fromarray(seg).convert("RGB")
     
     return seg_img
+
 
 def get_bbox_img(root, img_id, bbox, dataset):
     
@@ -219,43 +224,38 @@ def get_class_img(img, target_name, color, is_pos):
         cls_img = Image.new('RGB', img.size, color)
     return cls_img
     
+    # img_pos = img.copy()
+    # w,h = img_pos.size
+    
+    # boader = int(max(h/50,w/50)) # 线宽
+    # inner  = int(max(h/8,w/8)) # 缩进距离
+    
     # if is_pos:
-    #     img_pos = img.copy()
-        
-    #     w,h = img_pos.size
-    #     # print("h,w:{},{}:".format(h,w))
-
-    #     boader = int(max(h/10,w/10)) # 线宽
-    #     inner  = int(max(h/8,w/8)) # 缩进距离
-
     #     draw = ImageDraw.Draw(img_pos)
 
-    #     draw.rectangle([(0,0),(w,boader)], fill=color, outline=color, width=1)
-    #     draw.rectangle([(0,0),(boader,h)], fill=color, outline=color, width=1)
-    #     draw.rectangle([(w-boader,0),(w,h)], fill=color, outline=color, width=1)
-    #     draw.rectangle([(0,h-boader),(w,h)], fill=color, outline=color, width=1)
+        # draw.rectangle([(0,0),(w,boader)], fill=color, outline=color, width=1)
+        # draw.rectangle([(0,0),(boader,h)], fill=color, outline=color, width=1)
+        # draw.rectangle([(w-boader,0),(w,h)], fill=color, outline=color, width=1)
+        # draw.rectangle([(0,h-boader),(w,h)], fill=color, outline=color, width=1)
         
         
-        # draw.rectangle([(inner,inner),(w-inner,boader+inner)], fill='red', outline='red', width=1)
-        # draw.rectangle([(inner,inner),(boader+inner,h-inner)], fill='red', outline='red', width=1)
-        # draw.rectangle([(w-inner,inner),(w-inner+boader,h-inner+boader)], fill='red', outline='red', width=1)
-        # draw.rectangle([(0+inner,h-inner),(w-inner,h-inner+boader)], fill='red', outline='red', width=1)
+        # draw.rectangle([(inner,inner),(w-inner,boader+inner)], fill=color, outline=color, width=1)
+        # draw.rectangle([(inner,inner),(boader+inner,h-inner)], fill=color, outline=color, width=1)
+        # draw.rectangle([(w-inner,inner),(w-inner+boader,h-inner+boader)], fill=color, outline=color, width=1)
+        # draw.rectangle([(0+inner,h-inner),(w-inner,h-inner+boader)], fill=color, outline=color, width=1)
 
     # else:
-    #     img_pos = img.copy()
-        
-    #     w,h = img_pos.size
-    #     # print("h,w:{},{}:".format(h,w))
-
-    #     boader = int(max(h/10,w/10)) # 线宽
-    #     inner  = int(max(h/8,w/8)) # 缩进距离
-
     #     draw = ImageDraw.Draw(img_pos)
 
-    #     draw.rectangle([(0,0),(w,boader)], fill=color, outline=color, width=1)
-    #     draw.rectangle([(0,0),(boader,h)], fill=color, outline=color, width=1)
-    #     draw.rectangle([(w-boader,0),(w,h)], fill=color, outline=color, width=1)
-    #     draw.rectangle([(0,h-boader),(w,h)], fill=color, outline=color, width=1)
+        # draw.rectangle([(0,0),(w,boader)], fill=color, outline=color, width=1)
+        # draw.rectangle([(0,0),(boader,h)], fill=color, outline=color, width=1)
+        # draw.rectangle([(w-boader,0),(w,h)], fill=color, outline=color, width=1)
+        # draw.rectangle([(0,h-boader),(w,h)], fill=color, outline=color, width=1)
+        
+        # draw.rectangle([(inner,inner),(w-inner,boader+inner)], fill=color, outline=color, width=1)
+        # draw.rectangle([(inner,inner),(boader+inner,h-inner)], fill=color, outline=color, width=1)
+        # draw.rectangle([(w-inner,inner),(w-inner+boader,h-inner+boader)], fill=color, outline=color, width=1)
+        # draw.rectangle([(0+inner,h-inner),(w-inner,h-inner+boader)], fill=color, outline=color, width=1)
         
     # return img_pos
 
@@ -296,54 +296,82 @@ def proc_oxford_pets_binary(oxford_pets_root, tasks):
         img_id = words[0]
         cls_label = words[2]
         
-        if cls_label == 1:
+        if cls_label == '1':
             cls_name = 'cat'
-        else:
+        if cls_label == '2':
             cls_name = 'dog'
             
         clses = ['cat', 'dog']
 
         img_path = os.path.join(oxford_pets_root, 'images', '%s.jpg' % img_id)
         img = Image.open(img_path).convert("RGB")
+        
+        if cls_name == "cat":
+            c = 'red'
+            output_img = get_class_img(img, cls_name, c, is_pos=True)
+            if output_img is None:
+                assert "cls output image cannot be nonetype"
+                
+            prompt = {'edit': 'show red if contains {}'.format(cls_name)}
+            img_id2 = img_id + "_" + c
+            seed = generate_sample(img, img_id2, output_img, prompt, 'cls_pos')
+            seeds.append(seed)
+            
+        if cls_name == "dog":
+            c = 'purple'
+            output_img = get_class_img(img, cls_name, c, is_pos=True)
+            if output_img is None:
+                assert "cls output image cannot be nonetype"
+                
+            prompt = {'edit': 'show purple if contains {}'.format(cls_name)}
+            img_id2 = img_id + "_" + c
+            seed = generate_sample(img, img_id2, output_img, prompt, 'cls_pos')
+            seeds.append(seed)
+            
 
-        for cls in clses:
-            if cls == cls_name:
-                ## randomly set color
-                # c = random.choice(lcolor)
+        # for cls in clses:
+        #     if cls == cls_name:
+        #         ## randomly set color
+        #         # c = random.choice(lcolor)
                 
-                for i in range(len(lcolor)):
-                    c = lcolor[i]#red
-                    color = colors[c]#(255,0,0)
+        #         # for i in range(len(lcolor)):
+        #         #     c = lcolor[i]#red
+        #         #     color = colors[c]#(255,0,0)
                 
-                    ## specific set color
-                    # color = pet_to_color[target_name] # {cat:red}
-
-                    output_img = get_class_img(img, cls_name, c, is_pos=True)
-                    if output_img is None:
-                        assert "cls output image cannot be nonetype"
-                        
-                    prompt = {'edit': 'show {} if contains {} else black'.format(c, cls_name)}
-                    img_id2 = img_id + "_" + c
-                    seed = generate_sample(img, img_id2, output_img, prompt, 'cls_pos')
-                    seeds.append(seed)
+        #             ## specific set color
+        #             # color = pet_to_color[target_name] # {cat:red}
+        #         c = 'red'
                 
-            else:
-                if random.random() > neg_sample_rate:  # 负采样率
-                    continue
-                nname = cls
+        #         output_img = get_class_img(img, cls_name, c, is_pos=True)
+        #         if output_img is None:
+        #             assert "cls output image cannot be nonetype"
+                    
+        #         prompt = {'edit': 'show red if contains {}'.format(cls_name)}
+        #         img_id2 = img_id + "_" + c
+        #         seed = generate_sample(img, img_id2, output_img, prompt, 'cls_pos')
+        #         seeds.append(seed)
                 
-                c     = 'black'
+            # else:
+            #     if random.random() > neg_sample_rate:  # 负采样率
+            #         continue
+            #     nname = cls
                 
-                # color = pet_to_color[nname]
-                
-                output_img = get_class_img(img, nname, c, is_pos=False)
-                prompt = {'edit': 'show white if contains {} else black'.format(nname)}
-                seed = generate_sample(img, img_id, output_img, prompt, 'cls_neg_{}'.format(nname))
-                seeds.append(seed)
-            n += 1
-            if n % 100 == 0:
-                print('{} images processed!'.format(n))
-            continue
+            #     # for i in range(len(lcolor)):
+            #     #     c1 = lcolor[i] #red
+            #     #     c2     = 'black'
+            #     # c1 = random.choice(lcolor)
+            #     c1     = 'red'
+            #     c2     = 'purple'
+            
+            #     output_img = get_class_img(img, nname, c2, is_pos=False)
+            #     prompt = {'edit': 'show purple if contains {}'.format(nname)}
+            #     img_id3 = img_id + "_" + c1
+            #     seed = generate_sample(img, img_id3, output_img, prompt, 'cls_neg_{}'.format(nname))
+            #     seeds.append(seed)
+            #     n += 1
+            #     if n % 100 == 0:
+            #         print('{} images processed!'.format(n))
+            #     continue
 
         n +=1 
         if n % 100 == 0:
@@ -464,6 +492,7 @@ def proc_oxford_pets_finegrained(oxford_pets_root, tasks):
         
     return seeds
 
+
 def preproc_coco(root):
     
     print('begin to pre-process coco dataset...')
@@ -504,6 +533,7 @@ def preproc_coco(root):
             img_info[image_id][cid]['segmentation'].append(segmentation)
 
     return img_info, clses
+
 
 def preproc_voc(root):
     '''
@@ -555,6 +585,7 @@ def preproc_voc(root):
             img_info[image_id][cid]['segmentation'].append(segmentation)
 
     return img_info, clses, img_id_map
+
 
 def proc_coco(coco_root, tasks):
     
@@ -695,6 +726,7 @@ def proc_coco(coco_root, tasks):
         
     return
 
+
 def proc_nyuv2_all(nyuv2_root):
 
     print('begin to process NYU_V2 training dataset...')
@@ -739,6 +771,7 @@ def proc_nyuv2_all(nyuv2_root):
     
     return seeds
 
+
 def proc_nyuv2(nyuv2_root):
 
     print('begin to process NYU_V2 training dataset...')
@@ -770,6 +803,7 @@ def proc_nyuv2(nyuv2_root):
         seeds.append(seed)
     
     return seeds
+
 
 def proc_ade20k(ade_root):
     
@@ -823,6 +857,45 @@ def proc_ade20k(ade_root):
 
     return seeds
 
+
+def proc_imagenet(imagenet_root):
+    
+    IMAGENET_MAP = {"n02917067": "bullet train", "n01443537": "goldfish", "n02835271": "bicycle", 
+                    "n06874185": "traffic light", "n03662601": "lifeboat", "n02391049": "zebra",
+                    "n02504013": "indian elephant", "n03761084": "microwave", "n03782006": "monitor",
+                    "n03201208": "dining table"}
+    
+    
+    for item in IMAGENET_MAP.keys():
+        cls_name   = IMAGENET_MAP[item]
+        file_path  = os.path.join(imagenet_root, item)
+        image_list = os.listdir(file_path)
+        image_list = sorted(image_list)
+        for i, img_pa in enumerate(image_list):#len(image_list) = 9, i 0,1,2,...8
+            ## for train
+            if i+5  >= len(image_list):#leave out 5 images for test
+                continue
+            
+            img_path = os.path.join(file_path, img_pa)
+            img      = Image.open(img_path).convert('RGB')
+            img_id   = img_pa.split(".")[-2] #00000293
+        
+            for i in range(len(lcolor)):
+
+                output_img = get_class_img(img, cls_name, c, is_pos=True)
+                if output_img is None:
+                    assert "cls output image cannot be nonetype"
+                    
+                prompt = {'edit': 'show {} if contains {} else black'.format(c, cls_name)}
+                # prompt = {'edit':'classify this image'}
+                # fixed prompt:
+                # prompt = {'edit': 'show the corresponding color of this {}'.format(target_name)}
+                img_id2 = img_id + "_" + c
+                seed = generate_sample(img, img_id2, output_img, prompt, cls_name + '_pos')
+
+    return
+                
+            
 def proc_adechan2016(ade_root, cls_ade_dict):
     
     print('begin to process ade20k training dataset...')
@@ -884,6 +957,7 @@ def proc_adechan2016(ade_root, cls_ade_dict):
 
     return seeds
 
+
 def prompts_chat():
     '''
     Use ChatGPT to generate various prompts.
@@ -924,6 +998,7 @@ if __name__ == "__main__":
     parser.add_argument("--coco_root", default='./data/coco', type=str)
     parser.add_argument("--nyuv2_root", default='./data/nyu_mdet', type=str)
     parser.add_argument("--ade_root", default='./data/ADEChallengeData2016', type=str)
+    parser.add_argument("--imagenet_root", default='./data/imagenet', type=str)
     args = parser.parse_args()
     
     cls_ade_dict, pet_to_color, clses           = {}, {}, {}
@@ -1004,4 +1079,7 @@ if __name__ == "__main__":
     
     elif fnmatch(args.dataset, "ade20k"):
         proc_adechan2016(args.ade_root, cls_ade_dict)
-    
+        
+    elif fnmatch(args.dataset, "imagenet"):
+        proc_imagenet(args.imagenet_root)
+

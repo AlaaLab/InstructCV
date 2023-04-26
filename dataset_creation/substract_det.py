@@ -82,25 +82,11 @@ def image_diff(image1, image2, threshold=5):
     return diff
 
 
-# det_img         = Image.open(pre_path)
-# h,w           = det_img.size
-# det_img             = np.array(det_img)
 
-# resize              = transforms.Resize([w,h])
-
-# ori_img             = Image.open(ori_path)
-# ori_img             = resize(ori_img)
-# ori_img             = np.array(ori_img)
-# det_img             = np.array(det_img)
-print("1")
 det_img         = cv2.imread(pre_path)
 ori_img         = cv2.imread(ori_path)
-# pdb.set_trace()
 
-# box_img         = ImageChops.difference(det_img, ori_img)
 box_img             = image_diff(det_img, ori_img)
-
-# imgContour, bbox = ShapeDetection(box_img)
 box_img             = Image.fromarray(box_img)
-# cv2.imwrite((save_path+'_box.jpg'), imgContour)
+
 box_img.save(save_path)

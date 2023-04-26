@@ -72,7 +72,7 @@ def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
     return model
 
 
-def inference_depes(resolution, steps, vae_ckpt, split, test_txt_path, config, eval,
+def inference_depes(resolution, steps, vae_ckpt, split, test_txt_path, config, eval, single_test,
                   ckpt, input, output, edit, cfg_text, cfg_image, seed, task, rephrase):
     '''
     Modified by Yulu Gan
@@ -92,46 +92,36 @@ def inference_depes(resolution, steps, vae_ckpt, split, test_txt_path, config, e
 
     seed = random.randint(0, 100000) if seed is None else seed
     
-    genGT(input, output, task, test_txt_path).generate_nyuv2_gt()
+    # genGT(input, output, task, test_txt_path).generate_nyuv2_gt()
     
-    with open(test_txt_path) as file:  
+    if single_test:
+        img_list                = os.listdir(input)
+        for img_name in img_list:
+            
+            img_id              = img_name.split(".")[0]
+            img_path            = os.path.join(input, img_name)
+            output_path         = os.path.join(output, img_id)
+            
+            input_image         = Image.open(img_path).convert("RGB")
+            
+            width, height       = input_image.size
+            factor              = resolution / max(width, height)
+            factor              = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
+            width               = int((width * factor) // 64) * 64
+            height              = int((height * factor) // 64) * 64
+            input_image         = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
 
-        for line in file:
-        
-            start = time.time()
-            
-            img_path_part   = line.strip().split(" ")[0] # kitchen/rgb_00045.jpg
-            
-            file_name       = img_path_part.split("/")[0] # kitchen
-            
-            img_name        = img_path_part.split("/")[1] # rgb_00045.jpg
-
-            img_id          = file_name + "_" + img_name.split(".")[0] # kitchen_rgb_00045
-            
-            dep_path_part = file_name + "/rgb_" + img_name.split("_")[-1] # kitchen_0028b/rgb_00045.jpg
-            dep_path      = os.path.join('data/nyu_mdet', dep_path_part)
-            
-            input_image = Image.open(dep_path).convert("RGB")
-            input_image = resize(input_image)
-            
-            width, height = input_image.size
-            factor = resolution / max(width, height)
-            factor = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
-            width = int((width * factor) // 64) * 64
-            height = int((height * factor) // 64) * 64
-            input_image = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
-            
-            prompts = edit
-            # prompts = prompts.replace("%", file_name)
+            prompts             = edit
             print("prompts:", prompts)
-
+            
             if edit == "":
                 input_image.save(output)
                 return
 
             with torch.no_grad(), autocast("cuda"), model.ema_scope():
                 cond = {}
-                cond["c_crossattn"] = [model.get_learned_conditioning([prompts])]
+                
+                cond["c_crossattn"] = [model.get_learned_conditioning([prompts])] #modified: edit -> prompts
                 input_image = 2 * torch.tensor(np.array(input_image)).float() / 255 - 1
                 input_image = rearrange(input_image, "h w c -> 1 c h w").to(model.device)
                 cond["c_concat"] = [model.encode_first_stage(input_image).mode()]
@@ -155,17 +145,85 @@ def inference_depes(resolution, steps, vae_ckpt, split, test_txt_path, config, e
                 x = torch.clamp((x + 1.0) / 2.0, min=0.0, max=1.0)
                 x = 255.0 * rearrange(x, "1 c h w -> h w c")
                 edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
-            
-            output_path = os.path.join(output, img_id + "_" + task)
-                
+
             if os.path.exists(output_path) == False:
                 os.makedirs(output_path)
+
+            edited_image.save(output_path+'/{}_depes_pred.jpg'.format(img_id))
+    
+    else:
+        with open(test_txt_path) as file:  
+
+            for line in file:
+            
+                start = time.time()
+                
+                img_path_part   = line.strip().split(" ")[0] # kitchen/rgb_00045.jpg
+                
+                file_name       = img_path_part.split("/")[0] # kitchen
+                
+                img_name        = img_path_part.split("/")[1] # rgb_00045.jpg
+
+                img_id          = file_name + "_" + img_name.split(".")[0] # kitchen_rgb_00045
+                
+                dep_path_part = file_name + "/rgb_" + img_name.split("_")[-1] # kitchen_0028b/rgb_00045.jpg
+                dep_path      = os.path.join('data/nyu_mdet', dep_path_part)
+                
+                input_image = Image.open(dep_path).convert("RGB")
+                input_image = resize(input_image)
+                
+                width, height = input_image.size
+                factor = resolution / max(width, height)
+                factor = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
+                width = int((width * factor) // 64) * 64
+                height = int((height * factor) // 64) * 64
+                input_image = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
+                
+                prompts = edit
+                # prompts = prompts.replace("%", file_name)
+                print("prompts:", prompts)
+
+                if edit == "":
+                    input_image.save(output)
+                    return
+
+                with torch.no_grad(), autocast("cuda"), model.ema_scope():
+                    cond = {}
+                    cond["c_crossattn"] = [model.get_learned_conditioning([prompts])]
+                    input_image = 2 * torch.tensor(np.array(input_image)).float() / 255 - 1
+                    input_image = rearrange(input_image, "h w c -> 1 c h w").to(model.device)
+                    cond["c_concat"] = [model.encode_first_stage(input_image).mode()]
+
+                    uncond = {}
+                    uncond["c_crossattn"] = [null_token]
+                    uncond["c_concat"] = [torch.zeros_like(cond["c_concat"][0])]
+
+                    sigmas = model_wrap.get_sigmas(steps)
+
+                    extra_args = {
+                        "cond": cond,
+                        "uncond": uncond,
+                        "text_cfg_scale": cfg_text,
+                        "image_cfg_scale": cfg_image,
+                    }
+                    torch.manual_seed(seed)
+                    z = torch.randn_like(cond["c_concat"][0]) * sigmas[0]
+                    z = K.sampling.sample_euler_ancestral(model_wrap_cfg, z, sigmas, extra_args=extra_args)
+                    x = model.decode_first_stage(z)
+                    x = torch.clamp((x + 1.0) / 2.0, min=0.0, max=1.0)
+                    x = 255.0 * rearrange(x, "1 c h w -> h w c")
+                    edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
+                
+                output_path = os.path.join(output, img_id + "_" + task)
                     
-            edited_image.save(output_path+'/{}_{}_pred.png'.format(img_id, task))
-            
-            end = time.time()
-            
-            print("One image done. Inferenct time cost:{}".format(end - start))
+                if os.path.exists(output_path) == False:
+                    os.makedirs(output_path)
+                        
+                edited_image.save(output_path+'/{}_{}_pred.png'.format(img_id, task))
+                
+                end = time.time()
+                
+                print("One image done. Inferenct time cost:{}".format(end - start))
 
 
 if __name__ == "__main__":

@@ -18,11 +18,14 @@ from einops import rearrange
 from omegaconf import OmegaConf
 from PIL import Image, ImageOps
 from torch import autocast
+from dataset_creation.format_dataset import Pet_CLASSES
 
 sys.path.append("./stable_diffusion")
 
 from stable_diffusion.ldm.util import instantiate_from_config
 
+Pet_CLASSES_PART = ('Abyssinian', 'american bulldog', 'american pit bull terrier', 'basset hound', 'beagle','Bengal',#6
+               'Birman', 'Bombay', 'boxer', 'British Shorthair')
 
 class CFGDenoiser(nn.Module):
     def __init__(self, model):
@@ -83,74 +86,137 @@ def inference_cls(resolution, steps, vae_ckpt, split, config, eval, test_txt_pat
 
     seed = random.randint(0, 100000) if seed is None else seed
     
-    img_list = os.listdir(input)
-    
-           
-    for img_name in img_list:
+    if single_test:
         
-        start = time.time()
-
-        img_id = img_name.split(".")[0]
-        target_name = 'chair'
-        
-        img_path = os.path.join(input, img_name)
-        input_image = Image.open(img_path).convert("RGB")
-        input_image = resize(input_image)
-        
-        width, height = input_image.size
-        factor = resolution / max(width, height)
-        factor = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
-        width = int((width * factor) // 64) * 64
-        height = int((height * factor) // 64) * 64
-        input_image = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
-
-        prompts = edit
-        prompts = prompts.replace("%", target_name)
-        print("prompts:", prompts)
-        
-        if edit == "":
-            input_image.save(output)
-            return
-
-        with torch.no_grad(), autocast("cuda"), model.ema_scope():
-            cond = {}
+        img_list = os.listdir(input)
+        for img_name in img_list:
             
-            cond["c_crossattn"] = [model.get_learned_conditioning([prompts])] #modified: edit -> prompts
-            input_image = 2 * torch.tensor(np.array(input_image)).float() / 255 - 1
-            input_image = rearrange(input_image, "h w c -> 1 c h w").to(model.device)
-            cond["c_concat"] = [model.encode_first_stage(input_image).mode()]
+            start = time.time()
 
-            uncond = {}
-            uncond["c_crossattn"] = [null_token]
-            uncond["c_concat"] = [torch.zeros_like(cond["c_concat"][0])]
-
-            sigmas = model_wrap.get_sigmas(steps)
-
-            extra_args = {
-                "cond": cond,
-                "uncond": uncond,
-                "text_cfg_scale": cfg_text,
-                "image_cfg_scale": cfg_image,
-            }
-            torch.manual_seed(seed)
-            z = torch.randn_like(cond["c_concat"][0]) * sigmas[0]
-            z = K.sampling.sample_euler_ancestral(model_wrap_cfg, z, sigmas, extra_args=extra_args)
-            x = model.decode_first_stage(z)
-            x = torch.clamp((x + 1.0) / 2.0, min=0.0, max=1.0)
-            x = 255.0 * rearrange(x, "1 c h w -> h w c")
-            edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
-        
-        save_name = img_id + "_test_" + task + '.jpg'
-        
-        if os.path.exists(output) == False:
-            os.makedirs(output)
+            img_id = img_name.split(".")[0]
+            target_name = 'chair'
             
-        edited_image.save(os.path.join(output, save_name))
+            img_path = os.path.join(input, img_name)
+            input_image = Image.open(img_path).convert("RGB")
+            input_image = resize(input_image)
+            
+            width, height = input_image.size
+            factor = resolution / max(width, height)
+            factor = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
+            width = int((width * factor) // 64) * 64
+            height = int((height * factor) // 64) * 64
+            input_image = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
+
+            prompts = edit
+            prompts = prompts.replace("%", target_name)
+            print("prompts:", prompts)
+            
+            if edit == "":
+                input_image.save(output)
+                return
+
+            with torch.no_grad(), autocast("cuda"), model.ema_scope():
+                cond = {}
+                
+                cond["c_crossattn"] = [model.get_learned_conditioning([prompts])] #modified: edit -> prompts
+                input_image = 2 * torch.tensor(np.array(input_image)).float() / 255 - 1
+                input_image = rearrange(input_image, "h w c -> 1 c h w").to(model.device)
+                cond["c_concat"] = [model.encode_first_stage(input_image).mode()]
+
+                uncond = {}
+                uncond["c_crossattn"] = [null_token]
+                uncond["c_concat"] = [torch.zeros_like(cond["c_concat"][0])]
+
+                sigmas = model_wrap.get_sigmas(steps)
+
+                extra_args = {
+                    "cond": cond,
+                    "uncond": uncond,
+                    "text_cfg_scale": cfg_text,
+                    "image_cfg_scale": cfg_image,
+                }
+                torch.manual_seed(seed)
+                z = torch.randn_like(cond["c_concat"][0]) * sigmas[0]
+                z = K.sampling.sample_euler_ancestral(model_wrap_cfg, z, sigmas, extra_args=extra_args)
+                x = model.decode_first_stage(z)
+                x = torch.clamp((x + 1.0) / 2.0, min=0.0, max=1.0)
+                x = 255.0 * rearrange(x, "1 c h w -> h w c")
+                edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
+            
+            save_name = img_id + "_test_" + task + '.jpg'
+            
+            if os.path.exists(output) == False:
+                os.makedirs(output)
+                
+            edited_image.save(os.path.join(output, save_name))
+            
+            end = time.time()
+            
+            
+            print("One image done. Inferenct time cost:{}".format(end - start))
+    else:
+        split_path = os.path.join(input, "annotations", split)
         
-        end = time.time()
-        
-        
-        print("One image done. Inferenct time cost:{}".format(end - start))
+        for line in open(split_path):
+            line = line.strip()
+            word = line.split(" ")[0]
+            img_id = word
+            img_path = os.path.join(input, "images", word + ".jpg")
+            
+            for ncls in Pet_CLASSES_PART:
+
+                input_image = Image.open(img_path).convert("RGB")
+                input_image = resize(input_image)
+                
+                width, height = input_image.size
+                factor = resolution / max(width, height)
+                factor = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
+                width = int((width * factor) // 64) * 64
+                height = int((height * factor) // 64) * 64
+                input_image = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
+
+                prompts = edit
+                prompts = prompts.replace("%", ncls)
+                print("prompts:", prompts)
+
+                with torch.no_grad(), autocast("cuda"), model.ema_scope():
+                    cond = {}
+                    
+                    cond["c_crossattn"] = [model.get_learned_conditioning([prompts])] #modified: edit -> prompts
+                    input_image = 2 * torch.tensor(np.array(input_image)).float() / 255 - 1
+                    input_image = rearrange(input_image, "h w c -> 1 c h w").to(model.device)
+                    cond["c_concat"] = [model.encode_first_stage(input_image).mode()]
+
+                    uncond = {}
+                    uncond["c_crossattn"] = [null_token]
+                    uncond["c_concat"] = [torch.zeros_like(cond["c_concat"][0])]
+
+                    sigmas = model_wrap.get_sigmas(steps)
+
+                    extra_args = {
+                        "cond": cond,
+                        "uncond": uncond,
+                        "text_cfg_scale": cfg_text,
+                        "image_cfg_scale": cfg_image,
+                    }
+                    torch.manual_seed(seed)
+                    z = torch.randn_like(cond["c_concat"][0]) * sigmas[0]
+                    z = K.sampling.sample_euler_ancestral(model_wrap_cfg, z, sigmas, extra_args=extra_args)
+                    x = model.decode_first_stage(z)
+                    x = torch.clamp((x + 1.0) / 2.0, min=0.0, max=1.0)
+                    x = 255.0 * rearrange(x, "1 c h w -> h w c")
+                    edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
+                
+                save_name  = img_id + "_test_" + task + "_" + ncls + '.jpg'
+                output_cls = os.path.join(output, img_id)
+                
+                if os.path.exists(output_cls) == False:
+                    os.makedirs(output_cls)
+
+                edited_image.save(os.path.join(output_cls, save_name))
+                
+                
+            
 
 
 if __name__ == "__main__":
