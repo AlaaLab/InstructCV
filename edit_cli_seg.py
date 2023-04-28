@@ -28,13 +28,48 @@ from einops import rearrange
 from omegaconf import OmegaConf
 from PIL import Image, ImageOps
 from torch import autocast
-from dataset_creation.rephrase_prompts import Rephrase
 from evaluate.evaluate_cls_seg_det import genGT, CLASSES
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+
+tokenizer = AutoTokenizer.from_pretrained("humarin/chatgpt_paraphraser_on_T5_base")
+model_re = AutoModelForSeq2SeqLM.from_pretrained("humarin/chatgpt_paraphraser_on_T5_base")
 
 sys.path.append("./stable_diffusion")
 
 from stable_diffusion.ldm.util import instantiate_from_config
 
+def paraphrase(
+    question,
+    num_beams=5,
+    num_beam_groups=5,
+    num_return_sequences=5,
+    repetition_penalty=5.0,
+    diversity_penalty=5.0,
+    no_repeat_ngram_size=5,
+    temperature=0.7,
+    max_length=128
+):
+    input_ids = tokenizer(
+        f'paraphrase: {question}',
+        return_tensors="pt", padding="longest",
+        max_length=max_length,
+        truncation=True,
+    ).input_ids
+    
+    outputs = model_re.generate(
+        input_ids, temperature=temperature, repetition_penalty=repetition_penalty,
+        num_return_sequences=num_return_sequences, no_repeat_ngram_size=no_repeat_ngram_size,
+        num_beams=num_beams, num_beam_groups=num_beam_groups,
+        max_length=max_length, diversity_penalty=diversity_penalty
+    )
+
+    res = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+    res.append(question)
+    res.append(question.replace("help me",""))
+        
+    res = random.choice(res)
+
+    return res
 
 class CFGDenoiser(nn.Module):
     def __init__(self, model):
@@ -180,10 +215,19 @@ def inference_seg(resolution, steps, vae_ckpt, split, config, test_txt_path, eva
                 cls_name = CLASSES[cls]
                 
                 img_id  = image_name + "_" + cls_name
-        
+
                 prompts = edit
                 if rephrase:
-                    prompts  = Rephrase(prompts).do()
+                    # prompts  = paraphrase(prompts)
+                    # prompts.replace("percentage", "%")
+                    prompts_pool = ['Could someone please break down the % \into individual parts?',
+                                    'Can you provide me with a segment of the %?',
+                                    'Please divide the % \into smaller parts',
+                                    'Segment the %',
+                                    'Can you provide me with a segment of the %?',
+                                    'Help me segment the %',
+                                    'Would you be willing to split the % with me?']
+                    prompts = random.choice(prompts_pool)                
                 prompts = prompts.replace("%", cls_name)
                 print("prompts:", prompts)
             

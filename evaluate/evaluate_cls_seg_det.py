@@ -713,7 +713,7 @@ if __name__ == "__main__":
     # calc acc
     # acc = evaluate_cls(args.cls_pred_root)
     
-    test_path = './outputs/imgs_test_ade20k_unifiedIO'
+    test_path = './outputs/imgs_test_ade20k_rephrase'
     cls_iou = {}
     cls_ap = {}
     cate_bb = {}

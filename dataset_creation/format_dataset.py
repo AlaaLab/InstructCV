@@ -186,7 +186,7 @@ def get_bbox_img(root, img_id, bbox, dataset):
         a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill='white', outline='white', width=1)
     
     elif dataset == 'MSCOCO':
-        img_path = os.path.join(root, 'val2017', '%s.jpg' % img_id)
+        img_path = os.path.join(root, 'train2017', '%s.jpg' % img_id)
 
         img = Image.open(img_path).convert("RGB")
         # box_img = Image.new('RGB', img.size, (0,0,0))
@@ -286,6 +286,7 @@ def generate_sample(img, img_id, out_img, prompt, task_type):
 
     return seed
 
+
 def proc_oxford_pets_binary(oxford_pets_root, tasks):
     n = 0
     seeds = []
@@ -307,28 +308,53 @@ def proc_oxford_pets_binary(oxford_pets_root, tasks):
         img = Image.open(img_path).convert("RGB")
         
         if cls_name == "cat":
-            c = 'red'
+            c = 'white'
             output_img = get_class_img(img, cls_name, c, is_pos=True)
             if output_img is None:
                 assert "cls output image cannot be nonetype"
                 
-            prompt = {'edit': 'show red if contains {}'.format(cls_name)}
+            prompt = {'edit': 'show white if there exists {}, otherwise show black'.format(cls_name)}
             img_id2 = img_id + "_" + c
-            seed = generate_sample(img, img_id2, output_img, prompt, 'cls_pos')
-            seeds.append(seed)
+            seed = generate_sample(img, img_id2, output_img, prompt, 'cls_pos1')
+            
+            # prompt = {'edit': 'show white if there exists {}, otherwise show black'.format(cls_name)}
+            # img_id2 = img_id + "_" + c
+            # seed = generate_sample(img, img_id2, output_img, prompt, 'cls_pos2')
+            
+            # prompt = {'edit': 'show white if there exists {}, otherwise show black'.format(cls_name)}
+            # img_id2 = img_id + "_" + c
+            # seed = generate_sample(img, img_id2, output_img, prompt, 'cls_pos3')
+            
+            output_img = get_class_img(img, cls_name, 'blue', is_pos=True)
+            prompt = {'edit': 'show white if there exists dog, otherwise show blue'}
+            img_id2 = img_id + "_" + c
+            seed = generate_sample(img, img_id2, output_img, prompt, 'cls_neg1')
+            
+            output_img = get_class_img(img, cls_name, 'red', is_pos=False)
+            prompt = {'edit': 'show white if there exists dog, otherwise show red'}
+            seed = generate_sample(img, img_id2, output_img, prompt, 'cls_neg2')
+            
+            
             
         if cls_name == "dog":
-            c = 'purple'
+            c = 'black'
             output_img = get_class_img(img, cls_name, c, is_pos=True)
             if output_img is None:
                 assert "cls output image cannot be nonetype"
                 
-            prompt = {'edit': 'show purple if contains {}'.format(cls_name)}
+            prompt = {'edit': 'show black if contains {}, otherwise show white'.format(cls_name)}
             img_id2 = img_id + "_" + c
             seed = generate_sample(img, img_id2, output_img, prompt, 'cls_pos')
-            seeds.append(seed)
             
-
+            output_img = get_class_img(img, cls_name, 'red', is_pos=True)
+            prompt = {'edit': 'show black if contains cat, otherwise show red'}
+            img_id2 = img_id + "_" + c
+            seed = generate_sample(img, img_id2, output_img, prompt, 'cls_neg1')
+            
+            output_img = get_class_img(img, cls_name, 'blue', is_pos=True)
+            prompt = {'edit': 'show black if contains cat, otherwise show blue'}
+            img_id2 = img_id + "_" + c
+            seed = generate_sample(img, img_id2, output_img, prompt, 'cls_neg2')
         # for cls in clses:
         #     if cls == cls_name:
         #         ## randomly set color
@@ -497,7 +523,7 @@ def preproc_coco(root):
     
     print('begin to pre-process coco dataset...')
     clses                   = {}
-    coco_path               = os.path.join(root, 'annotations/instances_val2017.json')
+    coco_path               = os.path.join(root, 'annotations/instances_train2017.json')
     coco_fp                 = open(coco_path)
     anno_js                 = json.loads(coco_fp.readline())
 
@@ -545,7 +571,7 @@ def preproc_voc(root):
     
     print('begin to pre-process voc dataset...')
     clses, img_id_map       = {},{}
-    voc_path                = os.path.join(root, 'data/val.json')
+    voc_path                = os.path.join(root, 'data/train.json')
     voc_fp                  = open(voc_path)
     anno_js                 = json.loads(voc_fp.readline())
 
@@ -601,12 +627,12 @@ def proc_coco(coco_root, tasks):
         image_list.append(image_id)
     image_list = sorted(image_list)
     print("len(image_list)", len(image_list))
-    # image_list = image_list[0:2000]
-    # image_list = image_list[2000:4000]
-    image_list = image_list[4000:len(image_list)]
-    # image_list = image_list[70000:90000]
-    # image_list = image_list[90000:100000]
-    # image_list = image_list[100000:len(image_list)]
+    # image_list = image_list[0:20000]
+    # image_list = image_list[20000:40000]
+    # image_list = image_list[40000:60000]
+    # image_list = image_list[60000:80000]
+    # image_list = image_list[80000:100000]
+    image_list = image_list[100000:len(image_list)]
     for image_id in image_list:
     #----------------split process----------------
     
@@ -624,7 +650,7 @@ def proc_coco(coco_root, tasks):
                 ncls_perimg.append(cname)
             
             img_id              = image_id.zfill(12) #000000355677
-            img_path            = os.path.join(coco_root, 'val2017/{}.jpg'.format(img_id))
+            img_path            = os.path.join(coco_root, 'train2017/{}.jpg'.format(img_id))
             img                 = Image.open(img_path).convert("RGB")
             
             for task in tasks:
@@ -760,7 +786,7 @@ def proc_nyuv2_all(nyuv2_root):
             depth_img   = Image.open(dep_path).convert("RGB")
             
             # prompt['edit'] = 'Estimate the depth of this {}'.format(cls)
-            prompt['edit'] = 'Estimate the depth of this image'
+            prompt['edit'] = 'Create a monocular depth map'
 
             seed = generate_sample(img, img_id, depth_img, prompt, task_type="depes")
             seeds.append(seed)

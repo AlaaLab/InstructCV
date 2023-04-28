@@ -1,3 +1,5 @@
+# Copyright (c) 2023, Yulu Gan
+# Licensed under the BSD 3-clause license (see LICENSE.txt)
 # ** Description ** Rephrase the prompts
 # --------------------------------------------------------
 # References:
@@ -7,9 +9,43 @@
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import random
 
+device = "cuda"
+tokenizer = AutoTokenizer.from_pretrained("humarin/chatgpt_paraphraser_on_T5_base")
+model_re = AutoModelForSeq2SeqLM.from_pretrained("humarin/chatgpt_paraphraser_on_T5_base")
 
-device = "cuda"# not use
 
+# def paraphrase(
+#     question,
+#     num_beams=5,
+#     num_beam_groups=5,
+#     num_return_sequences=5,
+#     repetition_penalty=10.0,
+#     diversity_penalty=3.0,
+#     no_repeat_ngram_size=2,
+#     temperature=0.7,
+#     max_length=128
+# ):
+#     input_ids = tokenizer(
+#         f'paraphrase: {question}',
+#         return_tensors="pt", padding="longest",
+#         max_length=max_length,
+#         truncation=True,
+#     ).input_ids
+    
+#     outputs = model_re.generate(
+#         input_ids, temperature=temperature, repetition_penalty=repetition_penalty,
+#         num_return_sequences=num_return_sequences, no_repeat_ngram_size=no_repeat_ngram_size,
+#         num_beams=num_beams, num_beam_groups=num_beam_groups,
+#         max_length=max_length, diversity_penalty=diversity_penalty
+#     )
+
+#     res = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+#     res.append(question)
+#     res.append(question.replace("help me",""))
+        
+#     res = random.choice(res)
+
+#     return res
 
 class Rephrase(object):
     
@@ -58,8 +94,9 @@ class Rephrase(object):
 
 if __name__ == "__main__":
     
-    text = 'help me segment the %'
+    text = 'can you detect the %?'
     output = Rephrase(text).do()
+    output.replace("percentage", "%")
     print("output", type(output))
     print("output", len(output))
     print("output", output)
