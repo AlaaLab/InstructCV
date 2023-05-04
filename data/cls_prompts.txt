@@ -1,3 +1,23 @@
-Show black when there is no % in the image, otherwise exhibit %.
-
-
+Show * if there exsits %, else show #.
+If % is present, indicate *; otherwise, use # instead.
+In case % is present, indicate *; otherwise, use # instead.
+In case % is present, indicate *; else show #.
+Provide the value of * if % is present, otherwise provide # instead.
+The default option to display * instead of # if % exists.
+If % is present, indicate *. Else display #. How is this done?
+In case % is present, indicate * , otherwise # instead.
+When contains %, use the * symbol instead of #.
+Indicate * when % is found, otherwise show #.
+If there's a %, show *, otherwise display #.
+In case of %, mark *, otherwise show #.
+Indicate * if % exists, otherwise show #.
+When there's a %, display *, otherwise display #.
+Show * when % is present, otherwise display #.
+If % is detected, mark *, otherwise show #.
+Display # when % is present.Else indicate *.
+In the presence of %, the display will default to * instead of #.
+If % is detected, the display will show * by default rather than #.
+The display will use * instead of # as the default option when % is found.
+When % is present, the default display option is * instead of #.
+If % is present, the default choice for display will be * instead of #.
+Whenever % is found, display *; otherwise show # instead.

@@ -1,1 +1,13 @@
-Estimate the depth of the image
+Estimate the depth of the image.
+Calculate the depth of the image.
+Specify the depth of the image.
+Determine the depth of the image.
+Make an educated guess about how deep the image is.
+Specify the depth of the image. How would you go about doing that?
+How much can you tell me about how deep this picture was.
+Find out about how deep an object was in the image taken.
+Produce a depth map using only one eye.
+Construct an angled monocular depth map.
+Make your own monocular depth map.
+Produce a depth map using only one eye.
+Create a monocular depth map.

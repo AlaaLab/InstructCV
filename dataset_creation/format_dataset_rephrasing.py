@@ -9,6 +9,7 @@ from PIL import Image, ImageDraw, ImageFont
 import xml.etree.ElementTree as ET
 import shutil
 import os
+from random import shuffle
 import json
 import pdb
 import matplotlib.pyplot as plt
@@ -105,6 +106,8 @@ def get_bbox_prompt(cname):
     prompts = {}
     flag = random.randint(1,len(det_prompts)-1)
     prompt = det_prompts[flag]
+    if prompt == '':
+        assert "delete the empty line in det prompts txt file."
     prompt = copy.deepcopy(prompt)
     prompt = prompt.replace("%", cname)
     prompts['edit'] = prompt
@@ -121,32 +124,50 @@ def get_seg_prompt(cname):
         flag = random.randint(1,len(seg_prompts)-1)
         
     prompt = seg_prompts[flag]
+    if prompt == '':
+        assert "delete the empty line in seg prompts txt file."
     prompt = copy.deepcopy(prompt)
     prompt = prompt.replace("%", cname)
     prompts['edit'] = prompt
     return prompts
 
+def get_depes_prompt():
 
-def get_cls_prompt(c, cname):
+    prompts = {}
+    if len(dep_est_prompts) == 1:
+        flag = 0
+    else:
+        flag = random.randint(1,len(dep_est_prompts)-1)
+
+    prompt = dep_est_prompts[flag]
     
-    # fix prompt for init exp.
-    
-    prompt = {'edit': 'Show {} if the picture has {}, otherwise show black'.format(c, cname)}
-    
+    if prompt == '':
+        assert "delete the empty line in depes prompts txt file."
         
-    return prompt
+    prompts['edit'] = prompt
+    return prompts
 
 
-def get_depth_prompt():
+def get_cls_prompt(cls_name, pos_color, neg_color):
     
-    # prompts = {}
-    # flag = random.randint(1,len(dep_est_prompts)-1)
-    # prompt = dep_est_prompts[flag]
-    # prompts['edit'] = prompt
+    prompts = {}
+    if len(cls_prompts) == 1:
+        flag = 0
+    else:
+        flag = random.randint(1,len(cls_prompts)-1)
+        
+    prompt = cls_prompts[flag]
     
-    prompt = {'edit': 'Estimate the depth of the image'}
-
-    return prompt
+    if prompt == '' or ' ':
+        assert "delete the empty line in cls prompts txt file."
+        
+    prompt = copy.deepcopy(prompt)
+    prompt = prompt.replace("#", neg_color)
+    prompt = prompt.replace("*", pos_color)
+    prompt = prompt.replace("%", cls_name)
+    prompts['edit'] = prompt
+    
+    return prompts
 
 
 def get_seg_img(root, img_id):
@@ -218,46 +239,10 @@ def get_bbox_img(root, img_id, bbox, dataset):
     
 def get_class_img(img, target_name, color, is_pos):
     
-    if is_pos:
-        cls_img = Image.new('RGB', img.size, color)
-    else:
-        cls_img = Image.new('RGB', img.size, color)
+    cls_img = Image.new('RGB', img.size, color)
+    
     return cls_img
-    
-    # img_pos = img.copy()
-    # w,h = img_pos.size
-    
-    # boader = int(max(h/50,w/50)) # 线宽
-    # inner  = int(max(h/8,w/8)) # 缩进距离
-    
-    # if is_pos:
-    #     draw = ImageDraw.Draw(img_pos)
 
-        # draw.rectangle([(0,0),(w,boader)], fill=color, outline=color, width=1)
-        # draw.rectangle([(0,0),(boader,h)], fill=color, outline=color, width=1)
-        # draw.rectangle([(w-boader,0),(w,h)], fill=color, outline=color, width=1)
-        # draw.rectangle([(0,h-boader),(w,h)], fill=color, outline=color, width=1)
-        
-        
-        # draw.rectangle([(inner,inner),(w-inner,boader+inner)], fill=color, outline=color, width=1)
-        # draw.rectangle([(inner,inner),(boader+inner,h-inner)], fill=color, outline=color, width=1)
-        # draw.rectangle([(w-inner,inner),(w-inner+boader,h-inner+boader)], fill=color, outline=color, width=1)
-        # draw.rectangle([(0+inner,h-inner),(w-inner,h-inner+boader)], fill=color, outline=color, width=1)
-
-    # else:
-    #     draw = ImageDraw.Draw(img_pos)
-
-        # draw.rectangle([(0,0),(w,boader)], fill=color, outline=color, width=1)
-        # draw.rectangle([(0,0),(boader,h)], fill=color, outline=color, width=1)
-        # draw.rectangle([(w-boader,0),(w,h)], fill=color, outline=color, width=1)
-        # draw.rectangle([(0,h-boader),(w,h)], fill=color, outline=color, width=1)
-        
-        # draw.rectangle([(inner,inner),(w-inner,boader+inner)], fill=color, outline=color, width=1)
-        # draw.rectangle([(inner,inner),(boader+inner,h-inner)], fill=color, outline=color, width=1)
-        # draw.rectangle([(w-inner,inner),(w-inner+boader,h-inner+boader)], fill=color, outline=color, width=1)
-        # draw.rectangle([(0+inner,h-inner),(w-inner,h-inner+boader)], fill=color, outline=color, width=1)
-        
-    # return img_pos
 
 
 def generate_sample(img, img_id, out_img, prompt, task_type):
@@ -276,7 +261,7 @@ def generate_sample(img, img_id, out_img, prompt, task_type):
 
     img.save(output_path+'/{}_{}_0.jpg'.format(img_id, task_type))
     # pdb.set_trace()
-    out_img.save(output_path + '/{}_{}_1.png'.format(img_id, task_type))
+    out_img.save(output_path + '/{}_{}_1.jpg'.format(img_id, task_type))
     
     seed = [img_id+'_{}'.format(task_type), [img_id+'_{}'.format(task_type)]]
 
@@ -287,7 +272,7 @@ def generate_sample(img, img_id, out_img, prompt, task_type):
     return seed
 
 
-def proc_oxford_pets_binary(oxford_pets_root, tasks):
+def proc_oxford_pets_binary(oxford_pets_root, num_loop, tasks):
     n = 0
     seeds = []
 
@@ -307,105 +292,36 @@ def proc_oxford_pets_binary(oxford_pets_root, tasks):
         img_path = os.path.join(oxford_pets_root, 'images', '%s.jpg' % img_id)
         img = Image.open(img_path).convert("RGB")
         
-        if cls_name == "cat":
-            c = 'purple'
-            output_img = get_class_img(img, cls_name, c, is_pos=True)
-            prompt = {'edit': 'show purple if there exists {}, otherwise show orange'.format(cls_name)}
-            img_id2 = img_id + "_" + c
-            seed = generate_sample(img, img_id2, output_img, prompt, 'cls_pos1')
-            
-            c = 'purple'
-            output_img = get_class_img(img, cls_name, c, is_pos=True)
-            prompt = {'edit': 'show purple if there exists {}, otherwise show black'.format(cls_name)}
-            img_id2 = img_id + "_" + c
-            seed = generate_sample(img, img_id2, output_img, prompt, 'cls_pos2')
-            
-            c = 'blue'
-            output_img = get_class_img(img, cls_name, 'blue', is_pos=True)
-            prompt = {'edit': 'show purple if there exists dog, otherwise show blue'}
-            img_id2 = img_id + "_" + c
-            seed = generate_sample(img, img_id2, output_img, prompt, 'cls_neg1')
-            
-            c = 'red'
-            output_img = get_class_img(img, cls_name, 'red', is_pos=False)
-            prompt = {'edit': 'show purple if there exists dog, otherwise show red'}
-            img_id2 = img_id + "_" + c
-            seed = generate_sample(img, img_id2, output_img, prompt, 'cls_neg2')
-            
-            c = 'green'
-            output_img = get_class_img(img, cls_name, 'green', is_pos=False)
-            prompt = {'edit': 'show purple if there exists dog, otherwise show green'}
-            img_id2 = img_id + "_" + c
-            seed = generate_sample(img, img_id2, output_img, prompt, 'cls_neg3')
-            
-            
-            
-        if cls_name == "dog":
+        for cls in clses:
+            if cls == cls_name: #positive sample
+                
+                #randomly generate two colors
+                pos_c = random.choice(lcolor) #pos color
+                neg_c = random.choice(lcolor) #neg color
+                while pos_c == neg_c:
+                    pos_c = random.choice(lcolor)
+                    neg_c = random.choice(lcolor)
 
-
-            output_img = get_class_img(img, cls_name, 'orange', is_pos=True) 
-            prompt = {'edit': 'show orange if there exists contains {}, otherwise show black'.format(cls_name)}
-            img_id2 = img_id + "_" + c
-            seed = generate_sample(img, img_id2, output_img, prompt, 'cls_pos1')
-            
-            output_img = get_class_img(img, cls_name, 'green', is_pos=True) 
-            prompt = {'edit': 'show green if there exists {}, otherwise show black'.format(cls_name)}
-            img_id2 = img_id + "_" + c
-            seed = generate_sample(img, img_id2, output_img, prompt, 'cls_pos2')
-            
-            output_img = get_class_img(img, cls_name, 'red', is_pos=True)
-            prompt = {'edit': 'show orange if there exists cat, otherwise show red'}
-            img_id2 = img_id + "_" + c
-            seed = generate_sample(img, img_id2, output_img, prompt, 'cls_neg1')
-            
-            output_img = get_class_img(img, cls_name, 'blue', is_pos=True)
-            prompt = {'edit': 'show orange if there exists cat, otherwise show blue'}
-            img_id2 = img_id + "_" + c
-            seed = generate_sample(img, img_id2, output_img, prompt, 'cls_neg2')
-        # for cls in clses:
-        #     if cls == cls_name:
-        #         ## randomly set color
-        #         # c = random.choice(lcolor)
+                #generate outputs
+                output_img = get_class_img(img, cls_name, pos_c, is_pos=True)
+                prompt = get_cls_prompt(cls_name, pos_c, neg_c)
+                img_id = img_id + "_" + pos_c
+                seed = generate_sample(img, img_id, output_img, prompt, 'cls_pos_{}'.format(num_loop))
+        
+            else: #negtive sample
                 
-        #         # for i in range(len(lcolor)):
-        #         #     c = lcolor[i]#red
-        #         #     color = colors[c]#(255,0,0)
+                pos_c = random.choice(lcolor) #pos color
+                neg_c = random.choice(lcolor) #neg color
+                while pos_c == neg_c:
+                    pos_c = random.choice(lcolor)
+                    neg_c = random.choice(lcolor)
                 
-        #             ## specific set color
-        #             # color = pet_to_color[target_name] # {cat:red}
-        #         c = 'red'
+                output_img = get_class_img(img, cls, neg_c, is_pos=False)
+                prompt = get_cls_prompt(cls, pos_c, neg_c)
+                img_id = img_id + "_" + pos_c
+                seed = generate_sample(img, img_id, output_img, prompt, 'cls_neg_{}'.format(num_loop))
                 
-        #         output_img = get_class_img(img, cls_name, c, is_pos=True)
-        #         if output_img is None:
-        #             assert "cls output image cannot be nonetype"
-                    
-        #         prompt = {'edit': 'show red if contains {}'.format(cls_name)}
-        #         img_id2 = img_id + "_" + c
-        #         seed = generate_sample(img, img_id2, output_img, prompt, 'cls_pos')
-        #         seeds.append(seed)
-                
-            # else:
-            #     if random.random() > neg_sample_rate:  # 负采样率
-            #         continue
-            #     nname = cls
-                
-            #     # for i in range(len(lcolor)):
-            #     #     c1 = lcolor[i] #red
-            #     #     c2     = 'black'
-            #     # c1 = random.choice(lcolor)
-            #     c1     = 'red'
-            #     c2     = 'purple'
-            
-            #     output_img = get_class_img(img, nname, c2, is_pos=False)
-            #     prompt = {'edit': 'show purple if contains {}'.format(nname)}
-            #     img_id3 = img_id + "_" + c1
-            #     seed = generate_sample(img, img_id3, output_img, prompt, 'cls_neg_{}'.format(nname))
-            #     seeds.append(seed)
-            #     n += 1
-            #     if n % 100 == 0:
-            #         print('{} images processed!'.format(n))
-            #     continue
-
+        
         n +=1 
         if n % 100 == 0:
             print('{} images processed!'.format(n))
@@ -670,8 +586,8 @@ def proc_coco(coco_root, tasks):
                         
                     det_img, bbox = get_bbox_img(coco_root, img_id, bbox, dataset='MSCOCO')
                 
-                    # prompt  = get_bbox_prompt(cname)
-                    prompt = {'edit': 'detect the {}'.format(cname)}
+                    prompt  = get_bbox_prompt(cname)
+                    # prompt = {'edit': 'detect the {}'.format(cname)}
                     
                     # check if 3 channels
                     try:
@@ -748,7 +664,7 @@ def proc_coco(coco_root, tasks):
                             s = np.array(s).reshape(-1, 2)     # [n_points, 2]
                             cv2.fillPoly(gt, s.astype(np.int32)[np.newaxis, :, :], (255, 255, 255))
 
-                    prompt = {'edit': 'segment the {}'.format(cname)}
+                    prompt = get_seg_prompt(cname)
                     
                     seg_img = Image.fromarray(cv2.cvtColor(gt,cv2.COLOR_BGR2RGB)).convert("RGB")
                     seed = generate_sample(img, img_id, seg_img, prompt, task_type='seg_{}'.format(cname))
@@ -792,8 +708,7 @@ def proc_nyuv2_all(nyuv2_root):
             img         = Image.open(img_path).convert("RGB")
             depth_img   = Image.open(dep_path).convert("RGB")
             
-            # prompt['edit'] = 'Estimate the depth of this {}'.format(cls)
-            prompt['edit'] = 'Create a monocular depth map'
+            prompt      = get_depes_prompt()
 
             seed = generate_sample(img, img_id, depth_img, prompt, task_type="depes")
             seeds.append(seed)
@@ -971,8 +886,8 @@ def proc_adechan2016(ade_root, cls_ade_dict):
             if cls_name == "background":
                 continue
 
-            # prompt  = get_seg_prompt(cname=cls_name)
-            prompt = {'edit': 'segment the {}'.format(cls_name)}
+            prompt  = get_seg_prompt(cname=cls_name)
+            # prompt = {'edit': 'segment the {}'.format(cls_name)}
             
             # check if 3 channels
             try:
@@ -1034,30 +949,28 @@ if __name__ == "__main__":
     parser.add_argument("--imagenet_root", default='./data/imagenet', type=str)
     args = parser.parse_args()
     
-    cls_ade_dict, pet_to_color, clses           = {}, {}, {}
-    neg_sample_rate                             = 1000 # for cls. 0 means no negtive sample
-    num_seg, num_det, num_dep_est               = 0, 0, 0
-    seg_prompts, det_prompts, dep_est_prompts   = {}, {}, {}
+    cls_ade_dict, pet_to_color, clses                           = {}, {}, {}
+    neg_sample_rate                                             = 1000 # for cls. 0 means no negtive sample
+    num_seg, num_det, num_dep_est, num_cls                      = 0, 0, 0, 0
+    seg_prompts, det_prompts, dep_est_prompts, cls_prompts     = {}, {}, {}, {}
     
     for i in range(len(CLASSES)):
         
         cls_ade_dict[i]                         = CLASSES[i]
     
     # get colors for cls
-    # colors                                      = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 
-    #                                                 'purple':(128,0,128), 'white':(255,255,255), 'black':(0, 0, 0),
-    #                                                 'AliceBlue':(240,248,255), 'Aqua': (0,206,209), 'Peru':(205, 133, 63),
-    #                                                 'Brown':(165,42,42), 'DarkGray':(169,169,169), 'Gold':(255,215,0),
-    #                                                 'Violet':(238,130,238), 'SlateBlue':(230,230,250), 'Orange':(255,128,0),
-    #                                                 'Maroon':(128,0,0), 'LightSlateGray':(119,136,153), 'Indigo':(75,0,130),
-    #                                                 'DarkKhaki':(189,183,107), 'Coral':(255,127,80),'RosyBrown':(188,143,143),
-    #                                                 'LightSalmon':(255,160,122), 'Azure':(240,255,255),'Beige':(245,245,220),
-    #                                                 'CadetBlue':(95,158,160),'DarkBlue':(0,0,139),'Firebrick':(178,34,34),
-    #                                                 'Silver':(192,192,192),'YellowGreen':(154,205,50),'LightPink':(255,182,193),
-    #                                                 'Snow':(255,250,250),'Sienna':(160,82,45),'Salmon':(250,128,114),
-    #                                                 'PowderBlue':(176,224,230),'PeachPuff':(255,218,155),'DarkRed':(139,0,0),
-    #                                                 'Olive':(128,128,0)}
-    colors                                      = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255)}
+    colors                                      = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 
+                                                    'purple':(128,0,128), 'white':(255,255,255), 'AliceBlue':(240,248,255), 'Aqua': (0,255,255), 'Peru':(205, 133, 63),
+                                                    'Brown':(165,42,42), 'DarkGray':(169,169,169), 'Gold':(255,215,0),
+                                                    'Violet':(238,130,238), 'SlateBlue':(230,230,250), 'Orange':(255,128,0),
+                                                    'Maroon':(128,0,0), 'LightSlateGray':(119,136,153), 'Indigo':(75,0,130),
+                                                    'DarkKhaki':(189,183,107), 'Coral':(255,127,80),'RosyBrown':(188,143,143),
+                                                    'LightSalmon':(255,160,122), 'Azure':(240,255,255),'Beige':(245,245,220),
+                                                    'CadetBlue':(95,158,160),'DarkBlue':(0,0,139),'Firebrick':(178,34,34),
+                                                    'Silver':(192,192,192),'YellowGreen':(154,205,50),'LightPink':(255,182,193),
+                                                    'Snow':(255,250,250),'Sienna':(160,82,45),'Salmon':(250,128,114),
+                                                    'PowderBlue':(176,224,230),'PeachPuff':(255,218,155),'DarkRed':(139,0,0)}
+    # colors                                      = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255)}
     
     lcolor                                      = list(colors.keys())
 
@@ -1070,6 +983,67 @@ if __name__ == "__main__":
     
     #generate prompts dict
     
+    # with open("./data/seg_prompts.txt") as file:
+    #     for item_seg in file:
+    #         sen_seg = item_seg.strip()
+    #         if sen_seg == '':
+    #             continue
+    #         seg_prompts[num_seg] = sen_seg
+    #         num_seg += 1
+    #     seg_prompts_new = seg_prompts.copy()
+        
+    #     while len(seg_prompts_new.values()) <= 5000:
+            
+    #         for prompt in seg_prompts_new.values():
+    #             seg_prompts_tmp = seg_prompts_new.copy()
+    #             output = Rephrase(prompt).do()
+    #             for i in range(0,3):
+    #                 output_i = output[i].replace("percentage", "%")
+    #                 seg_prompts_tmp[num_seg] = output_i
+    #                 num_seg += 1
+                    
+    #         seg_prompts_new_ = {}
+    #         dict_key_ls = list(seg_prompts_tmp.keys())
+    #         random.shuffle(dict_key_ls)
+    #         for key in dict_key_ls:
+    #             seg_prompts_new_[key] = seg_prompts_tmp.get(key)
+    #         seg_prompts_new = seg_prompts_new_.copy()
+    
+
+    # json_file = open('dataset_creation/seg_prompt.json', 'w')
+    # json_file.write(json.dumps(seg_prompts_new))
+    # json_file.close()
+            
+    
+    # with open("./data/det_prompts.txt") as file:
+    #     for item_det in file:
+    #         sen_det = item_det.strip()
+    #         det_prompts[num_det] = sen_det
+    #         num_det += 1
+            
+    #     det_prompts_new = det_prompts.copy()
+        
+    #     while len(det_prompts_new.values()) <= 5000:
+            
+    #         for prompt in det_prompts_new.values():
+    #             det_prompts_tmp = det_prompts_new.copy()
+    #             output = Rephrase(prompt).do()
+    #             for i in range(0,3):
+    #                 output_i = output[i].replace("percentage", "%")
+    #                 det_prompts_tmp[num_det] = output_i
+    #                 num_det += 1
+                    
+    #         det_prompts_new_ = {}
+    #         dict_key_ls = list(det_prompts_tmp.keys())
+    #         random.shuffle(dict_key_ls)
+    #         for key in dict_key_ls:
+    #             det_prompts_new_[key] = det_prompts_tmp.get(key)
+    #         det_prompts_new = det_prompts_new_.copy()
+        
+    # json_file = open('dataset_creation/det_prompt.json', 'w')
+    # json_file.write(json.dumps(det_prompts_new))
+    # json_file.close()
+
     with open("./data/seg_prompts.txt") as file:
         for item_seg in file:
             sen_seg = item_seg.strip()
@@ -1081,22 +1055,20 @@ if __name__ == "__main__":
             sen_det = item_det.strip()
             det_prompts[num_det] = sen_det
             num_det += 1
-    
+            
     with open("./data/dep_est_prompts.txt") as file:
         for item_dep_est in file:
             sen_dep_est = item_dep_est.strip()
             dep_est_prompts[num_dep_est] = sen_dep_est
             num_dep_est += 1
+            
+    with open("./data/cls_prompts.txt") as file:
+        for item_cls_est in file:
+            sen_cls_est = item_cls_est.strip()
+            cls_prompts[num_cls] = sen_cls_est
+            num_cls += 1
 
-    # for line in open(os.path.join(args.oxford_pets_root, 'annotations/trainval.txt')):
-    #     line = line.strip()
-    #     words = line.split(' ')
-    #     img_id = words[0]
-    #     cls_label = words[1]
-
-    #     target_name = ' '.join(img_id.split('_')[:-1]).strip()
-    #     clses[cls_label] = target_name #store target_name and cls_label
-    tasks = ['cls']
+    tasks = ['det']
     
     if fnmatch(args.dataset, "coco"):
         proc_coco(args.coco_root, tasks)
@@ -1105,7 +1077,10 @@ if __name__ == "__main__":
         proc_oxford_pets_finegrained(args.oxford_pets_root, tasks)
         
     elif fnmatch(args.dataset, "oxford_pets_binary"):
-        proc_oxford_pets_binary(args.oxford_pets_root, tasks)
+        num_loop = 0
+        for i in range(20):
+            proc_oxford_pets_binary(args.oxford_pets_root, num_loop, tasks)
+            num_loop += 1
 
     elif fnmatch(args.dataset, "nyuv2"):
         proc_nyuv2_all(args.nyuv2_root)
