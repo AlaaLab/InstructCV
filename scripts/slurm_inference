@@ -26,7 +26,7 @@
 ## for evaluation
 # python edit_cli.py --ckpt logs/train_pets_cls_cls/checkpoints/last.ckpt --resolution 256 --input data/oxford-pets --output outputs/img_test_cls --edit "show black if contains dog, otherwise show white" --split test.txt --task cls
 ## for debug
-CUDA_VISIBLE_DEVICES=6 python edit_cli.py --ckpt logs/train_pets_cls_cls/checkpoints/last.ckpt --resolution 256 --input outputs/test_img --output outputs/img_test_cls --edit "show purple if there exists cat, otherwise show orange" --task cls --single_test
+CUDA_VISIBLE_DEVICES=6 python edit_cli.py --ckpt logs/train_test_panotic_seg_comeon/checkpoints/last.ckpt --resolution 256 --input outputs/img_test_seg --output outputs/img_test_cls --edit "Perform image segmentation to extract the bed with different colors." --task seg --single_test
 
 ## for depth estimation
 # python edit_cli_depes.py --input /lustre/grp/gyqlab/lism/brt/language-vision-interface/data/nyuv2/basement_0001a --output imgs_test_nyuv2/ --edit "Assess the image's depth by looking for visual cues and making an estimation."

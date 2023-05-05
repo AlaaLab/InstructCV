@@ -261,7 +261,7 @@ def generate_sample(img, img_id, out_img, prompt, task_type):
 
     img.save(output_path+'/{}_{}_0.jpg'.format(img_id, task_type))
     # pdb.set_trace()
-    out_img.save(output_path + '/{}_{}_1.jpg'.format(img_id, task_type))
+    out_img.save(output_path + '/{}_{}_1.png'.format(img_id, task_type))
     
     seed = [img_id+'_{}'.format(task_type), [img_id+'_{}'.format(task_type)]]
 
@@ -854,6 +854,17 @@ def proc_adechan2016(ade_root, cls_ade_dict):
     
     img_list = os.listdir(os.path.join(ade_root, "images/training"))
     
+    #part
+    img_list = sorted(img_list)
+    print("len(image_list)", len(img_list))
+    img_list = img_list[0:500]
+    # image_list = image_list[20000:40000]
+    # image_list = image_list[40000:60000]
+    # image_list = image_list[60000:80000]
+    # image_list = image_list[80000:100000]
+    # image_list = image_list[100000:len(image_list)]
+    #######
+    
     for img_name in img_list:
         
         img_path = os.path.join(ade_root, "images/training", img_name)
@@ -905,7 +916,46 @@ def proc_adechan2016(ade_root, cls_ade_dict):
 
     return seeds
 
+def get_colors(image_path):
+    
+    img = cv2.imread(image_path)
+    b, g, r = cv2.split(img)
+    colors = set()
+    for i in range(img.shape[0]):
+        for j in range(img.shape[1]):
+            colors.add((r[i][j], g[i][j], b[i][j]))
+    return list(colors)
 
+def color_replace(img, color):
+    
+    color = color[::-1]
+    img = cv2.imread(img)
+    lower = np.array(color)
+    upper = np.array(color)
+    mask = cv2.inRange(img, lower, upper)
+    img[mask > 0] = [255, 255, 255]
+    img[mask == 0] = [0, 0, 0]
+    return img
+
+def proc_vocdataset(voc_root):
+    
+    img_ins_root = os.path.join(voc_root, "SegmentationObject")
+    for img_name in os.listdir(img_ins_root): #2007_000032.png
+        img_name_jpg = img_name.replace("png","jpg")
+        img_path = os.path.join(voc_root, "JPEGImages",img_name_jpg)
+        img_ins_path = os.path.join(img_ins_root, img_name)
+    
+        img_id = img_name.split(".")[0]
+        img = Image.open(img_path).convert('RGB')
+        label = Image.open(img_ins_path).convert('RGB')#also seg_path
+        
+        prompt  = get_seg_prompt(cname="image")
+        
+        seed = generate_sample(img, img_id, label, prompt, task_type="seg")
+    
+    
+    
+    
 def prompts_chat():
     '''
     Use ChatGPT to generate various prompts.
@@ -947,6 +997,7 @@ if __name__ == "__main__":
     parser.add_argument("--nyuv2_root", default='./data/nyu_mdet', type=str)
     parser.add_argument("--ade_root", default='./data/ADEChallengeData2016', type=str)
     parser.add_argument("--imagenet_root", default='./data/imagenet', type=str)
+    parser.add_argument("--voc_root", default='./data/VOCdevkit/VOC2012', type=str)
     args = parser.parse_args()
     
     cls_ade_dict, pet_to_color, clses                           = {}, {}, {}
@@ -980,6 +1031,8 @@ if __name__ == "__main__":
 
     if os.path.exists(args.save_root)  == False:
         os.mkdir(args.save_root)
+        
+        
     
     #generate prompts dict
     
@@ -1044,7 +1097,7 @@ if __name__ == "__main__":
     # json_file.write(json.dumps(det_prompts_new))
     # json_file.close()
 
-    with open("./data/seg_prompts.txt") as file:
+    with open("./data/seg_prompts_voc.txt") as file:
         for item_seg in file:
             sen_seg = item_seg.strip()
             seg_prompts[num_seg] = sen_seg
@@ -1090,4 +1143,7 @@ if __name__ == "__main__":
         
     elif fnmatch(args.dataset, "imagenet"):
         proc_imagenet(args.imagenet_root)
+    
+    elif fnmatch(args.dataset, "voc"):
+        proc_vocdataset(args.voc_root)
 
