@@ -136,6 +136,11 @@ Download the dataset [here](https://cocodataset.org/)
 <summary>ADE20k - Semantic Segmentation</summary>
 
 Download the dataset [here](http://data.csail.mit.edu/places/ADEchallenge/ADEChallengeData2016.zip)
+Download the instance annotation from [here](http://sceneparsing.csail.mit.edu/)
+```
+cd ADEChallengeData2016
+wget http://sceneparsing.csail.mit.edu/data/ChallengeData2017/annotations_instance.tar
+```
 </details>
 
 <details open>
@@ -325,8 +330,11 @@ Change the data_root in dataset_configs.py
 
 
 
+
 </details>
 <br>
+
+
 
 
 

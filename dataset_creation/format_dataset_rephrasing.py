@@ -857,12 +857,8 @@ def proc_adechan2016(ade_root, cls_ade_dict):
     #part
     img_list = sorted(img_list)
     print("len(image_list)", len(img_list))
-    img_list = img_list[0:500]
-    # image_list = image_list[20000:40000]
-    # image_list = image_list[40000:60000]
-    # image_list = image_list[60000:80000]
-    # image_list = image_list[80000:100000]
-    # image_list = image_list[100000:len(image_list)]
+    img_list = img_list[0:10000]
+    # img_list = img_list[10000:len(img_list)]
     #######
     
     for img_name in img_list:
@@ -1097,7 +1093,7 @@ if __name__ == "__main__":
     # json_file.write(json.dumps(det_prompts_new))
     # json_file.close()
 
-    with open("./data/seg_prompts_voc.txt") as file:
+    with open("./data/seg_prompts.txt") as file:
         for item_seg in file:
             sen_seg = item_seg.strip()
             seg_prompts[num_seg] = sen_seg

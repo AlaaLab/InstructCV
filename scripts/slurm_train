@@ -16,4 +16,4 @@
 # python main.py --name new --base configs/train_coco_det.yaml --train --gpus 0,1,2,3,4,5,6,7
 # python main.py --name cls --base configs/train_coco_cls_seg_det.yaml --train --gpus 0,1,2,3,4,5,6,7
 # python main.py --name comeon --base configs/train_all100kdata_rephrased.yaml --train --gpus 0,1,2,3,4,5,6,7
-python main.py --name comeon --base configs/train_test_panotic_seg.yaml --train --gpus 0,1,2,3,4,5,6,7
+python main.py --name newnew --base configs/train_all100kdata_rephrased.yaml --train --gpus 0,1,2,3,4,5,6,7

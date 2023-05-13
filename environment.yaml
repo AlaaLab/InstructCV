@@ -37,3 +37,4 @@ dependencies:
     - seaborn
     - k-diffusion
     - pycocotools
+    - -e git+https://github.com/cocodataset/panopticapi.git

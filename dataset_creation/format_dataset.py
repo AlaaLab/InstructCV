@@ -276,7 +276,7 @@ def generate_sample(img, img_id, out_img, prompt, task_type):
 
     img.save(output_path+'/{}_{}_0.jpg'.format(img_id, task_type))
     # pdb.set_trace()
-    out_img.save(output_path + '/{}_{}_1.png'.format(img_id, task_type))
+    out_img.save(output_path + '/{}_{}_1.jpg'.format(img_id, task_type))
     
     seed = [img_id+'_{}'.format(task_type), [img_id+'_{}'.format(task_type)]]
 
@@ -634,12 +634,12 @@ def proc_coco(coco_root, tasks):
         image_list.append(image_id)
     image_list = sorted(image_list)
     print("len(image_list)", len(image_list))
-    # image_list = image_list[0:20000]
+    image_list = image_list[0:20000]
     # image_list = image_list[20000:40000]
     # image_list = image_list[40000:60000]
     # image_list = image_list[60000:80000]
     # image_list = image_list[80000:100000]
-    image_list = image_list[100000:len(image_list)]
+    # image_list = image_list[100000:len(image_list)]
     for image_id in image_list:
     #----------------split process----------------
     
@@ -1096,7 +1096,7 @@ if __name__ == "__main__":
 
     #     target_name = ' '.join(img_id.split('_')[:-1]).strip()
     #     clses[cls_label] = target_name #store target_name and cls_label
-    tasks = ['cls']
+    tasks = ['det']
     
     if fnmatch(args.dataset, "coco"):
         proc_coco(args.coco_root, tasks)
