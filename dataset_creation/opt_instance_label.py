@@ -26,12 +26,12 @@ colors = np.array(colors)
 n = 0
 
 
-for img_p in os.listdir(img_path):
+for img_p in os.listdir(img_path): #img_path: ./data/ADEChallengeData2016/images/validation
     
     img = np.array(Image.open(os.path.join(img_path, img_p)))
     label_p = os.path.join(label_path, img_p.split('.')[0] + '.png')
     im_label = Image.open(label_p).convert('L')
-    w, h = im_label.size
+    # w, h = im_label.size
     im_label = np.array(im_label)
     im_label = colors[im_label]
     new_img = np.where(im_label == 0, img[:,:], im_label[:,:])

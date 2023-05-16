@@ -130,7 +130,7 @@ def inference_seg(resolution, steps, vae_ckpt, split, config, test_txt_path, eva
 
     seed = random.randint(0, 100000) if seed is None else seed
     
-    # genGT(input, output, task, split).generate_ade20k_gt()
+    genGT(input, output, task, split).generate_ade20k_gt()
     
     if single_test:
         

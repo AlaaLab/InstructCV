@@ -131,6 +131,18 @@ def get_seg_prompt(cname):
     prompts['edit'] = prompt
     return prompts
 
+def get_seg_ins_prompt():
+
+    prompts = {}
+    if len(ins_prompts) == 1:
+        flag = 0
+    else:
+        flag = random.randint(1,len(ins_prompts)-1)
+
+    prompt = ins_prompts[flag]
+    prompts['edit'] = prompt
+    return prompts
+
 def get_depes_prompt():
 
     prompts = {}
@@ -242,8 +254,6 @@ def get_class_img(img, target_name, color, is_pos):
     cls_img = Image.new('RGB', img.size, color)
     
     return cls_img
-
-
 
 def generate_sample(img, img_id, out_img, prompt, task_type):
     '''
@@ -844,7 +854,7 @@ def proc_imagenet(imagenet_root):
     return
                 
             
-def proc_adechan2016(ade_root, cls_ade_dict):
+def proc_adechan2016_sem(ade_root, cls_ade_dict):
     
     print('begin to process ade20k training dataset...')
     
@@ -911,6 +921,56 @@ def proc_adechan2016(ade_root, cls_ade_dict):
                 print('About {} images processed!'.format(n))
 
     return seeds
+
+
+def proc_adechan2016_ins(ade_root):
+    
+    print('begin to process ade20k instance seg training dataset...')
+    
+    seeds   = []
+    prompt  = {}
+    n       = 0
+    colors  = [(0,0,0)]
+
+    for i in range(255):
+        colors.append((random.randrange(1, 255, 1), random.randrange(1, 255, 1), random.randrange(1, 255, 1)))
+
+    colors = np.array(colors)
+    
+    img_list = os.listdir(os.path.join(ade_root, "images/training"))
+    
+    #part
+    img_list = sorted(img_list)
+    print("len(image_list)", len(img_list))
+    img_list = img_list[0:10000]
+    # img_list = img_list[10000:len(img_list)]
+    #######
+    
+    for img_name in img_list:
+        
+        img_path = os.path.join(ade_root, "images/training", img_name)
+        seg_path = os.path.join(ade_root, "annotations_instance/training", img_name.split(".")[0]+".png")
+        
+        # seg_img = np.array(Image.open(img_path))
+        seg_img = Image.open(img_path).convert('RGB')
+        im_label = Image.open(seg_path).convert('L')
+        w, h = im_label.size
+        im_label = np.array(im_label)
+        im_label = colors[im_label]
+        im_label = Image.fromarray(np.uint8(im_label)).convert('RGB')
+        # new_img = np.where(im_label == 0, seg_img[:,:], im_label[:,:])
+        # new_img = Image.fromarray(new_img.astype(np.uint8))
+        
+        prompt  = get_seg_ins_prompt()
+        
+        seed = generate_sample(seg_img, img_name.split(".")[0], im_label, prompt, task_type="ins_seg")
+
+        n +=1 
+        if n % 100 == 0:
+            print('About {} images processed!'.format(n))
+
+    return seeds
+
 
 def get_colors(image_path):
     
@@ -996,10 +1056,10 @@ if __name__ == "__main__":
     parser.add_argument("--voc_root", default='./data/VOCdevkit/VOC2012', type=str)
     args = parser.parse_args()
     
-    cls_ade_dict, pet_to_color, clses                           = {}, {}, {}
-    neg_sample_rate                                             = 1000 # for cls. 0 means no negtive sample
-    num_seg, num_det, num_dep_est, num_cls                      = 0, 0, 0, 0
-    seg_prompts, det_prompts, dep_est_prompts, cls_prompts     = {}, {}, {}, {}
+    cls_ade_dict, pet_to_color, clses                          = {}, {}, {}
+    neg_sample_rate                                            = 1000 # for cls. 0 means no negtive sample
+    num_seg, num_det, num_dep_est, num_cls, num_ins            = 0, 0, 0, 0, 0
+    seg_prompts, det_prompts, dep_est_prompts, cls_prompts, ins_prompts   = {}, {}, {}, {}, {}
     
     for i in range(len(CLASSES)):
         
@@ -1116,7 +1176,13 @@ if __name__ == "__main__":
             sen_cls_est = item_cls_est.strip()
             cls_prompts[num_cls] = sen_cls_est
             num_cls += 1
-
+    
+    with open("./data/seg_prompts_instance.txt") as file:
+        for item_seg_ins in file:
+            sen_seg_ins = item_seg_ins.strip()
+            ins_prompts[num_ins] = sen_seg_ins
+            num_ins += 1
+    
     tasks = ['det']
     
     if fnmatch(args.dataset, "coco"):
@@ -1134,8 +1200,11 @@ if __name__ == "__main__":
     elif fnmatch(args.dataset, "nyuv2"):
         proc_nyuv2_all(args.nyuv2_root)
     
-    elif fnmatch(args.dataset, "ade20k"):
-        proc_adechan2016(args.ade_root, cls_ade_dict)
+    elif fnmatch(args.dataset, "ade20k_sem"):
+        proc_adechan2016_sem(args.ade_root, cls_ade_dict)
+        
+    elif fnmatch(args.dataset, "ade20k_ins"):
+        proc_adechan2016_ins(args.ade_root)
         
     elif fnmatch(args.dataset, "imagenet"):
         proc_imagenet(args.imagenet_root)
