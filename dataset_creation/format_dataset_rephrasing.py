@@ -995,8 +995,10 @@ def color_replace(img, color):
 
 def proc_vocdataset(voc_root):
     
-    img_ins_root = os.path.join(voc_root, "SegmentationObject")
+    img_ins_root = os.path.join(voc_root, "SegmentationObject_new")
+    
     for img_name in os.listdir(img_ins_root): #2007_000032.png
+        
         img_name_jpg = img_name.replace("png","jpg")
         img_path = os.path.join(voc_root, "JPEGImages",img_name_jpg)
         img_ins_path = os.path.join(img_ins_root, img_name)
@@ -1005,10 +1007,9 @@ def proc_vocdataset(voc_root):
         img = Image.open(img_path).convert('RGB')
         label = Image.open(img_ins_path).convert('RGB')#also seg_path
         
-        prompt  = get_seg_prompt(cname="image")
+        prompt  = get_seg_ins_prompt()
         
         seed = generate_sample(img, img_id, label, prompt, task_type="seg")
-    
     
     
     
