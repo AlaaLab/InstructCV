@@ -9,29 +9,29 @@ import numpy as np
 import cv2
 import random
 
+colors           = [(252,230.202),(255,0,0),(255,127,80),(255,99,71),(255,0,255),(0,255,0),(0,255,255),(255,235,205),(255,255,0),(255,153,18),(255,215,0),(255,227,132),(160,32,240),(244,164,95),(218,112,214),(153,51,250)]
+bbox_p           = "/lustre/grp/gyqlab/lism/brt/language-vision-interface/visualization/det_result/bbox.json"
+img_p            = "/lustre/grp/gyqlab/lism/brt/language-vision-interface/visualization/ori_img/2007_004538.jpg"
+cls_name         = ['person', 'horse']
 
-colors           = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (128,0,128), (255,255,255),
-                    (0,206,209), (205, 133, 63), (165,42,42), (255,128,0), (188,143,143),(128,128,0)]
-colors_used      = random.choice(colors)
-bbox_p           = "det_result/"
-img_p            = "ori_img/"
-
-with open('bbox.json','r',encoding='utf8')as fp:
+with open(bbox_p,'r',encoding='utf8')as fp:
     bbox_data = json.load(fp)['bbox']
 
 num = len(bbox_data)
-img = cv2.imread('zebra.jpg')
+img = cv2.imread(img_p)
+
 for i in range(num):
+    colors_used      = random.choice(colors)
     point1 = np.int_(bbox_data[i][:2])
     point2 = np.int_(bbox_data[i][2:])
 
-    img = cv2.rectangle(img, point1, point2, colors_used, 2)
-    new_point1 = (point1[0], point1[1] - 20)
-    new_point2 = (point1[0] + 70, point1[1])
+    img = cv2.rectangle(img, point1, point2, colors_used, 11)
+    new_point1 = (point1[0], point1[1] - 30)
+    new_point2 = (point1[0] + 120, point1[1])
 
     img = cv2.rectangle(img,new_point1, new_point2, colors_used, -1) #background
     news_point1 = (point1[0] + 5 ,point1[1] - 5)
-    
-    cv2.putText(img, 'zebra', news_point1, cv2.FONT_HERSHEY_TRIPLEX, 0.5, colors_used, 1)
+    print(cls_name[i])
+    cv2.putText(img, cls_name[i], news_point1, cv2.FONT_ITALIC, 1, (0,0,0), 2)
 
-cv2.imwrite('zebra_result.jpg',img)
+cv2.imwrite('det_vis.jpg',img)

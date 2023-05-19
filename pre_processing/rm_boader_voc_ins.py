@@ -27,8 +27,8 @@ for img_path in img_paths:
     h,w = gray.shape
     ret,thresh = cv2.threshold(gray,200,255,cv2.THRESH_BINARY)
     color_n = np.unique(gray)
-    if len(color_n) <= 3:
-        continue
+    # if len(color_n) <= 3:
+    #     continue
     for i in range(h):
         for j in range(w):
             if thresh[i,j] == 255:

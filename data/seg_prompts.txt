@@ -1,23 +1,2 @@
-Employ segmentation to divide the % in this image into slices.
-Utilize segmentation to slice the % shown in this image.
-Segment the % in this image into slices by using segmentation.
-Apply segmentation to cut the % in this image into slices.
-Isolate the % in the image through the use of segmentation algorithms. 
-Employ segmentation algorithms to partition the % in the given image. 
-Apply segmentation techniques to divide the % in the image. 
-Use segmentation algorithms to segment the % in the image. 
-Use segmentation methods to partition the % in the image. 
-Use segmentation techniques to isolate the % in the image. 
-Implement segmentation algorithms to separate the % in the image. 
-Utilize segmentation techniques to segment the % in the image. 
-Apply a segmentation algorithm to partition the % in the given image. 
-Employ a segmentation technique to isolate the % in the image.
-Employ segmentation techniques to divide the % values displayed on this graph.
-Apply segmentation to separate the % data points in this chart.
-Use segmentation methodology to break down the %s depicted on this graph.
-Implement segmentation strategies to partition the % values shown in this chart.
-Adopt segmentation approaches to split the % data on this graph.
-Utilize segmentation methods to segment the % figures in this visualization.
-Utilize segmentation algorithms to divide the % information in this chart.
-Employ segmentation tactics to split the % values depicted on this graph.
-Apply segmentation procedures to separate the % values on this chart.
+Segment the %
+Divide the %
