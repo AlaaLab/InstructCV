@@ -48,6 +48,7 @@ ann_final.json
 pred_final.json
 baselines/pix2seq
 baselines/pix2seq_bak
+visualization/det_result
 
 
 # OS generated files

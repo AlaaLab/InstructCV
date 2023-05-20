@@ -18,6 +18,7 @@ from fnmatch import fnmatch
 import random
 import copy
 from numpy import asarray
+import csv
 
 #for ade20k
 CLASSES = (
@@ -276,7 +277,7 @@ def generate_sample(img, img_id, out_img, prompt, task_type):
 
     img.save(output_path+'/{}_{}_0.jpg'.format(img_id, task_type))
     # pdb.set_trace()
-    out_img.save(output_path + '/{}_{}_1.jpg'.format(img_id, task_type))
+    out_img.save(output_path + '/{}_{}_1.png'.format(img_id, task_type))
     
     seed = [img_id+'_{}'.format(task_type), [img_id+'_{}'.format(task_type)]]
 
@@ -805,35 +806,30 @@ def proc_nyuv2_all(nyuv2_root):
     return seeds
 
 
-def proc_nyuv2(nyuv2_root):
+def proc_nyuv2(root):
 
     print('begin to process NYU_V2 training dataset...')
     
-    seeds               = []
-    prompt              = {}
-    n = 0
+    seeds                   = []
+    prompt                  = {}
     
-    img_path            = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/data/nyuv2_labeled/nyu_images'
-    depth_path          = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/data/nyuv2_labeled/nyu_depths'
-    imgs                = os.listdir(img_path)
-    
-    for img_n in imgs: #0.jpg
+    csv_p                   = os.path.join(root, "data/nyu2_train.csv")
+
+
+    with open(csv_p, encoding='utf-8-sig') as f:
         
-        line  = img_n.strip()
-        word  = line.split('.')
-        img_id = word[0] #0
-    
-        img_path_        = os.path.join(img_path, '%s.jpg' % img_id)
-        depth_path_      = os.path.join(depth_path, '%s.png' % img_id)
-        
-        img             = Image.open(img_path_).convert("RGB")
-        depth_img       = Image.open(depth_path_).convert("RGB")
-        
-        prompt['edit'] = 'Estimate the depth of this image'
-        # prompt = get_depth_prompt()
-        
-        seed = generate_sample(img, img_id, depth_img, prompt, task_type="depes")
-        seeds.append(seed)
+        for row in csv.reader(f, skipinitialspace=True):
+            img_p           = os.path.join(root, row[0].strip())
+            label_p         = os.path.join(root, row[1].strip())
+            img_id          = img_p.split("/")[-2] + "_" + img_p.split("/")[-1].split(".")[0]
+
+            img             = Image.open(img_p).convert("RGB")
+            depth_img       = Image.open(label_p).convert("RGB")
+            prompt['edit']  = 'Estimate the depth of this image'
+            
+            seed            = generate_sample(img, img_id, depth_img, prompt, task_type="depes")
+            
+    f.close()
     
     return seeds
 
@@ -1032,6 +1028,7 @@ if __name__ == "__main__":
     parser.add_argument("--nyuv2_root", default='./data/nyu_mdet', type=str)
     parser.add_argument("--ade_root", default='./data/ADEChallengeData2016', type=str)
     parser.add_argument("--imagenet_root", default='./data/imagenet', type=str)
+    parser.add_argument("--nyuv2_root_nonoise", default='./data/nyu_data', type=str)
     args = parser.parse_args()
     
     cls_ade_dict, pet_to_color, clses           = {}, {}, {}
@@ -1115,4 +1112,6 @@ if __name__ == "__main__":
         
     elif fnmatch(args.dataset, "imagenet"):
         proc_imagenet(args.imagenet_root)
-
+    
+    elif fnmatch(args.dataset, "nyuv2_nonoise"):
+        proc_nyuv2(args.nyuv2_root_nonoise)

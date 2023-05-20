@@ -70,3 +70,6 @@ CUDA_VISIBLE_DEVICES=7 python edit_cli.py --resolution 256 --ckpt logs/train_all
 
 # for fig1
 python edit_cli.py --ckpt logs/train_all100kdata_add_coco_pet_seg_blue/checkpoints/epoch=000020.ckpt --resolution 512 --input outputs/test_one_image --output outputs/img_test_cls --edit "detect the woody's face" --task det --single_test
+
+## for vis_depes
+# python edit_cli.py --resolution 256 --ckpt logs/LIV_v1_epoch=50.ckpt --input visualization/dep_img --output outputs/visualization_depes --edit "Estimate the depth of this image" --task depes --single_test
