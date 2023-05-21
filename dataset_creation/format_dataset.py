@@ -187,7 +187,7 @@ def get_bbox_img(root, img_id, bbox, dataset):
         a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill='white', outline='white', width=1)
     
     elif dataset == 'MSCOCO':
-        img_path = os.path.join(root, 'val2017', '%s.jpg' % img_id)
+        img_path = os.path.join(root, 'train2017', '%s.jpg' % img_id)
 
         img = Image.open(img_path).convert("RGB")
         # box_img = Image.new('RGB', img.size, (0,0,0))
@@ -531,7 +531,7 @@ def preproc_coco(root):
     
     print('begin to pre-process coco dataset...')
     clses                   = {}
-    coco_path               = os.path.join(root, 'annotations/instances_val2017.json')
+    coco_path               = os.path.join(root, 'annotations/instances_train2017.json')
     coco_fp                 = open(coco_path)
     anno_js                 = json.loads(coco_fp.readline())
 
@@ -640,7 +640,7 @@ def proc_coco(coco_root, tasks):
     # image_list = image_list[40000:60000]
     # image_list = image_list[60000:80000]
     # image_list = image_list[80000:100000]
-    image_list = image_list[0:len(image_list)]
+    image_list = image_list[100000:len(image_list)]
     for image_id in image_list:
     #----------------split process----------------
     
@@ -657,7 +657,7 @@ def proc_coco(coco_root, tasks):
                 ncls_perimg.append(cname_)
             
             img_id              = image_id.zfill(12) #000000355677
-            img_path            = os.path.join(coco_root, 'val2017/{}.jpg'.format(img_id))
+            img_path            = os.path.join(coco_root, 'train2017/{}.jpg'.format(img_id))
             img                 = Image.open(img_path).convert("RGB")
             
             for task in tasks:
@@ -935,6 +935,13 @@ def proc_adechan2016(ade_root, cls_ade_dict):
     
     img_list = os.listdir(os.path.join(ade_root, "images/training"))
     
+    #part
+    img_list = sorted(img_list)
+    print("len(image_list)", len(img_list))
+    # img_list = img_list[0:10000]
+    img_list = img_list[15000:20210]
+    #######
+    
     for img_name in img_list:
         
         img_path = os.path.join(ade_root, "images/training", img_name)
@@ -1093,7 +1100,7 @@ if __name__ == "__main__":
 
     #     target_name = ' '.join(img_id.split('_')[:-1]).strip()
     #     clses[cls_label] = target_name #store target_name and cls_label
-    tasks = ['det']
+    tasks = ['seg']
     
     if fnmatch(args.dataset, "coco"):
         proc_coco(args.coco_root, tasks)

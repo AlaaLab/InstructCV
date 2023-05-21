@@ -3,7 +3,7 @@ from fnmatch import fnmatch
 import json
 
 
-path        = "./image_pairs_depes"
+path        = "./image_pairs_FP_model"
 
 
 file_list   = os.listdir(path)

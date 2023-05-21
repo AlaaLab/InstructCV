@@ -867,7 +867,7 @@ def proc_adechan2016_sem(ade_root, cls_ade_dict):
     #part
     img_list = sorted(img_list)
     print("len(image_list)", len(img_list))
-    img_list = img_list[0:10000]
+    img_list = img_list[0:5000]
     # img_list = img_list[10000:len(img_list)]
     #######
     

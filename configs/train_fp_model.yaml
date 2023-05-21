@@ -82,7 +82,7 @@ data:
     train:
       target: edit_dataset.EditDataset
       params:
-        path: ./image_pairs_all_data #clip-filtered-dataset
+        path: image_pairs_FP_model #clip-filtered-dataset
         split: train
         min_resize_res: 256
         max_resize_res: 256
@@ -91,7 +91,7 @@ data:
     validation:
       target: edit_dataset.EditDataset
       params:
-        path: ./image_pairs_all_data #clip-filtered-dataset
+        path: image_pairs_FP_model #clip-filtered-dataset
         split: val
         min_resize_res: 256
         max_resize_res: 256
