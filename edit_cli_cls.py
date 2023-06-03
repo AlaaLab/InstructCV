@@ -143,7 +143,7 @@ def inference_cls(resolution, steps, vae_ckpt, split, config, eval, test_txt_pat
                 x = 255.0 * rearrange(x, "1 c h w -> h w c")
                 edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
             
-            save_name = img_id + "_test_" + task + '.jpg'
+            save_name = img_id + "_test2_" + task + '.jpg'
             
             if os.path.exists(output) == False:
                 os.makedirs(output)

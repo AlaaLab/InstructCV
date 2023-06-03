@@ -816,8 +816,8 @@ if __name__ == "__main__":
         if cls not in cate_bb:
             cate_bb[cls] = {}
 
-        gt_img_root = os.path.join(test_path, det_p, '{}_gt.jpg'.format(cls))
-        pred_path = os.path.join(test_path, det_p, '{}_pred.jpg'.format(cls))
+        gt_img_root = os.path.join(test_path, det_p, '{}_gt.png'.format(cls))
+        pred_path = os.path.join(test_path, det_p, '{}_pred.png'.format(cls))
         
         if not os.path.exists(pred_path):
             continue

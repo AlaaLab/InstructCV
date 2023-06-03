@@ -93,7 +93,7 @@ def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
 
 
 def inference_seg_fs1000(resolution, steps, vae_ckpt, split, config, eval, test_txt_path,
-                  ckpt, input, output, edit, cfg_text, cfg_image, seed, task, rephrase):
+                  ckpt, input, output, edit, cfg_text, cfg_image, seed, task, single_test,rephrase):
     '''
     Modified by Yulu Gan
     March 31, 2022
@@ -131,7 +131,7 @@ def inference_seg_fs1000(resolution, steps, vae_ckpt, split, config, eval, test_
                 os.makedirs(ge_path)
             
             if fnmatch(img_name, "*.jpg"):
-        
+
                 img_path = os.path.join(file_path, img_name)
                 print("img_path", img_path)
                 
@@ -144,13 +144,14 @@ def inference_seg_fs1000(resolution, steps, vae_ckpt, split, config, eval, test_
             # if os.path.exists(ge_path) == True:
             #     continue
             
-            if fnmatch(file_name, "*_*"):
-                cname               = file_name.split("_")[-1]
+            # if fnmatch(file_name, "*_*"):
+            #     cname               = file_name.split("_")[-1]
             
-            if not fnmatch(file_name, "*_*"):
-                cname               = file_name
+            # if not fnmatch(file_name, "*_*"):
+            #     cname               = file_name
                 
-            prompts             = edit.replace("%", cname)
+            prompts             = edit.replace("%", file_name)
+            print("prompts:", prompts)
             start               = time.time()
             
             

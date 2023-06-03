@@ -1100,7 +1100,7 @@ if __name__ == "__main__":
 
     #     target_name = ' '.join(img_id.split('_')[:-1]).strip()
     #     clses[cls_label] = target_name #store target_name and cls_label
-    tasks = ['seg']
+    tasks = ['det']
     
     if fnmatch(args.dataset, "coco"):
         proc_coco(args.coco_root, tasks)

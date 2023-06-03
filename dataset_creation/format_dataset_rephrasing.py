@@ -167,16 +167,16 @@ def get_cls_prompt(cls_name, pos_color, neg_color):
         flag = 0
     else:
         flag = random.randint(1,len(cls_prompts)-1)
-        
+
     prompt = cls_prompts[flag]
     
     if prompt == '' or ' ':
         assert "delete the empty line in cls prompts txt file."
         
     prompt = copy.deepcopy(prompt)
-    prompt = prompt.replace("#", neg_color)
     prompt = prompt.replace("*", pos_color)
     prompt = prompt.replace("%", cls_name)
+    prompt = prompt.replace("#", neg_color)
     prompts['edit'] = prompt
     
     return prompts
@@ -193,10 +193,10 @@ def get_seg_img(root, img_id):
     return seg_img
 
 
-def get_bbox_img(root, img_id, bbox, dataset):
+def get_bbox_img(img_id, bbox, dataset):
     
     if dataset == 'oxford-pets':
-        xml_file = os.path.join(root, './data/oxford-pets/annotations/xmls', '%s.xml' % img_id.replace('-', '_'))
+        xml_file = os.path.join('./data/oxford-pets/annotations/xmls', '%s.xml' % img_id.replace('-', '_'))
         if os.path.exists(xml_file) == False:
             return None, bbox
 
@@ -209,14 +209,14 @@ def get_bbox_img(root, img_id, bbox, dataset):
             int(bndbox.find('xmax').text),
             int(bndbox.find('ymax').text)]
 
-        img_path = os.path.join(root, './data/oxford-pets/images', '%s.jpg' % img_id.replace('-', '_'))
+        img_path = os.path.join('./data/oxford-pets/images', '%s.jpg' % img_id.replace('-', '_'))
 
         img = Image.open(img_path).convert("RGB")
-        #box_img = img.copy()
-        box_img = Image.new('RGB', img.size, (0,0,0))
+        box_img = img.copy()
+        # box_img = Image.new('RGB', img.size, (0,0,0))
         a = ImageDraw.ImageDraw(box_img)
-        #a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill=None, outline='red', width=6)
-        a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill='white', outline='white', width=1)
+        a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill=None, outline='blue', width=4)
+        # a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill='white', outline='white', width=1)
     
     elif dataset == 'MSCOCO':
         img_path = os.path.join(root, 'train2017', '%s.jpg' % img_id)
@@ -249,7 +249,7 @@ def get_bbox_img(root, img_id, bbox, dataset):
     return box_img, bbox
 
     
-def get_class_img(img, target_name, color, is_pos):
+def get_class_img(img, color):
     
     cls_img = Image.new('RGB', img.size, color)
     
@@ -282,7 +282,48 @@ def generate_sample(img, img_id, out_img, prompt, task_type):
     return seed
 
 
-def proc_oxford_pets_binary(oxford_pets_root, num_loop, tasks):
+def proc_oxford_pets_binary(oxford_pets_root, tasks):
+    n = 0
+    seeds = []
+
+    for line in open(os.path.join(oxford_pets_root, 'annotations/trainval.txt')):
+        line = line.strip()
+        words = line.split(' ')
+        img_id = words[0]
+        cls_label = words[2]
+        
+        if cls_label == '1':
+            cls_name = 'cat'
+        if cls_label == '2':
+            cls_name = 'dog'
+            
+        clses = ['cat', 'dog']
+
+        img_path = os.path.join(oxford_pets_root, 'images', '%s.jpg' % img_id)
+        img = Image.open(img_path).convert("RGB")
+
+        if cls_name == 'cat':
+        #generate outputs
+            for i in range(2):
+                output_img = get_class_img(img, cls_name, "blue", is_pos=True)
+                prompt = get_cls_prompt(cls_name, "blue")
+                img_id = img_id + "_" + "blue"
+                seed = generate_sample(img, img_id, output_img, prompt, 'cls_pos_{}'.format(i))
+        
+        if cls_name == 'dog':
+            output_img = get_class_img(img, cls_name, "green", is_pos=True)
+            prompt = get_cls_prompt(cls_name, "green")
+            img_id = img_id + "_" + "green"
+            seed = generate_sample(img, img_id, output_img, prompt, 'cls_pos')      
+        
+        n +=1 
+        if n % 100 == 0:
+            print('{} images processed!'.format(n))
+        
+    return seeds
+
+
+def proc_oxford_pets_binary_ifelse(oxford_pets_root, num_loop, tasks):
     n = 0
     seeds = []
 
@@ -313,7 +354,7 @@ def proc_oxford_pets_binary(oxford_pets_root, num_loop, tasks):
                     neg_c = random.choice(lcolor)
 
                 #generate outputs
-                output_img = get_class_img(img, cls_name, pos_c, is_pos=True)
+                output_img = get_class_img(img, pos_c)
                 prompt = get_cls_prompt(cls_name, pos_c, neg_c)
                 img_id = img_id + "_" + pos_c
                 seed = generate_sample(img, img_id, output_img, prompt, 'cls_pos_{}'.format(num_loop))
@@ -326,7 +367,7 @@ def proc_oxford_pets_binary(oxford_pets_root, num_loop, tasks):
                     pos_c = random.choice(lcolor)
                     neg_c = random.choice(lcolor)
                 
-                output_img = get_class_img(img, cls, neg_c, is_pos=False)
+                output_img = get_class_img(img, neg_c)
                 prompt = get_cls_prompt(cls, pos_c, neg_c)
                 img_id = img_id + "_" + pos_c
                 seed = generate_sample(img, img_id, output_img, prompt, 'cls_neg_{}'.format(num_loop))
@@ -428,13 +469,12 @@ def proc_oxford_pets_finegrained(oxford_pets_root, tasks):
             
             else:
                     
-                output_img, bbox = get_bbox_img(img_id, None, dataset='oxford-pets')
+                output_img, bbox = get_bbox_img(img_id, 1, dataset='oxford-pets')
                     
                 if output_img is None:
                     continue
                 
-                prompt = {}
-                prompt['edit'] = 'detect the {}'.format(target_name)
+                prompt  = get_bbox_prompt(target_name)
                 
                 seed = generate_sample(img, img_id, output_img, prompt, task_type)
                 seeds.append(seed)
@@ -579,8 +619,8 @@ def proc_coco(coco_root, tasks):
             ncls_perimg         = [] # store g.t class names
             
             for i in cname_id:
-                cname           = clses[i]
-                ncls_perimg.append(cname)
+                cname_           = clses[i]
+                ncls_perimg.append(cname_)
             
             img_id              = image_id.zfill(12) #000000355677
             img_path            = os.path.join(coco_root, 'train2017/{}.jpg'.format(img_id))
@@ -818,39 +858,63 @@ def proc_ade20k(ade_root):
 
 def proc_imagenet(imagenet_root):
     
-    IMAGENET_MAP = {"n02917067": "bullet train", "n01443537": "goldfish", "n02835271": "bicycle", 
-                    "n06874185": "traffic light", "n03662601": "lifeboat", "n02391049": "zebra",
-                    "n02504013": "indian elephant", "n03761084": "microwave", "n03782006": "monitor",
-                    "n03201208": "dining table"}
+    # IMAGENET_MAP = {"n04613696": "mongolian yurt yellow", "n01440764": "fish blue", 
+    #                 "n04476259": "Plate green", "n04606251": "shipwrecks red", 
+    #                 "n06359193": "website purple"}
     
+    IMAGENET_MAP = {"n04613696": "yurt yellow green", "n01440764": "fish blue red"}
+    
+    cls_num      = len(IMAGENET_MAP.keys())
+    clses        = list(IMAGENET_MAP.keys())
     
     for item in IMAGENET_MAP.keys():
-        cls_name   = IMAGENET_MAP[item]
-        file_path  = os.path.join(imagenet_root, item)
-        image_list = os.listdir(file_path)
-        image_list = sorted(image_list)
-        for i, img_pa in enumerate(image_list):#len(image_list) = 9, i 0,1,2,...8
-            ## for train
-            if i+5  >= len(image_list):#leave out 5 images for test
-                continue
-            
-            img_path = os.path.join(file_path, img_pa)
-            img      = Image.open(img_path).convert('RGB')
-            img_id   = img_pa.split(".")[-2] #00000293
         
-            for i in range(len(lcolor)):
+        split           = IMAGENET_MAP[item].split(" ")
+        file_path       = os.path.join(imagenet_root, item)
+        image_list      = os.listdir(file_path)
+        image_list      = sorted(image_list)
+        color_neg       = split[-1]
+        color_pos       = split[-2]
+        
+        for i in range(cls_num):
+            
+            if clses[i] == item: # pos
 
-                output_img = get_class_img(img, cls_name, c, is_pos=True)
-                if output_img is None:
-                    assert "cls output image cannot be nonetype"
+                for m, img_pa in enumerate(image_list): #len(image_list) = 9, i 0,1,2,...8
                     
-                prompt = {'edit': 'show {} if contains {} else black'.format(c, cls_name)}
-                # prompt = {'edit':'classify this image'}
-                # fixed prompt:
-                # prompt = {'edit': 'show the corresponding color of this {}'.format(target_name)}
-                img_id2 = img_id + "_" + c
-                seed = generate_sample(img, img_id2, output_img, prompt, cls_name + '_pos')
+                    cls_name    = IMAGENET_MAP[item].split(" ")[0]
+                    img_path    = os.path.join(file_path, img_pa)
+                    img         = Image.open(img_path).convert('RGB')
+                    img_id      = img_pa.split(".")[-2] #00000293
+                
+                    output_img = get_class_img(img, color_pos)
+                    if output_img is None:
+                        assert "cls output image cannot be nonetype"
 
+                    prompt = get_cls_prompt(cls_name, color_pos, color_neg)
+                    
+                    img_id2 = img_id + "_" + color_pos
+                    seed = generate_sample(img, img_id2, output_img, prompt, cls_name + '_cls_pos')
+                        
+            else: # neg
+                
+                for m, img_pa in enumerate(image_list): #len(image_list) = 9, i 0,1,2,...8
+                    
+                    cls_name    = IMAGENET_MAP[clses[i]].split(" ")[0]
+                    img_path    = os.path.join(file_path, img_pa)
+                    img         = Image.open(img_path).convert('RGB')
+                    img_id      = img_pa.split(".")[-2] #00000293
+                
+                    output_img  = get_class_img(img, color_neg)
+                    
+                    if output_img is None:
+                        assert "cls output image cannot be nonetype"
+
+                    prompt      = get_cls_prompt(cls_name, color_pos, color_neg)
+                    
+                    img_id2     = img_id + "_" + color_neg
+                    seed        = generate_sample(img, img_id2, output_img, prompt, cls_name + '_cls_neg')
+                
     return
                 
             
@@ -868,7 +932,7 @@ def proc_adechan2016_sem(ade_root, cls_ade_dict):
     img_list = sorted(img_list)
     print("len(image_list)", len(img_list))
     img_list = img_list[0:5000]
-    # img_list = img_list[10000:len(img_list)]
+    # img_list = img_list[15000:len(img_list)]
     #######
     
     for img_name in img_list:
@@ -1010,8 +1074,30 @@ def proc_vocdataset(voc_root):
         prompt  = get_seg_ins_prompt()
         
         seed = generate_sample(img, img_id, label, prompt, task_type="seg")
+    return
     
+def proc_fs(fs_root, split):
     
+    for line in open(os.path.join(fs_root, split)):
+        line        = line.strip()
+        
+        if line.split(".")[-1] == "png":
+            continue
+        
+        cname       = line.split("/")[0].replace("_", " ")
+        img_id      = cname + "_" + line.split("/")[-1].split(".")[0]
+        
+        img_p       = os.path.join(fs_root, line)
+        label_p     = img_p.replace("jpg","png")
+        
+        img         = Image.open(img_p).convert('RGB')
+        label       = Image.open(label_p).convert('RGB')
+        
+        prompt      = get_bbox_prompt(cname)
+        seed = generate_sample(img, img_id, label, prompt, task_type="seg")
+    
+    return
+        
     
 def prompts_chat():
     '''
@@ -1053,8 +1139,9 @@ if __name__ == "__main__":
     parser.add_argument("--coco_root", default='./data/coco', type=str)
     parser.add_argument("--nyuv2_root", default='./data/nyu_mdet', type=str)
     parser.add_argument("--ade_root", default='./data/ADEChallengeData2016', type=str)
-    parser.add_argument("--imagenet_root", default='./data/imagenet', type=str)
+    parser.add_argument("--imagenet_root", default='./data/imagenet_train', type=str)
     parser.add_argument("--voc_root", default='./data/VOCdevkit/VOC2012', type=str)
+    parser.add_argument("--fs_root", default='./data/fewshot_data/fewshot_data', type=str)
     args = parser.parse_args()
     
     cls_ade_dict, pet_to_color, clses                          = {}, {}, {}
@@ -1067,17 +1154,23 @@ if __name__ == "__main__":
         cls_ade_dict[i]                         = CLASSES[i]
     
     # get colors for cls
+    # colors                                      = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 
+    #                                                 'purple':(128,0,128), 'white':(255,255,255), 'AliceBlue':(240,248,255), 'Aqua': (0,255,255), 'Peru':(205, 133, 63),
+    #                                                 'Brown':(165,42,42), 'DarkGray':(169,169,169), 'Gold':(255,215,0),
+    #                                                 'Violet':(238,130,238), 'SlateBlue':(230,230,250), 'Orange':(255,128,0),
+    #                                                 'Maroon':(128,0,0), 'LightSlateGray':(119,136,153), 'Indigo':(75,0,130),
+    #                                                 'DarkKhaki':(189,183,107), 'Coral':(255,127,80),'RosyBrown':(188,143,143),
+    #                                                 'LightSalmon':(255,160,122), 'Azure':(240,255,255),'Beige':(245,245,220),
+    #                                                 'CadetBlue':(95,158,160),'DarkBlue':(0,0,139),'Firebrick':(178,34,34),
+    #                                                 'Silver':(192,192,192),'YellowGreen':(154,205,50),'LightPink':(255,182,193),
+    #                                                 'Snow':(255,250,250),'Sienna':(160,82,45),'Salmon':(250,128,114),
+    #                                                 'PowderBlue':(176,224,230),'PeachPuff':(255,218,155),'DarkRed':(139,0,0)}
     colors                                      = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 
-                                                    'purple':(128,0,128), 'white':(255,255,255), 'AliceBlue':(240,248,255), 'Aqua': (0,255,255), 'Peru':(205, 133, 63),
-                                                    'Brown':(165,42,42), 'DarkGray':(169,169,169), 'Gold':(255,215,0),
-                                                    'Violet':(238,130,238), 'SlateBlue':(230,230,250), 'Orange':(255,128,0),
-                                                    'Maroon':(128,0,0), 'LightSlateGray':(119,136,153), 'Indigo':(75,0,130),
-                                                    'DarkKhaki':(189,183,107), 'Coral':(255,127,80),'RosyBrown':(188,143,143),
-                                                    'LightSalmon':(255,160,122), 'Azure':(240,255,255),'Beige':(245,245,220),
-                                                    'CadetBlue':(95,158,160),'DarkBlue':(0,0,139),'Firebrick':(178,34,34),
-                                                    'Silver':(192,192,192),'YellowGreen':(154,205,50),'LightPink':(255,182,193),
-                                                    'Snow':(255,250,250),'Sienna':(160,82,45),'Salmon':(250,128,114),
-                                                    'PowderBlue':(176,224,230),'PeachPuff':(255,218,155),'DarkRed':(139,0,0)}
+                                                    'purple':(128,0,128), 'white':(255,255,255), 
+                                                    'Brown':(165,42,42), 'Gold':(255,215,0),'Beige':(245,245,220),
+                                                    'Violet':(238,130,238), 'Orange':(255,128,0),
+                                                    'Maroon':(128,0,0), 'Indigo':(75,0,130), 'Aqua': (0,255,255),
+                                                    'Coral':(255,127,80),'RosyBrown':(188,143,143),'Peru':(205, 133, 63)}
     # colors                                      = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255)}
     
     lcolor                                      = list(colors.keys())
@@ -1154,19 +1247,19 @@ if __name__ == "__main__":
     # json_file.write(json.dumps(det_prompts_new))
     # json_file.close()
 
-    with open("./data/seg_prompts.txt") as file:
+    with open("./data/seg_prompts_rp.txt") as file:
         for item_seg in file:
             sen_seg = item_seg.strip()
             seg_prompts[num_seg] = sen_seg
             num_seg += 1
     
-    with open("./data/det_prompts.txt") as file:
+    with open("./data/det_prompts_rp.txt") as file:
         for item_det in file:
             sen_det = item_det.strip()
             det_prompts[num_det] = sen_det
             num_det += 1
             
-    with open("./data/dep_est_prompts.txt") as file:
+    with open("./data/dep_est_prompts_rp.txt") as file:
         for item_dep_est in file:
             sen_dep_est = item_dep_est.strip()
             dep_est_prompts[num_dep_est] = sen_dep_est
@@ -1193,10 +1286,9 @@ if __name__ == "__main__":
         proc_oxford_pets_finegrained(args.oxford_pets_root, tasks)
         
     elif fnmatch(args.dataset, "oxford_pets_binary"):
-        num_loop = 0
-        for i in range(20):
-            proc_oxford_pets_binary(args.oxford_pets_root, num_loop, tasks)
-            num_loop += 1
+        loop = 5
+        for num_loop in range(loop):
+            proc_oxford_pets_binary_ifelse(args.oxford_pets_root, num_loop, tasks)
 
     elif fnmatch(args.dataset, "nyuv2"):
         proc_nyuv2_all(args.nyuv2_root)
@@ -1212,4 +1304,8 @@ if __name__ == "__main__":
     
     elif fnmatch(args.dataset, "voc"):
         proc_vocdataset(args.voc_root)
+    
+    elif fnmatch(args.dataset, "fs"):
+        proc_fs(args.fs_root, "test_part2.txt")
+
 
