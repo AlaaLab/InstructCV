@@ -1,13 +1,3 @@
-# Copyright (c) 2023, Yulu Gan
-# Licensed under the BSD 3-clause license (see LICENSE.txt)
-# ---------------------------------------------------------------------------------
-# ** Description **  Script for inferencing the segmantation task.
-# ---------------------------------------------------------------------------------
-# References:
-# Instruct-pix2pix: https://github.com/timothybrooks/instruct-pix2pix/blob/main/edit_cli.py
-# ---------------------------------------------------------------------------------
-
-
 from __future__ import annotations
 
 import math
@@ -28,48 +18,14 @@ from einops import rearrange
 from omegaconf import OmegaConf
 from PIL import Image, ImageOps
 from torch import autocast
-from evaluate.evaluate_cls_seg_det import genGT, CLASSES
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-
-tokenizer = AutoTokenizer.from_pretrained("humarin/chatgpt_paraphraser_on_T5_base")
-model_re = AutoModelForSeq2SeqLM.from_pretrained("humarin/chatgpt_paraphraser_on_T5_base")
+from dataset_creation.format_dataset import Pet_CLASSES
 
 sys.path.append("./stable_diffusion")
 
 from stable_diffusion.ldm.util import instantiate_from_config
 
-def paraphrase(
-    question,
-    num_beams=5,
-    num_beam_groups=5,
-    num_return_sequences=5,
-    repetition_penalty=5.0,
-    diversity_penalty=5.0,
-    no_repeat_ngram_size=5,
-    temperature=0.7,
-    max_length=128
-):
-    input_ids = tokenizer(
-        f'paraphrase: {question}',
-        return_tensors="pt", padding="longest",
-        max_length=max_length,
-        truncation=True,
-    ).input_ids
-    
-    outputs = model_re.generate(
-        input_ids, temperature=temperature, repetition_penalty=repetition_penalty,
-        num_return_sequences=num_return_sequences, no_repeat_ngram_size=no_repeat_ngram_size,
-        num_beams=num_beams, num_beam_groups=num_beam_groups,
-        max_length=max_length, diversity_penalty=diversity_penalty
-    )
-
-    res = tokenizer.batch_decode(outputs, skip_special_tokens=True)
-    res.append(question)
-    res.append(question.replace("help me",""))
-        
-    res = random.choice(res)
-
-    return res
+Pet_CLASSES_PART = ('Abyssinian', 'american bulldog', 'american pit bull terrier', 'basset hound', 'beagle','Bengal',#6
+               'Birman', 'Bombay', 'boxer', 'British Shorthair')
 
 class CFGDenoiser(nn.Module):
     def __init__(self, model):
@@ -111,11 +67,11 @@ def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
     return model
 
 
-def inference_seg(resolution, steps, vae_ckpt, split, config, test_txt_path, eval, single_test,
+def inference_cls(resolution, steps, vae_ckpt, split, config, eval, test_txt_path, single_test,
                   ckpt, input, output, edit, cfg_text, cfg_image, seed, task, rephrase):
     '''
     Modified by Yulu Gan
-    March 31, 2022
+    6th, March, 2022
     1. Support multiple images inference
     2. Make outputs' size are the closest as inputs
     '''
@@ -130,27 +86,29 @@ def inference_seg(resolution, steps, vae_ckpt, split, config, test_txt_path, eva
 
     seed = random.randint(0, 100000) if seed is None else seed
     
-    genGT(input, output, task, split).generate_ade20k_gt()
-    
     if single_test:
         
-        img_list                = os.listdir(input)
+        img_list = os.listdir(input)
         for img_name in img_list:
             
-            img_id              = img_name.split(".")[0]
-            img_path            = os.path.join(input, img_name)
-            output_path         = os.path.join(output, img_id)
-            
-            input_image         = Image.open(img_path).convert("RGB")
-            
-            width, height       = input_image.size
-            factor              = resolution / max(width, height)
-            factor              = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
-            width               = int((width * factor) // 64) * 64
-            height              = int((height * factor) // 64) * 64
-            input_image         = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
+            start = time.time()
 
-            prompts             = edit
+            img_id = img_name.split(".")[0]
+            target_name = 'chair'
+            
+            img_path = os.path.join(input, img_name)
+            input_image = Image.open(img_path).convert("RGB")
+            input_image = resize(input_image)
+            
+            width, height = input_image.size
+            factor = resolution / max(width, height)
+            factor = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
+            width = int((width * factor) // 64) * 64
+            height = int((height * factor) // 64) * 64
+            input_image = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
+
+            prompts = edit
+            prompts = prompts.replace("%", target_name)
             print("prompts:", prompts)
             
             if edit == "":
@@ -184,69 +142,45 @@ def inference_seg(resolution, steps, vae_ckpt, split, config, test_txt_path, eva
                 x = torch.clamp((x + 1.0) / 2.0, min=0.0, max=1.0)
                 x = 255.0 * rearrange(x, "1 c h w -> h w c")
                 edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
-
-            if os.path.exists(output_path) == False:
-                os.makedirs(output_path)
-
-            edited_image.save(output_path+'/{}_seg_pred.jpg'.format(img_id))
+            
+            save_name = img_id + "_test2_" + task + '.jpg'
+            
+            if os.path.exists(output) == False:
+                os.makedirs(output)
+                
+            edited_image.save(os.path.join(output, save_name))
+            
+            end = time.time()
             
             
+            print("One image done. Inferenct time cost:{}".format(end - start))
     else:
         
-        for image_name in open(os.path.join(input, split)): # Read paths to files from txt
+        split_path = os.path.join(input, "annotations", split)
+        
+        for line in open(split_path):
+            line = line.strip()
+            word = line.split(" ")[0]
+            img_id = word
+            img_path = os.path.join(input, "images", word + ".jpg")
             
-            image_name = image_name.strip()
-            
-            start = time.time()
-            
-            img_path            = os.path.join(input, "images/validation", image_name)
-            anno_path           = os.path.join(input, "annotations/validation", image_name.replace("jpg","png"))
+            for ncls in Pet_CLASSES_PART:
 
-            # get classes name
-            anno                = Image.open(anno_path)
-            anno                = np.array(anno)
-            clses               = np.unique(anno)
-            
-            for cls in clses:
+                input_image = Image.open(img_path).convert("RGB")
+                input_image = resize(input_image)
                 
-                if cls == 0:
-                    continue
-                
-                cls_name = CLASSES[cls]
-                
-                img_id  = image_name + "_" + cls_name
+                width, height = input_image.size
+                factor = resolution / max(width, height)
+                factor = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
+                width = int((width * factor) // 64) * 64
+                height = int((height * factor) // 64) * 64
+                input_image = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
 
                 prompts = edit
-                if rephrase:
-                    # prompts  = paraphrase(prompts)
-                    # prompts.replace("percentage", "%")
-                    prompts_pool = ['Could someone please break down the % \into individual parts?',
-                                    'Can you provide me with a segment of the %?',
-                                    'Please divide the % \into smaller parts',
-                                    'Segment the %',
-                                    'Can you provide me with a segment of the %?',
-                                    'Help me segment the %',
-                                    'Would you be willing to split the % with me?']
-                    prompts = random.choice(prompts_pool)                
-                prompts = prompts.replace("%", cls_name)
+                prompts = prompts.replace("%", ncls)
                 print("prompts:", prompts)
-            
-                if edit == "":
-                    input_image.save(output)
-                    return
 
                 with torch.no_grad(), autocast("cuda"), model.ema_scope():
-                    
-                    input_image = Image.open(img_path).convert("RGB")
-                    input_image = resize(input_image)
-
-                    width, height = input_image.size
-                    factor = resolution / max(width, height)
-                    factor = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
-                    width = int((width * factor) // 64) * 64
-                    height = int((height * factor) // 64) * 64
-                    input_image = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
-                    
                     cond = {}
                     
                     cond["c_crossattn"] = [model.get_learned_conditioning([prompts])] #modified: edit -> prompts
@@ -274,18 +208,17 @@ def inference_seg(resolution, steps, vae_ckpt, split, config, test_txt_path, eva
                     x = 255.0 * rearrange(x, "1 c h w -> h w c")
                     edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
                 
+                save_name  = img_id + "_test_" + task + "_" + ncls + '.jpg'
+                output_cls = os.path.join(output, img_id)
                 
-                output_path         = os.path.join(output, img_id + "_" + task)
+                if os.path.exists(output_cls) == False:
+                    os.makedirs(output_cls)
 
-                if os.path.exists(output_path) == False:
-                    os.makedirs(output_path)
-                        
-                edited_image.save(output_path+'/{}_{}_pred.png'.format(img_id, task))
+                edited_image.save(os.path.join(output_cls, save_name))
                 
-                end = time.time()
                 
-                print("One image done. Inferenct time cost:{}".format(end - start))
+            
 
 
 if __name__ == "__main__":
-    inference_seg()
+    inference_cls()

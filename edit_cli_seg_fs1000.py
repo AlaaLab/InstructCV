@@ -137,8 +137,9 @@ def inference_seg_fs1000(resolution, steps, vae_ckpt, split, config, eval, test_
                 
             if fnmatch(img_name, "*.png"):
                 
-                # shutil.copy(os.path.join(file_path, img_name), gt_save_path)
-                # print("one done")
+                # generate g.t.
+                shutil.copy(os.path.join(file_path, img_name), gt_save_path)
+                print("one done")
                 continue
             
             # if os.path.exists(ge_path) == True:

@@ -155,6 +155,7 @@ def inference_cls(resolution, steps, vae_ckpt, split, config, eval, test_txt_pat
             
             print("One image done. Inferenct time cost:{}".format(end - start))
     else:
+        
         split_path = os.path.join(input, "annotations", split)
         
         for line in open(split_path):
@@ -163,7 +164,7 @@ def inference_cls(resolution, steps, vae_ckpt, split, config, eval, test_txt_pat
             img_id = word
             img_path = os.path.join(input, "images", word + ".jpg")
             
-            for ncls in Pet_CLASSES_PART:
+            for ncls in ['cat','dog']:
 
                 input_image = Image.open(img_path).convert("RGB")
                 input_image = resize(input_image)

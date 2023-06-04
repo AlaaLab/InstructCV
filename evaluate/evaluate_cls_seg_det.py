@@ -137,8 +137,8 @@ def calc_iou(gt_img_path, pred_img):
     gt_copy[gt_copy<=0] = 0
     pred_copy       = pred_img.copy()
     pred_copy.flags.writeable   = True
-    pred_copy[pred_copy>0] = 255
-    pred_copy[pred_copy<=0] = 0
+    pred_copy[pred_copy>10] = 255
+    pred_copy[pred_copy<=10] = 0
     
     
     intersection    = np.sum((gt_copy) & (pred_copy))
@@ -713,7 +713,7 @@ if __name__ == "__main__":
     # calc acc
     # acc = evaluate_cls(args.cls_pred_root)
     
-    test_path = './outputs/imgs_test_ade20k'
+    test_path = './outputs/imgs_test_ade20k_can_you_help'
     cls_iou = {}
     cls_ap = {}
     cate_bb = {}

@@ -23,8 +23,7 @@
 # python edit_cli.py --input data/ade20k/images/ADE/training/cultural/apse__indoor/ADE_train_00001472.jpg --output imgs/ADE_train_00001472_seg.jpeg --edit "segment the person"
 
 ## for cls:
-## for evaluation
-python edit_cli.py --ckpt logs/train_pets_cls_pets/checkpoints/last.ckpt --resolution 512 --input outputs/test_img --output outputs/img_test_cls --edit "Show red if there exsits cat; if not, show green instead." --task cls --single_task
+python edit_cli.py --ckpt logs/train_pets_cls_pets/checkpoints/last.ckpt --resolution 128 --input data/oxford-pets --output outputs/img_test_cls_rp --edit "Show red if there exsits %; if not, show green instead." --task cls --split test.txt
 ## for debug
 CUDA_VISIBLE_DEVICES=6 python edit_cli.py --split "test_part4.txt" --ckpt logs/train_all100kdata_rephrased_newnew/checkpoints/last.ckpt --resolution 256 --input data/ADEChallengeData2016/ --output outputs/img_test_ade20k_rephrasedv2 --edit "Perform image segmentation to extract the % using different colors." --task seg
 
@@ -41,7 +40,7 @@ CUDA_VISIBLE_DEVICES=6 python edit_cli.py --split "test_part4.txt" --ckpt logs/t
 # python edit_cli.py --resolution 256 --ckpt logs/train_all100kdata_add_coco_pet_seg/checkpoints/epoch=000015.ckpt --input data/nyu_mdet/ --output "outputs/imgs_test_nyuv2" --edit "Estimate the depth of this image" --task depes
 
 ## for ade20k
-# CUDA_VISIBLE_DEVICES=0 python edit_cli.py --resolution 256 --split "test_part0.txt" --ckpt logs/train_rp_model_archived_version/checkpoints/epoch=000042.ckpt --input data/ADEChallengeData2016/ --output outputs/imgs_test_ade20k/ --edit "segment the %." --task seg
+# CUDA_VISIBLE_DEVICES=6 python edit_cli.py --resolution 256 --split "test_part0.txt" --ckpt logs/train_rp_model_archived_version/checkpoints/47.ckpt --input data/ADEChallengeData2016/ --output outputs/imgs_test_ade20k_please_segment / --edit "Please segment the % into smaller parts." --task seg
 
 ## for voc seg
 # CUDA_VISIBLE_DEVICES=2 python edit_cli.py --resolution 256 --split "val_part5.txt" --ckpt logs/train_all100kdata_add_coco_pet_seg/checkpoints/epoch=000038.ckpt --input /lustre/grp/gyqlab/lism/brt/language-vision-interface/data/VOCdevkit/VOC2012 --output outputs/imgs_test_voc  --edit "segment the %" --task voc_seg
@@ -56,7 +55,7 @@ CUDA_VISIBLE_DEVICES=7 python edit_cli.py --resolution 512 --split "test_part7.t
 # CUDA_VISIBLE_DEVICES=0 python baselines/unified-io-inference/demo_script.py
 
 # for fs-1000
-# python edit_cli.py --resolution 256 --ckpt logs/train_fp_model_archived_version/checkpoints/epoch=000042.ckpt --input data/fewshot_data/fewshot_data --output outputs/imgs_test_fs1000/ --edit "segment the %" --task fs1000_seg
+# python edit_cli.py --resolution 256 --ckpt logs/train_rp_model_archived_version/checkpoints/47.ckpt --input data/fewshot_data/fewshot_data --output outputs/imgs_test_fs1000/ --edit "segment the %" --task fs1000_seg
 ## unified-io
 # python baselines/unified-io-inference/demo_script_seg_fs1000.py
 
