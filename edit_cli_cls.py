@@ -1,3 +1,12 @@
+# Copyright (c) 2023, Yulu Gan
+# Licensed under the BSD 3-clause license (see LICENSE.txt)
+# ---------------------------------------------------------------------------------
+# ** Description **  Script for inferencing the classification task.
+# ---------------------------------------------------------------------------------
+# References:
+# Instruct-pix2pix: https://github.com/timothybrooks/instruct-pix2pix/blob/main/edit_cli.py
+# ---------------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import math
@@ -157,6 +166,8 @@ def inference_cls(resolution, steps, vae_ckpt, split, config, eval, test_txt_pat
     else:
         
         split_path = os.path.join(input, "annotations", split)
+        pos_color  = "red"
+        neg_color  = "green"
         
         for line in open(split_path):
             line = line.strip()
@@ -178,6 +189,8 @@ def inference_cls(resolution, steps, vae_ckpt, split, config, eval, test_txt_pat
 
                 prompts = edit
                 prompts = prompts.replace("%", ncls)
+                prompts = prompts.replace("*", pos_color)
+                prompts = prompts.replace("#", neg_color)
                 print("prompts:", prompts)
 
                 with torch.no_grad(), autocast("cuda"), model.ema_scope():

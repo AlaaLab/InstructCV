@@ -81,96 +81,97 @@ def load_model_from_config(config, ckpt, vae_ckpt=None, verbose=False):
     return model
 
 
-def inference_det_voc(resolution, steps, vae_ckpt, split, config, test_txt_path, eval,
+def inference_det_voc(resolution, steps, vae_ckpt, split, config, test_txt_path, eval, single_test,
                   ckpt, input, output, edit, cfg_text, cfg_image, seed, task, rephrase):
 
-    resize = transforms.Resize((resolution,resolution))
-    config = OmegaConf.load(config)
-    model = load_model_from_config(config, ckpt, vae_ckpt)
-    model.eval().cuda()
-    model_wrap = K.external.CompVisDenoiser(model)
-    model_wrap_cfg = CFGDenoiser(model_wrap)
-    null_token = model.get_learned_conditioning([""])
-    
-    # genGT(input, output, task, split).generate_voc_det_gt()
-
-    seed = random.randint(0, 100000) if seed is None else seed
-    
-    img_info, clses,img_id_map  = preproc_voc(input)
-    split_path                  = os.path.join(input, split)
-    
-    for line in open(split_path):
-        line                    = line.strip()
-        img_name                = line.split(" ")[0].split("/")[1] #2007_000033.jpg
-        image_id                = img_name.split('.')[0]
-        id                      = img_id_map[img_name]  
+    if not eval:
+        resize = transforms.Resize((resolution,resolution))
+        config = OmegaConf.load(config)
+        model = load_model_from_config(config, ckpt, vae_ckpt)
+        model.eval().cuda()
+        model_wrap = K.external.CompVisDenoiser(model)
+        model_wrap_cfg = CFGDenoiser(model_wrap)
+        null_token = model.get_learned_conditioning([""])
         
-        for cid in img_info[str(id)]:# img_info:0-1499
-            start = time.time()
-            cname = clses[cid] #target_name  
-            bbox  = img_info[str(id)][cid]['bbox']
-            
-            output_path = os.path.join(output, image_id + '_{}_det'.format(cname))
-            img_path    = os.path.join(input, 'JPEGImages', img_name)
-            
-            input_image         = Image.open(img_path).convert("RGB")
-            input_image         = resize(input_image)
-            
-            width, height       = input_image.size
-            factor              = resolution / max(width, height)
-            factor              = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
-            width               = int((width * factor) // 64) * 64
-            height              = int((height * factor) // 64) * 64
-            input_image         = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
+        # genGT(input, output, task, split).generate_voc_det_gt()
 
-            prompts             = edit
-            prompts             = prompts.replace("%", cname)
+        seed = random.randint(0, 100000) if seed is None else seed
+        
+        img_info, clses,img_id_map  = preproc_voc(input)
+        split_path                  = os.path.join(input, split)
+        
+        for line in open(split_path):
+            line                    = line.strip()
+            img_name                = line.split(" ")[0].split("/")[1] #2007_000033.jpg
+            image_id                = img_name.split('.')[0]
+            id                      = img_id_map[img_name]  
             
-            if edit == "":
-                input_image.save(output)
-                return
-
-            with torch.no_grad(), autocast("cuda"), model.ema_scope():
-                cond = {}
+            for cid in img_info[str(id)]:# img_info:0-1499
+                start = time.time()
+                cname = clses[cid] #target_name  
+                bbox  = img_info[str(id)][cid]['bbox']
                 
-                cond["c_crossattn"] = [model.get_learned_conditioning([prompts])] #modified: edit -> prompts
-                input_image = 2 * torch.tensor(np.array(input_image)).float() / 255 - 1
-                input_image = rearrange(input_image, "h w c -> 1 c h w").to(model.device)
-                cond["c_concat"] = [model.encode_first_stage(input_image).mode()]
+                output_path = os.path.join(output, image_id + '_{}_det'.format(cname))
+                img_path    = os.path.join(input, 'JPEGImages', img_name)
+                
+                input_image         = Image.open(img_path).convert("RGB")
+                input_image         = resize(input_image)
+                
+                width, height       = input_image.size
+                factor              = resolution / max(width, height)
+                factor              = math.ceil(min(width, height) * factor / 64) * 64 / min(width, height)
+                width               = int((width * factor) // 64) * 64
+                height              = int((height * factor) // 64) * 64
+                input_image         = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
 
-                uncond = {}
-                uncond["c_crossattn"] = [null_token]
-                uncond["c_concat"] = [torch.zeros_like(cond["c_concat"][0])]
+                prompts             = edit
+                prompts             = prompts.replace("%", cname)
+                
+                if edit == "":
+                    input_image.save(output)
+                    return
 
-                sigmas = model_wrap.get_sigmas(steps)
+                with torch.no_grad(), autocast("cuda"), model.ema_scope():
+                    cond = {}
+                    
+                    cond["c_crossattn"] = [model.get_learned_conditioning([prompts])] #modified: edit -> prompts
+                    input_image = 2 * torch.tensor(np.array(input_image)).float() / 255 - 1
+                    input_image = rearrange(input_image, "h w c -> 1 c h w").to(model.device)
+                    cond["c_concat"] = [model.encode_first_stage(input_image).mode()]
 
-                extra_args = {
-                    "cond": cond,
-                    "uncond": uncond,
-                    "text_cfg_scale": cfg_text,
-                    "image_cfg_scale": cfg_image,
-                }
-                torch.manual_seed(seed)
-                z = torch.randn_like(cond["c_concat"][0]) * sigmas[0]
-                z = K.sampling.sample_euler_ancestral(model_wrap_cfg, z, sigmas, extra_args=extra_args)
-                x = model.decode_first_stage(z)
-                x = torch.clamp((x + 1.0) / 2.0, min=0.0, max=1.0)
-                x = 255.0 * rearrange(x, "1 c h w -> h w c")
-                edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
+                    uncond = {}
+                    uncond["c_crossattn"] = [null_token]
+                    uncond["c_concat"] = [torch.zeros_like(cond["c_concat"][0])]
 
-            if os.path.exists(output_path) == False:
-                os.makedirs(output_path)
+                    sigmas = model_wrap.get_sigmas(steps)
 
-            print(output_path)
-            edited_image.save(output_path+'/{}_{}_pred.jpg'.format(image_id + "_" + cname, task))
+                    extra_args = {
+                        "cond": cond,
+                        "uncond": uncond,
+                        "text_cfg_scale": cfg_text,
+                        "image_cfg_scale": cfg_image,
+                    }
+                    torch.manual_seed(seed)
+                    z = torch.randn_like(cond["c_concat"][0]) * sigmas[0]
+                    z = K.sampling.sample_euler_ancestral(model_wrap_cfg, z, sigmas, extra_args=extra_args)
+                    x = model.decode_first_stage(z)
+                    x = torch.clamp((x + 1.0) / 2.0, min=0.0, max=1.0)
+                    x = 255.0 * rearrange(x, "1 c h w -> h w c")
+                    edited_image = Image.fromarray(x.type(torch.uint8).cpu().numpy())
 
-            end = time.time()
-            print("One image done. Inferenct time cost:{}".format(end - start))
+                if os.path.exists(output_path) == False:
+                    os.makedirs(output_path)
+
+                print(output_path)
+                edited_image.save(output_path+'/{}_{}_pred.jpg'.format(image_id + "_" + cname, task))
+
+                end = time.time()
+                print("One image done. Inferenct time cost:{}".format(end - start))
     
     if eval:#after split 0-9 are done, run codes as follows
         
-        postDet().generate_exc_bbox() #generate extracted(w/o filtered) pred_bbox.json & .jpg
-        genGT(input, output, task, split).inference_det_voc() #generate g.t. bbox.json & .jpg
+        postDet(root=input,pred_root=output).generate_exc_bbox() #generate extracted(w/o filtered) pred_bbox.json & .jpg
+        genGT(input, output, task, split).generate_voc_gt() #generate g.t. bbox.json & .jpg
         
 
 

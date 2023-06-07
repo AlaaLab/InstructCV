@@ -158,7 +158,7 @@ def inference_det(resolution, steps, vae_ckpt, split, config, test_txt_path, eva
 
             edited_image.save(output_path+'/{}_det_pred.jpg'.format(img_id))
     
-    else:
+    elif not single_test and not eval:
         for image_name in open(os.path.join(input, split)): #"test_part0.txt"
             
             start                   = time.time()
@@ -177,7 +177,6 @@ def inference_det(resolution, steps, vae_ckpt, split, config, test_txt_path, eva
                 
                 cname               = clses[cid] #target_name
                 output_path         = os.path.join(output, image_id + "_" + cname + "_" + task)
-                
                 # # resume
                 # if os.path.exists(output_path) == True:
                 #     continue
@@ -239,7 +238,7 @@ def inference_det(resolution, steps, vae_ckpt, split, config, test_txt_path, eva
     if eval:#after split 0-9 are done, run codes as follows
         
         postDet().generate_exc_bbox() #generate extracted(w/o filtered) pred_bbox.json & .jpg
-        genGT(input, output, task).generate_coco_gt() #generate g.t. bbox.json & .jpg
+        # genGT(input, output, task, split).generate_coco_gt() #generate g.t. bbox.json & .jpg
         
 
 

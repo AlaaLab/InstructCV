@@ -92,7 +92,7 @@ def inference_depes(resolution, steps, vae_ckpt, split, test_txt_path, config, e
 
     seed = random.randint(0, 100000) if seed is None else seed
     
-    # genGT(input, output, task, test_txt_path).generate_nyuv2_gt()
+    genGT(input, output, task, test_txt_path).generate_nyuv2_gt()
     
     if single_test:
         img_list                = os.listdir(input)
@@ -180,12 +180,24 @@ def inference_depes(resolution, steps, vae_ckpt, split, test_txt_path, config, e
                 input_image = ImageOps.fit(input_image, (width, height), method=Image.Resampling.LANCZOS)
                 
                 prompts = edit
-                # prompts = prompts.replace("%", file_name)
+                if rephrase:
+                    # prompts  = paraphrase(prompts)
+                    # prompts.replace("percentage", "%")
+                    prompts_pool = ['Approximate the depth of this image.',
+                                    'Make an estimation of how deep the this image is.',
+                                    'Provide a rough calculation of the image\'s depth.',
+                                    'Give an approximate measurement of the image\'s depth.',
+                                    'Make an informed guess of the depth of the image.',
+                                    'Make an estimation of how deep the image goes.',
+                                    'Estimate the depth of this image']
+                    prompts = random.choice(prompts_pool)                
                 print("prompts:", prompts)
 
-                if edit == "":
-                    input_image.save(output)
-                    return
+                # if edit == "":
+                #     input_image.save(output)
+                #     return
+                
+                
 
                 with torch.no_grad(), autocast("cuda"), model.ema_scope():
                     cond = {}

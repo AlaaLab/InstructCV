@@ -187,7 +187,7 @@ def get_bbox_img(root, img_id, bbox, dataset):
         a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill='white', outline='white', width=1)
     
     elif dataset == 'MSCOCO':
-        img_path = os.path.join(root, 'train2017', '%s.jpg' % img_id)
+        img_path = os.path.join(root, 'val2017', '%s.jpg' % img_id)
 
         img = Image.open(img_path).convert("RGB")
         # box_img = Image.new('RGB', img.size, (0,0,0))
@@ -531,7 +531,7 @@ def preproc_coco(root):
     
     print('begin to pre-process coco dataset...')
     clses                   = {}
-    coco_path               = os.path.join(root, 'annotations/instances_train2017.json')
+    coco_path               = os.path.join(root, 'annotations/instances_val2017.json')
     coco_fp                 = open(coco_path)
     anno_js                 = json.loads(coco_fp.readline())
 
@@ -579,7 +579,7 @@ def preproc_voc(root):
     
     print('begin to pre-process voc dataset...')
     clses, img_id_map       = {},{}
-    voc_path                = os.path.join(root, 'data/train.json')
+    voc_path                = os.path.join(root, 'data/val.json')
     voc_fp                  = open(voc_path)
     anno_js                 = json.loads(voc_fp.readline())
 

@@ -24,7 +24,7 @@ class Eval():
                  pred_file= 'pred_final.json', ann_file='ann_final.json',
                  src_ann_item='bbox.json', src_pred_item='pred_bbox2.json',
                  ann_bbox_item='bbox', pred_bbox_item='pred_bbox', 
-                 src_dir='./outputs/imgs_test_coco',metric='bbox'):
+                 src_dir='./outputs/imgs_test_coco_rp',metric='bbox'):
         
         self.dst_pred                       = dst_pred
         self.dst_ann                        = dst_ann
@@ -141,9 +141,9 @@ class Eval():
                     area            = w*h 
 
                     json_results.append({
-                        "image_id": img_id,                             # int 该物体所在图片的编号
-                        "category_id": ann_id,                          # int 被标记物体的类别id编号
-                        "bbox": [x1, y1, w, h],                         # [x, y, width, height] 目标检测框的坐标信息
+                        "image_id": img_id,                             # int
+                        "category_id": ann_id,                          # int
+                        "bbox": [x1, y1, w, h],                         # [x, y, width, height]
                         "score": 1
                     })
         json.dump(json_results,open(self.dst_pred,'w'))

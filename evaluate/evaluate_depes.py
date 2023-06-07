@@ -36,7 +36,7 @@ def read_gt_img(img_name):
  
     img = cv2.imread(img_name, -1)
     img = img.astype(np.float16) #e.g., max = 7333
-    h, w = img.shape
+    h, w, c = img.shape
 
     np_img = np.array(img)
     np_img = np.asarray([np_img], dtype=float)
@@ -63,15 +63,16 @@ def compute_errors(pred, gt):
     '''
 
     # remove noise areas (noise caused by the camera)
-    # gen                     = np.ones(gt.shape)
-    # flag                    = np.bitwise_and(gen.astype(np.uint8), gt.astype(np.uint8))
-    # flag                    = np.bitwise_and(flag.astype(np.uint8), pred.astype(np.uint8))
-    # gt_new                  = flag * gt
-    # pred_new                = flag * pred
-    gen = np.multiply(pred, gt)
-    gen[gen>0]=1
-    gt_new = gt*gen
-    pred_new = pred*gen
+    gen                     = np.ones(gt.shape)[:,:,0]
+    gt = gt[:,:,0]
+    flag                    = np.bitwise_and(gen.astype(np.uint8), gt.astype(np.uint8))
+    flag                    = np.bitwise_and(flag.astype(np.uint8), pred.astype(np.uint8))
+    gt_new                  = flag * gt
+    pred_new                = flag * pred
+    # gen                       = np.multiply(pred, gt)
+    # gen[gen>0]                = 1
+    # gt_new                    = gt * gen
+    # pred_new                  = pred * gen
     
     # print("np.max(gt_new)",np.max(gt))
     # print("np.max(gt_new)",np.min(gt))
@@ -88,8 +89,10 @@ def compute_errors(pred, gt):
     a2                      = (thresh < 1.25 ** 2).mean()
     a3                      = (thresh < 1.25 ** 3).mean()
     abs_rel                 = np.mean(np.abs(gt_new_nozero - pred_new_nozero) / gt_new_nozero)
-    
+    # pdb.set_trace()
     rmse                    = (gt_new - pred_new) ** 2
+    print("max:", np.max(gt_new))
+    print("min:", np.min(gt_new))
     rmse                    = np.sqrt(rmse.mean())
     
     return dict(a1=a1, a2=a2, a3=a3, 
@@ -98,7 +101,7 @@ def compute_errors(pred, gt):
     
 if __name__ == "__main__":
     
-    test_path = "./outputs/imgs_test_sunrgbd_unifiedio"
+    test_path = "./outputs/imgs_test_nyuv2_table2_fix"
     file_name = os.listdir(test_path)
     rmse_l    = []
     a1_l        = []
@@ -130,12 +133,11 @@ if __name__ == "__main__":
 
         gt = gt[:,:,:].squeeze()
         # gt = gt / 8000 # for sunrgbd
-        gt = gt / 8000
+        gt = gt / 255 * 10# for nyuv2 [0,255] - > [0, 10]
 
         pred = read_pred_img(pred_path, h, w)
         pred = pred[:,:,:,0].squeeze()
-        # pred = pred * 10 / 255
-        pred = pred * 10
+        pred = pred * 10 / 255# [0,10]
         
         if math.isinf(np.max(gt)) == True:
             continue

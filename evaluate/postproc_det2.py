@@ -19,7 +19,7 @@ import shutil
 class postDet(object):
     
     def __init__(self, root = './data/coco',
-                 pred_root='./outputs/imgs_test_coco_new2', vis=True):
+                 pred_root='./outputs/imgs_test_coco_rp', vis=True):
         
         self.root           = root
         self.pred_root      = pred_root
@@ -89,18 +89,23 @@ class postDet(object):
 
         # extracting blue areas using hsv channels
         hsv = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2HSV)
-        low_hsv = np.array([0, 120, 66])
-        high_hsv = np.array([8, 255, 255])
+        # low_hsv = np.array([0, 120, 66])
+        # high_hsv = np.array([8, 255, 255])
+        low_hsv = np.array([100,130,50])
+        high_hsv = np.array([125,255,255])
         mask1 = cv2.inRange(hsv, lowerb=low_hsv, upperb=high_hsv)
 
-        low_hsv = np.array([165, 120, 66])  # 46
-        high_hsv = np.array([180, 255, 255])
-        mask2 = cv2.inRange(hsv, lowerb=low_hsv, upperb=high_hsv)
+        # low_hsv = np.array([165, 120, 66])  # 46
+        # high_hsv = np.array([180, 255, 255])
+        # low_hsv = np.array([100,43,46])
+        # high_hsv = np.array([140,255,255])
+        # mask2 = cv2.inRange(hsv, lowerb=low_hsv, upperb=high_hsv)
 
         # extracting the red area of the original image
         for i in np.arange(0, bgr_img.shape[0], 1):
             for j in np.arange(0, bgr_img.shape[1], 1):
-                if mask1[i, j] == 0 and mask2[i, j] == 0:
+                # if mask1[i, j] == 0 and mask2[i, j] == 0:
+                if mask1[i, j] == 0:
                     output_img[i, j, :] = 0
 
         # get grayscale map
@@ -165,14 +170,19 @@ class postDet(object):
             goal = self.delete(goal)
         return goal
 
-    def ext_coor(self, img_path):
+    def ext_coor(self, img_path, gt_path):
 
         print("img_path", img_path)
         img_name = img_path.split('_')[-2]
         img = cv2.imread(img_path)
+        gt_img                      = cv2.imread(gt_path)
+        h, w, c                     = gt_img.shape  
+        img                         = cv2.resize(img, (w, h))
         hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
         low_hsv = np.array([100,110,70])
         high_hsv = np.array([140,255,255])
+        # low_hsv = np.array([100,43,46])
+        # high_hsv = np.array([140,255,255])
         mask1 = cv2.inRange(hsv,lowerb=low_hsv,upperb=high_hsv)
         # low_hsv = np.array([156,90,90])
         # high_hsv = np.array([180,255,255])
@@ -254,15 +264,15 @@ class postDet(object):
         file_list                           = sorted(file_list)
         print("len(file_list)", len(file_list)) #12808
         n                                   = 0
-        
-        for file in file_list[0:2000]:
+
+        for file in file_list[0:len(file_list)]:
             
             file_path                       = os.path.join(self.pred_root, file)
             img_list                        = os.listdir(file_path)
             
             for img in img_list:
                 
-                # # # resume
+                # resume
                 # file_                       = file + "_exc.jpg"
                 # if file_ in img_list:
                 #     print("pass,{}".format(file_))
@@ -277,28 +287,28 @@ class postDet(object):
 
                 # generate coordinates of bboxes (json)
                 gt_path                     = os.path.join(self.root, 'val2017', img.split("_")[0]+'.jpg')
-                # bboxes, output              = self.extract_bbox(pred_img_path, gt_path)
-                diff, img_id                = self.image_diff(pred_img_path) #do subtract
+                bboxes, output              = self.extract_bbox(pred_img_path, gt_path)
+                # diff, img_id              = self.image_diff(pred_img_path) #do subtract
                 
                 #for debugging: save diff image
-                # pdb.set_trace()
-                cv2.imwrite(os.path.join(file_path, '{}_diff.jpg'.format(img_id)), diff)
+                # cv2.imwrite(os.path.join(file_path, '{}_diff.jpg'.format(img_id)), diff)
                 
-                bboxes2, img_vis            = self.ext_coor(pred_img_path)
-                # bboxes.append(bboxes2)
+                bboxes2, img_vis            = self.ext_coor(pred_img_path, gt_path)
+                bboxes = bboxes + bboxes2
                 
                 # bbox_info                   = {'pred_bbox': bboxes}
-                bbox_info                   = {'pred_bbox': bboxes2}
+                bbox_info                   = {'pred_bbox': bboxes}
                 bbox_file                   = open(os.path.join(file_path, 'pred_bbox.json'), 'w')
                 bbox_file.write(json.dumps(bbox_info))
                 bbox_file.close()
                 
                 save_path                   = os.path.join(file_path, img.replace("pred", "exc"))
+                save_path2                  = os.path.join(file_path, img.replace("pred", "exc2"))
                 
                 # generate images with bboxes
                 if self.vis:
-                    # cv2.imwrite(save_path, output)
-                    cv2.imwrite(save_path, img_vis)
+                    cv2.imwrite(save_path, output)
+                    cv2.imwrite(save_path2, img_vis)
                 
                 n+=1
                 if n % 100 == 0:

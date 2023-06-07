@@ -13,6 +13,7 @@ from edit_cli_depes_sunrgbd import inference_sunrgbd_depes
 from edit_cli_seg_voc import inference_seg_voc
 from edit_cli_det_voc import inference_det_voc
 from edit_cli_seg_pets import inference_seg_pets
+from edit_cli_seg_coco import inference_seg_coco
 
 
 from argparse import ArgumentParser
@@ -87,6 +88,9 @@ def main():
         
     if args.task == "pet_seg":
         inference_seg_pets(**inference_params)
+    
+    if args.task == "seg_coco":
+        inference_seg_coco(**inference_params)
 
 if __name__ == "__main__":
     main()

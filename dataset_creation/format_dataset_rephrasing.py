@@ -131,6 +131,7 @@ def get_seg_prompt(cname):
     prompts['edit'] = prompt
     return prompts
 
+
 def get_seg_ins_prompt():
 
     prompts = {}
@@ -142,6 +143,7 @@ def get_seg_ins_prompt():
     prompt = ins_prompts[flag]
     prompts['edit'] = prompt
     return prompts
+
 
 def get_depes_prompt():
 
@@ -193,7 +195,7 @@ def get_seg_img(root, img_id):
     return seg_img
 
 
-def get_bbox_img(img_id, bbox, dataset):
+def get_bbox_img(root, img_id, bbox, dataset):
     
     if dataset == 'oxford-pets':
         xml_file = os.path.join('./data/oxford-pets/annotations/xmls', '%s.xml' % img_id.replace('-', '_'))
@@ -215,7 +217,7 @@ def get_bbox_img(img_id, bbox, dataset):
         box_img = img.copy()
         # box_img = Image.new('RGB', img.size, (0,0,0))
         a = ImageDraw.ImageDraw(box_img)
-        a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill=None, outline='blue', width=4)
+        a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill=None, outline='blue', width=6)
         # a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill='white', outline='white', width=1)
     
     elif dataset == 'MSCOCO':
@@ -255,6 +257,7 @@ def get_class_img(img, color):
     
     return cls_img
 
+
 def generate_sample(img, img_id, out_img, prompt, task_type):
     '''
     Args img: input/original images
@@ -271,7 +274,7 @@ def generate_sample(img, img_id, out_img, prompt, task_type):
 
     img.save(output_path+'/{}_{}_0.jpg'.format(img_id, task_type))
     # pdb.set_trace()
-    out_img.save(output_path + '/{}_{}_1.png'.format(img_id, task_type))
+    out_img.save(output_path + '/{}_{}_1.jpg'.format(img_id, task_type))
     
     seed = [img_id+'_{}'.format(task_type), [img_id+'_{}'.format(task_type)]]
 
@@ -600,12 +603,12 @@ def proc_coco(coco_root, tasks):
         image_list.append(image_id)
     image_list = sorted(image_list)
     print("len(image_list)", len(image_list))
-    # image_list = image_list[0:20000]
+    image_list = image_list[0:20000]
     # image_list = image_list[20000:40000]
     # image_list = image_list[40000:60000]
     # image_list = image_list[60000:80000]
     # image_list = image_list[80000:100000]
-    image_list = image_list[100000:len(image_list)]
+    # image_list = image_list[100000:len(image_list)]
     for image_id in image_list:
     #----------------split process----------------
     
@@ -1046,6 +1049,7 @@ def get_colors(image_path):
             colors.add((r[i][j], g[i][j], b[i][j]))
     return list(colors)
 
+
 def color_replace(img, color):
     
     color = color[::-1]
@@ -1056,6 +1060,7 @@ def color_replace(img, color):
     img[mask > 0] = [255, 255, 255]
     img[mask == 0] = [0, 0, 0]
     return img
+
 
 def proc_vocdataset(voc_root):
     
@@ -1076,6 +1081,7 @@ def proc_vocdataset(voc_root):
         seed = generate_sample(img, img_id, label, prompt, task_type="seg")
     return
     
+
 def proc_fs(fs_root, split):
     
     for line in open(os.path.join(fs_root, split)):

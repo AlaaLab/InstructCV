@@ -71,6 +71,7 @@ def paraphrase(
 
     return res
 
+
 class CFGDenoiser(nn.Module):
     def __init__(self, model):
         super().__init__()
@@ -231,9 +232,9 @@ def inference_seg(resolution, steps, vae_ckpt, split, config, test_txt_path, eva
                 prompts = prompts.replace("%", cls_name)
                 print("prompts:", prompts)
             
-                if edit == "":
-                    input_image.save(output)
-                    return
+                # if edit == "":
+                #     input_image.save(output)
+                #     return
 
                 with torch.no_grad(), autocast("cuda"), model.ema_scope():
                     

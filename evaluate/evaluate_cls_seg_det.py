@@ -105,13 +105,12 @@ def cal_bboxes_iou(test_path, src_ann_item, src_pred_item, ann_bbox_item, pred_b
 
             iou_dict = sorted(iou_dict.items(), key=lambda x: x[1], reverse=True)
             # pred_bboxes_.append(pred_bboxes[int(iou_dict[0][0])])
-            # print("iou_dict", len(iou_dict))
             if len(iou_dict) == 0:
                 json_results = {}
                 json_results['pred_bbox'] = pred_bboxes_
                 json.dump(json_results,open(os.path.join(test_path, det_p, "pred_bbox2.json"),'w'))
                 continue
-            if iou_dict[0][1] > 0.2:
+            if iou_dict[0][1] > 0.5:
                 pred_bboxes_.append(pred_bboxes[int(iou_dict[0][0])])
             json_results = {}
             json_results['pred_bbox'] = pred_bboxes_
@@ -713,7 +712,7 @@ if __name__ == "__main__":
     # calc acc
     # acc = evaluate_cls(args.cls_pred_root)
     
-    test_path = './outputs/imgs_test_ade20k_can_you_help'
+    test_path = './outputs/imgs_test_ade20k'
     cls_iou = {}
     cls_ap = {}
     cate_bb = {}
