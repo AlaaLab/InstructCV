@@ -31,7 +31,7 @@ from torch import autocast
 from dataset_creation.format_dataset import preproc_coco
 from dataset_creation.format_dataset import CLASSES
 from evaluate.evaluate_cls_seg_det import genGT
-from evaluate.postproc_det2 import postDet
+from evaluate.postproc_det2_voc import postDet_voc
 from evaluate.Evaluate_AR import Eval
 from format_dataset import preproc_voc
 
@@ -170,8 +170,8 @@ def inference_det_voc(resolution, steps, vae_ckpt, split, config, test_txt_path,
     
     if eval:#after split 0-9 are done, run codes as follows
         
-        postDet(root=input,pred_root=output).generate_exc_bbox() #generate extracted(w/o filtered) pred_bbox.json & .jpg
-        genGT(input, output, task, split).generate_voc_gt() #generate g.t. bbox.json & .jpg
+        # postDet_voc(root=input,pred_root=output).generate_exc_bbox() #generate extracted(w/o filtered) pred_bbox.json & .jpg
+        genGT(input, output, task, split).generate_voc_det_gt() #generate g.t. bbox.json & .jpg
         
 
 

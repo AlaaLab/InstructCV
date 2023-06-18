@@ -11,9 +11,9 @@ import random
 
 colors           = [(252,230.202),(255,0,0),(255,127,80),(255,99,71),(255,0,255),(0,255,0),(0,255,255),(255,235,205),(255,255,0),(255,153,18),(255,215,0),(255,227,132),
                     (160,32,240),(244,164,95),(218,112,214),(153,51,250),(255,97,0),(106,90,205),(127,255,212),(255,125,64),(0,199,140),(3,168,158)]
-bbox_p           = "/lustre/grp/gyqlab/lism/brt/language-vision-interface/visualization/det_result/bbox.json"
-img_p            = "/lustre/grp/gyqlab/lism/brt/language-vision-interface/visualization/ori_img/animal.png"
-cls_name         = ['Judy']
+bbox_p           = "/lustre/grp/gyqlab/lism/brt/language-vision-interface/visualization/det_result/bbox_woody.json"
+img_p            = "/lustre/grp/gyqlab/lism/brt/language-vision-interface/visualization/ori_img/woody.jpg"
+cls_name         = ['Spider Man']
 
 with open(bbox_p,'r',encoding='utf8')as fp:
     bbox_data = json.load(fp)['bbox']
@@ -28,7 +28,7 @@ for i in range(num):
 
     img = cv2.rectangle(img, point1, point2, colors_used, 10)
     new_point1 = (point1[0], point1[1] - 30)
-    new_point2 = (point1[0] + 150, point1[1])
+    new_point2 = (point1[0] + 250, point1[1])
 
     img = cv2.rectangle(img,new_point1, new_point2, colors_used, -1) #background
     news_point1 = (point1[0] + 5 ,point1[1] - 5)

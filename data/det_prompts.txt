@@ -1,6 +1,20 @@
 Detect the % using a blue bounding box.
 Detect the % using a blue bounding box.
 Detect the % using a blue bounding box.
+Detect the %.
+Detect the %.
+Detect %.
+Detect %.
+Can you detect the % in this image?
+Is it possible for you to detect the % in this image?
+Are you capable of detecting the % in this image?
+Can you determine the presence of the % in this image?
+Is it within your capabilities to spot the % in this image?
+Are you able to recognize the % in this image?
+Is it feasible for you to detect the occurrence of the % in this image?
+Are you equipped to identify the % in this image?
+Is it within your scope to detect the % in this image?
+Can you locate this % with a blue box.
 Verify the % with the help of a blue box.
 Determine the % by using a blue box to mark it.
 Identify the % by using a blue box.
@@ -27,7 +41,6 @@ Finding the % in this picture can be achievable by using a sorting box with a sq
 The detection of % in this image is necessary.
 The % in this picture requires attention.
 This image requires the recognition of %.
-In this image, the % must be identified and marked.
 The detection of % in this image is necessary. What should I do?
 This image requires the recognition of %.
 To identify the % in this picture, one must look at it closely.
@@ -102,10 +115,8 @@ Find all the occurrences of the % in the picture.
 Discover each % present in the image.
 Identify all % signs within the picture.
 Spot every instance of the % character in the image.
-Pinpoint all % in the picture.
 Uncover each occurrence of the % in the image.
 Locate every % that appears in the picture.
-Hunt down all % signs in the image.
 Detect every instance of the % character in the picture.
 Locate all % visible in the image.
 Are you able to recognize each individual % in the image?

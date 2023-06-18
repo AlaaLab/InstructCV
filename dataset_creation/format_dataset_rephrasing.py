@@ -5,6 +5,7 @@
 # --------------------------------------------------------
 
 import numpy as np
+import csv
 from PIL import Image, ImageDraw, ImageFont
 import xml.etree.ElementTree as ET
 import shutil
@@ -221,7 +222,7 @@ def get_bbox_img(root, img_id, bbox, dataset):
         # a.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])), fill='white', outline='white', width=1)
     
     elif dataset == 'MSCOCO':
-        img_path = os.path.join(root, 'train2017', '%s.jpg' % img_id)
+        img_path = os.path.join(root, 'val2017', '%s.jpg' % img_id)
 
         img = Image.open(img_path).convert("RGB")
         # box_img = Image.new('RGB', img.size, (0,0,0))
@@ -274,7 +275,7 @@ def generate_sample(img, img_id, out_img, prompt, task_type):
 
     img.save(output_path+'/{}_{}_0.jpg'.format(img_id, task_type))
     # pdb.set_trace()
-    out_img.save(output_path + '/{}_{}_1.jpg'.format(img_id, task_type))
+    out_img.save(output_path + '/{}_{}_1.png'.format(img_id, task_type))
     
     seed = [img_id+'_{}'.format(task_type), [img_id+'_{}'.format(task_type)]]
 
@@ -483,10 +484,10 @@ def proc_oxford_pets_finegrained(oxford_pets_root, tasks):
                 seeds.append(seed)
 
                 output_path = os.path.join(args.save_root, img_id + '_det')
-                bbox_info = {'bbox': bbox}
-                bbox_file = open(os.path.join(output_path, 'bbox.json'), 'w')
-                bbox_file.write(json.dumps(bbox_info))
-                bbox_file.close()
+                # bbox_info = {'bbox': bbox}
+                # bbox_file = open(os.path.join(output_path, 'bbox.json'), 'w')
+                # bbox_file.write(json.dumps(bbox_info))
+                # bbox_file.close()
 
         n +=1 
         if n % 100 == 0:
@@ -499,7 +500,7 @@ def preproc_coco(root):
     
     print('begin to pre-process coco dataset...')
     clses                   = {}
-    coco_path               = os.path.join(root, 'annotations/instances_train2017.json')
+    coco_path               = os.path.join(root, 'annotations/instances_val2017.json')
     coco_fp                 = open(coco_path)
     anno_js                 = json.loads(coco_fp.readline())
 
@@ -603,7 +604,7 @@ def proc_coco(coco_root, tasks):
         image_list.append(image_id)
     image_list = sorted(image_list)
     print("len(image_list)", len(image_list))
-    image_list = image_list[0:20000]
+    image_list = image_list[0:200]
     # image_list = image_list[20000:40000]
     # image_list = image_list[40000:60000]
     # image_list = image_list[60000:80000]
@@ -626,7 +627,7 @@ def proc_coco(coco_root, tasks):
                 ncls_perimg.append(cname_)
             
             img_id              = image_id.zfill(12) #000000355677
-            img_path            = os.path.join(coco_root, 'train2017/{}.jpg'.format(img_id))
+            img_path            = os.path.join(coco_root, 'val2017/{}.jpg'.format(img_id))
             img                 = Image.open(img_path).convert("RGB")
             
             for task in tasks:
@@ -767,7 +768,7 @@ def proc_nyuv2_all(nyuv2_root):
             seeds.append(seed)
             
             n += 1 
-            if n % 1000 == 0:
+            if n % 100 == 0:
                 print('{} images processed!'.format(n))
     
     return seeds
@@ -797,8 +798,7 @@ def proc_nyuv2(nyuv2_root):
         img             = Image.open(img_path_).convert("RGB")
         depth_img       = Image.open(depth_path_).convert("RGB")
         
-        prompt['edit'] = 'Estimate the depth of this image'
-        # prompt = get_depth_prompt()
+        prompt          = get_depes_prompt()
         
         seed = generate_sample(img, img_id, depth_img, prompt, task_type="depes")
         seeds.append(seed)
@@ -929,19 +929,19 @@ def proc_adechan2016_sem(ade_root, cls_ade_dict):
     prompt = {}
     n = 0
     
-    img_list = os.listdir(os.path.join(ade_root, "images/training"))
+    img_list = os.listdir(os.path.join(ade_root, "images/validation"))
     
     #part
     img_list = sorted(img_list)
     print("len(image_list)", len(img_list))
-    img_list = img_list[0:5000]
+    img_list = img_list[0:2000]
     # img_list = img_list[15000:len(img_list)]
     #######
     
     for img_name in img_list:
         
-        img_path = os.path.join(ade_root, "images/training", img_name)
-        seg_path = os.path.join(ade_root, "annotations/training", img_name.split(".")[0]+".png")
+        img_path = os.path.join(ade_root, "images/validation", img_name)
+        seg_path = os.path.join(ade_root, "annotations/validation", img_name.split(".")[0]+".png")
         anno = Image.open(seg_path)
         anno = np.array(anno)
         
@@ -1080,7 +1080,39 @@ def proc_vocdataset(voc_root):
         
         seed = generate_sample(img, img_id, label, prompt, task_type="seg")
     return
+  
     
+def proc_nyuv2(root):
+
+    print('begin to process NYU_V2 training dataset...')
+    
+    seeds                   = []
+    prompt                  = {}
+    n                       = 0
+    csv_p                   = os.path.join(root, "data/nyu2_train.csv")
+
+
+    with open(csv_p, encoding='utf-8-sig') as f:
+        
+        for row in csv.reader(f, skipinitialspace=True):
+            img_p           = os.path.join(root, row[0].strip())
+            label_p         = os.path.join(root, row[1].strip())
+            img_id          = img_p.split("/")[-2] + "_" + img_p.split("/")[-1].split(".")[0]
+
+            img             = Image.open(img_p).convert("RGB")
+            depth_img       = Image.open(label_p).convert("RGB")
+            prompt          = get_depes_prompt()
+            
+            seed            = generate_sample(img, img_id, depth_img, prompt, task_type="depes")
+            
+            n +=1 
+            if n % 100 == 0:
+                print('About {} images processed!'.format(n))
+            
+    f.close()
+    
+    return seeds
+
 
 def proc_fs(fs_root, split):
     
@@ -1148,6 +1180,7 @@ if __name__ == "__main__":
     parser.add_argument("--imagenet_root", default='./data/imagenet_train', type=str)
     parser.add_argument("--voc_root", default='./data/VOCdevkit/VOC2012', type=str)
     parser.add_argument("--fs_root", default='./data/fewshot_data/fewshot_data', type=str)
+    parser.add_argument("--nyuv2_root_nonoise", default='./data/nyu_data', type=str)
     args = parser.parse_args()
     
     cls_ade_dict, pet_to_color, clses                          = {}, {}, {}
@@ -1253,13 +1286,13 @@ if __name__ == "__main__":
     # json_file.write(json.dumps(det_prompts_new))
     # json_file.close()
 
-    with open("./data/seg_prompts_rp.txt") as file:
+    with open("./data/seg_prompts_copy.txt") as file:
         for item_seg in file:
             sen_seg = item_seg.strip()
             seg_prompts[num_seg] = sen_seg
             num_seg += 1
     
-    with open("./data/det_prompts_rp.txt") as file:
+    with open("./data/det_prompts_bak.txt") as file:
         for item_det in file:
             sen_det = item_det.strip()
             det_prompts[num_det] = sen_det
@@ -1292,7 +1325,7 @@ if __name__ == "__main__":
         proc_oxford_pets_finegrained(args.oxford_pets_root, tasks)
         
     elif fnmatch(args.dataset, "oxford_pets_binary"):
-        loop = 5
+        loop = 1
         for num_loop in range(loop):
             proc_oxford_pets_binary_ifelse(args.oxford_pets_root, num_loop, tasks)
 
@@ -1313,5 +1346,8 @@ if __name__ == "__main__":
     
     elif fnmatch(args.dataset, "fs"):
         proc_fs(args.fs_root, "test_part2.txt")
+    
+    elif fnmatch(args.dataset, "nyuv2_nonoise"):
+        proc_nyuv2(args.nyuv2_root_nonoise)
 
 

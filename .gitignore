@@ -15,6 +15,10 @@
 *.pkg
 *.jpg
 *.png
+*.parquet
+visualization/visual_det_add.py
+HyperRBN/
+visualization/output*
 
 
 # Databases

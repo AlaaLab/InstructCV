@@ -69,9 +69,8 @@ CUDA_VISIBLE_DEVICES=0 python edit_cli.py --resolution 256 --ckpt logs/train_rp_
 # for pet seg
 CUDA_VISIBLE_DEVICES=7 python edit_cli.py --resolution 256 --ckpt logs/train_all100kdata_add_coco_pet_seg_blue/checkpoints/epoch=000020.ckpt --input data/oxford-pets --output ./outputs/imgs_test_pets_seg/ --edit "segment the %" --task pet_seg
 
-
 # for fig1
-python edit_cli.py --ckpt logs/train_all100kdata_add_coco_pet_seg_blue/checkpoints/epoch=000020.ckpt --resolution 512 --input outputs/test_one_image --output outputs/img_test_cls --edit "detect the woody's face" --task det --single_test
+python edit_cli.py --ckpt logs/train_rp_model_hug/checkpoints/28.ckpt --resolution 512 --input visualization/ori_img --output outputs/img_test_cls --edit "Detect Woody using a blue bounding box." --task det --single_test
 
 ## for vis_depes
 # python edit_cli.py --ckpt logs/train_fp_model_archived_version/checkpoints/epoch=000042.ckpt --input outputs/test_img --output outputs/visualization_depes --edit "Estimate the depth of this image" --task depes --single_test

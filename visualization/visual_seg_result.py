@@ -9,7 +9,7 @@ import numpy as np
 import glob
 import pdb
 
-img1 = cv2.imread('/lustre/grp/gyqlab/lism/brt/language-vision-interface/visualization/ori_img/ADE_val_00000592.jpg')
+img1 = cv2.imread('/lustre/grp/gyqlab/lism/brt/language-vision-interface/visualization/ori_img/ADE_val_00000455.jpg')
 h, w ,c = img1.shape
 print(img1.shape)
 img2 = img1.copy()
@@ -17,10 +17,10 @@ img2 = img1.copy()
 img_paths = glob.glob('/lustre/grp/gyqlab/lism/brt/language-vision-interface/visualization/seg_result2/*')
 save_path = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/visualization/123.jpg'
 
-np.random.seed(2)
+np.random.seed(5)
 # colors = np.random.randint(0,255,(len(img_paths),3))
 colors = np.random.randint(0,255,(1,3))
-np.random.seed(30)
+np.random.seed(6)
 # colors2 = np.random.randint(0,255,(len(img_paths),3))
 colors2 = np.random.randint(0,255,(1,3))
 
