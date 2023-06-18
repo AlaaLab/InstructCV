@@ -5,9 +5,8 @@
 # ------------------------------------------------------------------------------
 
 from __future__ import annotations
-
+import pandas as pd
 import math
-import pdb
 import cv2
 import random
 from fnmatch import fnmatch
@@ -49,6 +48,86 @@ example_instructions = [
 ]
 
 model_id = "yulu2/InstructCV"
+
+def delete(points):
+    points = np.asarray(points)
+    goal = []
+    for i in range(points.shape[0]-1):
+        a = abs(points[0][0] - points[i+1][0])
+        b = abs(points[0][1] - points[i+1][1])
+        if a > 5 or b > 5:
+            goal.append(points[i+1])
+    goal.append(points[0])
+    if len(goal) != points.shape[0]:
+        goal = delete(goal)
+    return goal
+
+def ext_coor(edited_img, input_image):
+    
+    hsv = cv2.cvtColor(edited_img,cv2.COLOR_BGR2HSV)
+    low_hsv = np.array([100,110,70])
+    high_hsv = np.array([140,255,255])
+
+    mask1 = cv2.inRange(hsv,lowerb=low_hsv,upperb=high_hsv)
+    kernel = np.ones((3,3),'uint8')
+    mask = cv2.morphologyEx(mask1,cv2.MORPH_CLOSE,kernel,iterations=1)
+    mask = cv2.copyMakeBorder(mask,50,50,50,50,cv2.BORDER_CONSTANT,value=0)
+
+    points = []
+    for i in range(edited_img.shape[0]):
+        for j in range(edited_img.shape[1]):
+            if np.sum(np.array(mask[i+50,j+50:j+70]) )== 255*20 and np.sum(np.array(mask[i+50:i+70,j+50]) )== 255*20 \
+                    and np.sum(np.array(mask[i+50:i+60,j+40:j+50]) )< 255*50 \
+                    and np.sum(np.array(mask[i+40:i+50,j+50:j+60]) )< 255*50\
+                    and np.sum(np.array(mask[i+40:i+50,j+40:j+50]) )< 255*50\
+                    and np.sum(np.array(mask[i+50:i+60,j+50:j+60]) )< 255*50:
+
+                cv2.circle(edited_img,(j,i),1,(0,255,0),-1)
+                points.append([i, j])
+            if np.sum(np.array(mask[i+50,j+30:j+50]) )== 255*20 and np.sum(np.array(mask[i+30:i+50,j+50]) )== 255*20\
+                    and np.sum(np.array(mask[i+40:i+50,j+50:j+60]) )< 255*50\
+                    and np.sum(np.array(mask[i+50:i+60,j+40:j+50]) )< 255*50\
+                    and np.sum(np.array(mask[i+50:i+60,j+50:j+60]) )< 255*50\
+                    and np.sum(np.array(mask[i+40:i+50,j+40:j+50]) )< 255*50:
+                    cv2.circle(edited_img,(j,i),2,(0,255,0),-1)
+                    points.append([i, j])
+
+    points = np.array(points)
+    if points.size == 0:
+        return [], edited_img
+    
+    points_sort = pd.DataFrame(points,columns=['x','y'])
+    points_sort.sort_values(by=['x','y'],axis=0)
+
+    goal = delete(points)
+    goal = pd.DataFrame(goal,columns=['x','y'])
+    goal = goal.sort_values(by=['x','y'],axis=0)
+    goal = np.array(goal)
+    point = []
+    for i in range(goal.shape[0]):
+        for j in np.arange(i+1,goal.shape[0]):
+            point.append([goal[i,0],goal[i,1],goal[j,0],goal[j,1]])
+    point_new = []
+    for i in range(len(point)):
+        if point[i][1] < point[i][3]:
+            point_new.append(point[i])
+    
+    if len(point_new) == 0:
+        return [], edited_img
+    
+    bboxes = []
+    for i in range(len(point_new)):
+        xx1 = point_new[i][1]
+        yy1 = point_new[i][0]
+        xx2 = point_new[i][3]
+        yy2 = point_new[i][2]
+        cv2.rectangle(input_image, (xx1, yy1), (xx2, yy2), (0, 255, 0), 2)
+        
+        bbox = [int(xx1),int(yy1),int(xx2),int(yy2)]
+        bboxes.append(bbox)
+        # cv2.putText(img_vis, img_name, (xx1 + 10, yy1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+
+    return bboxes
 
 def main():
     pipe = StableDiffusionInstructPix2PixPipeline.from_pretrained(model_id, torch_dtype=torch.float16, safety_checker=None).to("cuda")
@@ -98,6 +177,22 @@ def main():
                 edited_image_2 = cv2.fillPoly(img2, [contours[j]], (int(colors2[0]),int(colors2[1]),int(colors2[2])))
             img_merge = cv2.addWeighted(edited_image, 0.5,edited_image_2, 0.5, 0)
             edited_image  = Image.fromarray(cv2.cvtColor(img_merge, cv2.COLOR_BGR2RGB))
+        
+        if fnmatch(instruction_, "*detect*") or fnmatch(instruction_, "*locate*"):
+            colors       = [(252,230.202),(255,0,0),(255,127,80),(255,99,71),(255,0,255),(0,255,0),(0,255,255),(255,235,205),(255,255,0),(255,153,18),(255,215,0),(255,227,132),
+                            (160,32,240),(244,164,95),(218,112,214),(153,51,250),(255,97,0),(106,90,205),(127,255,212),(255,125,64),(0,199,140),(3,168,158)]
+            input_image  = cv2.cvtColor(np.array(input_image), cv2.COLOR_RGB2BGR)
+            edited_image = cv2.cvtColor(np.array(edited_image), cv2.COLOR_RGB2BGR)
+            bbox = ext_coor(edited_image, input_image)
+            num = len(bbox)
+
+            for i in range(num):
+                colors_used      = random.choice(colors)
+                point1 = np.int_(bbox[i][:2])
+                point2 = np.int_(bbox[i][2:])
+                img = cv2.rectangle(input_image, point1, point2, colors_used, 10)
+            edited_image  = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+            
         seed = 50
         text_cfg_scale = 7.5
         image_cfg_scale = 1.5

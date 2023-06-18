@@ -7,7 +7,7 @@ The master branch works with **PyTorch 1.5+**.
 ## Overview
 We bulit a interface between language and vision tasks. We can use various language instructions to decide which vision task to do!
 
-![Demo](https://i.hd-r.cn/b9dc90bd1f3895bdbff45226627b8c41.png)
+[![pCVB5B8.png](https://s1.ax1x.com/2023/06/11/pCVB5B8.png)](https://imgse.com/i/pCVB5B8)
 <br/>
 
 <details open>
@@ -24,7 +24,81 @@ We bulit a interface between language and vision tasks. We can use various langu
 </details>
 <br/>
 
-# &#x1F4A1; Play with your image
+
+## Links
+* [Project Page](https://github.com) 
+* [HuggingFace 🤗 Demo](https://huggingface.co/spaces/yulu2/InstructCV)
+* [ArXiv Page](https://arxiv.or)
+
+
+## Citation
+
+If you find our work useful in your research, please cite:
+
+```BiBTeX
+@article{,
+  title={{}},
+  author={},
+  journal={},
+  year={2023}
+}
+```
+## Set up the environments
+Install dependencies by running:
+```shell
+#Step0. Set up the env.
+conda env create -f environment.yaml
+conda activate lvi
+#Step1 (optional) . You could ignore this step if you do not run the baselines.
+## install tensorflow : https://www.tensorflow.org/install/pip
+pip3 install git+https://github.com/philferriere/cocoapi.git#subdirectory=PythonAPI 
+pip install -U openmim
+mim install mmcv-full
+git clone https://github.com/open-mmlab/mmdetection.git
+cd mmdetection
+pip install -v -e .
+```
+
+## Model Zoo
+<table>
+<thead>
+  <tr>
+    <th align="center"></th>
+    <th align="center" style="text-align:center" colspan="2">Depth <br>Estimation <br>RMSE⬇</th>
+    <th align="center" style="text-align:center" colspan="2">Sementic Segmentation mIoU⬆</th>
+    <th align="center" style="text-align:center" colspan="2">Classification <br>Acc⬆</th>
+    <th align="center" style="text-align:center" colspan="2">Object Detection mAP⬆</th>
+    <th align="center" style="text-align:center">Download</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td align="center"></td>
+    <td align="center">NYUv2</td>
+    <td align="center">SUNRGB-D</td>
+    <td align="center">ADE-20K</td>
+    <td align="center">VOC</td>
+    <td align="center">Oxford-Pets</td>
+    <td align="center">ImageNet-sub</td>
+    <td align="center">COCO</td>
+    <td align="center">VOC</td>
+  </tr>
+  <tr>
+    <td align="center"><a href="configs/Panoptic/odise_label_coco_50e.py"> InstructCV(rephrased) </a></td>
+    <td align="center">0.297</td>
+    <td align="center">0.279</td>
+    <td align="center">47.235</td>
+    <td align="center">52.125</td>
+    <td align="center">82.135</td>
+    <td align="center">74.665</td>
+    <td align="center">48.500</td>
+    <td align="center">61.700</td>
+    <td align="center"><a href="https://github.com/"> checkpoint </a></td>
+  </tr>
+</tbody>
+</table>
+
+## Play with your image
 You can put your favorite image and try to use language as instruction to do some vision tasks. Just have a try to see what will happen!
 
 **Step0.** Download the pre-trained weights we provided.
@@ -46,6 +120,7 @@ python edit_cli.py --input <path_to_the_dictionary_you_created> --output <path_t
 python edit_cli.py --input imgs/ --output outputs/ --edit "segment the cat."
 ```
 <br>
+
 
 
 # &#x2714; Prepare training datasets
@@ -181,24 +256,8 @@ python dataset_creation/format_dataset.py --save_root <path_to_save> --tasks <vi
 python dataset_creation/format_dataset.py --save_root './image_pairs' --tasks ['det'] --data_root './data/coco'
 ```
 
-# &#x1F449; Training
+## Training
 [Training Log](https://drive.google.com/file/d/1pMeRfWvDXSW7k7ESQBliMkgGoWQi74FW/view?usp=share_link)
-## Set up the environments
-
-```shell
-#(must) Step0. Set up the env.
-conda env create -f environment.yaml
-conda activate lvi
-#(optional) Step1. Set env. for baselines - pix2seq
-## install tensorflow : https://www.tensorflow.org/install/pip
-#(optional) Step2. Set env. for baselines - detection
-pip3 install git+https://github.com/philferriere/cocoapi.git#subdirectory=PythonAPI #Install the pycocotool
-pip install -U openmim
-mim install mmcv-full
-git clone https://github.com/open-mmlab/mmdetection.git
-cd mmdetection
-pip install -v -e .
-```
 
 ## Download pre-trained models
 We trained our model from the checkpoint provided by Stable Diffusion V1.5
@@ -222,16 +281,7 @@ sbatch scripts/slurm_train
 ```
 
 
-## Reproduce the Table 2.
-1. Build the datasets following Sec. Prepare datasets
-2. Train the model following Sec. Train
-3. Evaluate by runing:
-```
-python evaluate/evaluate_cls_seg_det.py
-python evaluate/evaluate_depth.py
-```
-
-# &#x2B50; Repoduce the results in Table 1.
+## Repoduce the results in Table 1.
 
 ## Semantic segmantation
 We evaluate model's performance on ADE20k
@@ -334,11 +384,31 @@ Change the data_root in dataset_configs.py
 </details>
 <br>
 
+## Demo
+
+* Integrated into [Huggingface Spaces 🤗](https://huggingface.co/spaces) using [Gradio](https://github.com/gradio-app/gradio). Try out the web demo: [![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/yulu2/InstructCV)
+
+* Run the demo on Google Colab: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/NVlabs/ODISE/blob/master/demo/demo.ipynb)
 
 
+The pre-trained model for Stable Diffusion is subject to its original license terms from [Stable Diffusion](https://github.com/CompVis/stable-diffusion).
+
+* To run InstructCV's demo from the command line:
+
+    ```shell
+    python demo/app.py --input demo/examples/coco.jpg --output demo/coco_pred.jpg --edit "Please segment the dog."
+    ```
+    The output is saved in `demo/coco_pred.jpg`. For more detailed options for `demo/demo.py` see [Getting Started with InstructCV](GETTING_STARTED.md).
+    
+  
+* To run the [Gradio](https://github.com/gradio-app/gradio) demo locally:
+    ```shell
+    python demo/app.py
+    ```
 
 
 ## Acknowledgement
-This project is based on the following open-source projects. We thank their authors for making the source code publically available.
-* [CompVis/stable_diffusion](https://github.com/CompVis/stable-diffusion)
-* [Instruct Pix2Pix](https://github.com/timothybrooks/instruct-pix2pix) (largely based on this repo)
+
+Code is largely based on [CompVis/stable_diffusion](https://github.com/CompVis/stable-diffusion) and [Instruct Pix2Pix](https://github.com/timothybrooks/instruct-pix2pix).
+
+Thank you, all, for the great open-source projects!
