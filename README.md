@@ -10,7 +10,8 @@ We bulit a interface between language and vision tasks. We can use various langu
 <!-- [![pCVB5B8.png](https://s1.ax1x.com/2023/06/11/pCVB5B8.png)](https://imgse.com/i/pCVB5B8)
 <br/> -->
 
-<!-- <img src="https://media.giphy.com/media/5t3Txysw5Ea2YZMrpm/giphy.gif" width="256"> -->
+<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYXliYjA0aWdwbG5icXRxNHN5eGZtMmEzYnR1bWU1djEwYWltZXQwZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/A0JSMStYAw1D784fTP/giphy.gif" width="512">
+
 
 <div align="center">
 <img src="https://media.giphy.com/media/5t3Txysw5Ea2YZMrpm/giphy.gif" width="32%">
