@@ -16,10 +16,18 @@
 *.jpg
 *.png
 *.parquet
-visualization/visual_det_add.py
+README_REF.md
+
+# Folders
 HyperRBN/
 visualization/output*
-README_REF.md
+visualization/visual_det_add.py
+diffuses/
+baselines/
+pytorch_forward_forward/
+N-W-estimator/
+diffusers/
+baselines/
 
 
 # Databases
@@ -54,6 +62,8 @@ pred_final.json
 baselines/pix2seq
 baselines/pix2seq_bak
 visualization/det_result
+scripts/slurm_inference
+visualization/
 
 
 # OS generated files

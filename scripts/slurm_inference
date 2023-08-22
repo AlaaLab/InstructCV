@@ -75,4 +75,5 @@ python edit_cli.py --ckpt logs/train_rp_model_hug/checkpoints/28.ckpt --resoluti
 ## for vis_depes
 # python edit_cli.py --ckpt logs/train_fp_model_archived_version/checkpoints/epoch=000042.ckpt --input outputs/test_img --output outputs/visualization_depes --edit "Estimate the depth of this image" --task depes --single_test
 
-CUDA_VISIBLE_DEVICES=2 python edit_cli.py --resolution 256 --split "test_part0.txt" --ckpt logs/train_fp_model_archived_version/checkpoints/epoch=000042.ckpt  --input data/ADEChallengeData2016 --output outputs/imgs_test_ade20k_please_segment/ --edit "Please segment the % into smaller parts" --task seg
+CUDA_VISIBLE_DEVICES=1 python edit_cli.py --resolution 256 --split "test_part0.txt" --ckpt logs/train_fp_model_archived_version/checkpoints/42.ckpt  --input data/ADEChallengeData2016 --output outputs/imgs_test_ade20k_highlight_the_image/ --edit "Which image segments contain the %" --task seg
+CUDA_VISIBLE_DEVICES=3 python edit_cli.py --resolution 256 --split "test_part0.txt" --ckpt logs/train_rp_model_archived_version/checkpoints/48.ckpt  --input data/ADEChallengeData2016 --output outputs/imgs_test_ade20k_rp_Highlight_the/ --edit "Highlight the image parts corresponding to the %." --task seg

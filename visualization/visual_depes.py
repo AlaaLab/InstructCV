@@ -5,7 +5,6 @@ import pdb
 
 root = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/visualization/depes'
 save_r = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/visualization/output'
-
 img_list = os.listdir(root)
 
 for img in img_list:
