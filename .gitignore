@@ -28,6 +28,8 @@ pytorch_forward_forward/
 N-W-estimator/
 diffusers/
 baselines/
+data_convert/
+
 
 
 # Databases
