@@ -29,6 +29,7 @@ N-W-estimator/
 diffusers/
 baselines/
 data_convert/
+dataset/
 
 
 
@@ -66,6 +67,8 @@ baselines/pix2seq_bak
 visualization/det_result
 scripts/slurm_inference
 visualization/
+baselines_bak/
+diffusers_bak/
 
 
 # OS generated files
