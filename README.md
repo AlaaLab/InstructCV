@@ -113,16 +113,16 @@ pip install -v -e .
 </table>
 
 ## Get Started
-See [Preparing Datasets for InstructCV](datasets/README.md).
+See [Preparing Datasets for InstructCV](DATASET.md).
 
 See [Getting Started with InstructCV](GETTING_STARTED.md) for detailed instructions on training and inference with InstructCV.
 
 
 ## Demo
 
-* Integrated into [Huggingface Spaces 🤗](https://huggingface.co/spaces) using [Gradio](https://github.com/gradio-app/gradio). Try out the web demo: [![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/yulu2/InstructCV)
+* Integrated into [Huggingface Spaces 🤗](https://huggingface.co/spaces) using [Gradio](https://github.com/gradio-app/gradio). Try out the web demo: [![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/alaa-lab/InstructCV)
 
-* Run the demo on Google Colab: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/)
+* Run the demo on Google Colab: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1YDI2kb6uPP1d1VsiarFDapufRtkYso4g)
 
 
 The pre-trained model for Stable Diffusion is subject to its original license terms from [Stable Diffusion](https://github.com/CompVis/stable-diffusion).
