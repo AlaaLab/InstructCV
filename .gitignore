@@ -71,6 +71,7 @@ baselines_bak/
 diffusers_bak/
 visualization_bak/
 edit_cli_inference/
+pre_processing_bak/
 
 
 # OS generated files
