@@ -69,6 +69,7 @@ scripts/slurm_inference
 visualization/
 baselines_bak/
 diffusers_bak/
+visualization_bak/
 
 
 # OS generated files
@@ -90,6 +91,8 @@ evaluate/postproc_det2_voc_.py
 evaluate/space_inf_.py
 evaluate/inferece_hug_.py
 data/names_.txt
+seg_prompt_bak.json
+
 
 
 
