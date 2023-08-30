@@ -1,3 +1,8 @@
+# Copyright (c) 2023, Yulu Gan
+# Licensed under the BSD 3-clause license (see LICENSE.txt)
+# ** Description ** Generate seed in the datasets
+# --------------------------------------------------------
+
 import os
 from fnmatch import fnmatch
 import json
