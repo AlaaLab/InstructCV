@@ -4,16 +4,16 @@
 # ** Description ** Script for inferencing the four vision tasks.
 # ---------------------------------------------------------------------------------
 
-from edit_cli_cls import inference_cls
-from edit_cli_depes import inference_depes
-from edit_cli_det import inference_det
-from edit_cli_seg import inference_seg
-from edit_cli_seg_fs1000 import inference_seg_fs1000
-from edit_cli_depes_sunrgbd import inference_sunrgbd_depes
-from edit_cli_seg_voc import inference_seg_voc
-from edit_cli_det_voc import inference_det_voc
-from edit_cli_seg_pets import inference_seg_pets
-from edit_cli_seg_coco import inference_seg_coco
+from infer.edit_cli_cls import inference_cls
+from infer.edit_cli_depes import inference_depes
+from infer.edit_cli_det import inference_det
+from infer.edit_cli_seg import inference_seg
+from infer.edit_cli_seg_fs1000 import inference_seg_fs1000
+from infer.edit_cli_depes_sunrgbd import inference_sunrgbd_depes
+from infer.edit_cli_seg_voc import inference_seg_voc
+from infer.edit_cli_det_voc import inference_det_voc
+from infer.edit_cli_seg_pets import inference_seg_pets
+from infer.edit_cli_seg_coco import inference_seg_coco
 
 
 from argparse import ArgumentParser

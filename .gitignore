@@ -96,6 +96,7 @@ evaluate/evaluate_seg_fs1000_.py
 evaluate/postproc_det2_voc_.py
 evaluate/space_inf_.py
 evaluate/inferece_hug_.py
+infer/edit_app.py
 data/names_.txt
 seg_prompt_bak.json
 dataset_creation/ade20k_pan_ann_gen_.py
