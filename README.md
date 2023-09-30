@@ -3,6 +3,7 @@
 Yulu Gan, Sungwoo Park, Alexander Schubert, Anthony Philippakis, Ahmed Alaa
 
 &#x1F31F; Official PyTorch implementation of **InstructCV**. The master branch works with **PyTorch 1.5+**.
+![Screenshot 2023-09-30 at 11 30 35 AM](https://github.com/AlaaLab/InstructCV/assets/21158134/0baadd7a-7b43-4766-a3fb-0c9f6ba9f65f)
 
 ## Overview
 We bulit a interface between language and vision tasks. We can use various language instructions to decide which vision task to do using one model, one loss function.
