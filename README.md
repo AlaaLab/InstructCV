@@ -8,7 +8,7 @@ Yulu Gan, Sungwoo Park, Alexander Schubert, Anthony Philippakis and Ahmed Alaa
 
 ![Screenshot 2023-09-30 at 11 30 35 AM](https://github.com/AlaaLab/InstructCV/assets/21158134/0baadd7a-7b43-4766-a3fb-0c9f6ba9f65f)
 
-<img align="center" width="33%" src="https://github.com/AlaaLab/InstructCV/assets/21158134/0baadd7a-7b43-4766-a3fb-0c9f6ba9f65f">
+<img align="center" width="100%" src="https://github.com/AlaaLab/InstructCV/assets/21158134/0baadd7a-7b43-4766-a3fb-0c9f6ba9f65f">
 
 
 ## Overview
