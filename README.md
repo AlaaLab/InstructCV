@@ -6,24 +6,7 @@ Yulu Gan, Sungwoo Park, Alexander Schubert, Anthony Philippakis, Ahmed Alaa
 ![Screenshot 2023-09-30 at 11 30 35 AM](https://github.com/AlaaLab/InstructCV/assets/21158134/0baadd7a-7b43-4766-a3fb-0c9f6ba9f65f)
 
 ## Overview
-We bulit a interface between language and vision tasks. We can use various language instructions to decide which vision task to do using one model, one loss function.
-
-<!-- [![pCVB5B8.png](https://s1.ax1x.com/2023/06/11/pCVB5B8.png)](https://imgse.com/i/pCVB5B8)
-<br/> -->
-
-<div align="center">
-<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExd2xneXN0czhtMXFxaTJuNThrb3NyMGRkcGQwaDAwaHd6c3h2cHlxNSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Rs9tOqqKCqqfoAKjsZ/giphy.gif" width="90%">
-</div>
-<br>
-<div align="center">
-<div align="center">
-<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYjdwcnFqOGI1MndqZGV5MTgxd2NldjR2YWp4dzFicnF2Y3c3bnFkbCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/MIfEWTuLeMQNAsKOas/giphy.gif" width="44.2%">
-<img src="https://media.giphy.com/media/5t3Txysw5Ea2YZMrpm/giphy.gif" width="44.5%">
-</div>
-<br>
-<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNjZmNTBhOTY2NmQ3ZDNhMTIyNTI3ZGQ5MDIzNjRmNzE0YzJhNmE4MSZlcD12MV9pbnRlcm5hbF9naWZzX2dpZklkJmN0PWc/XzWdZ1KZCRfgQMZnW6/giphy.gif" width="44.5%">
-<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcjFma2FndWlhZG01dm0ybzFncTg5cWZuNXc1NGd6bDUwYmdzbzNrYSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/B8qVvI0HhEkVdTCBLe/giphy.gif" width="44.3%">
-</div>
+Recent advances in generative diffusion models have enabled text-controlled synthesis of realistic and diverse images with impressive quality. Despite these remarkable advances, the application of text-to-image generative models in computer vision for standard visual recognition tasks remains limited. The current de facto approach for these tasks is to design model architectures and loss functions that are tailored to the task at hand. In this project, we develop a unified language interface for computer vision tasks that abstracts away task specific design choices and enables task execution by following natural language instructions. Our approach involves casting multiple computer vision tasks as text-to-image generation problems. Here, the text represents an instruction describing the task, and the resulting image is a visually-encoded task output. To train our model, we pool commonly-used computer vision datasets covering a range of tasks, including segmentation, object detection, depth estimation, and classification. We then use a large language model to paraphrase prompt templates that convey the specific tasks to be conducted on each image, and through this process, we create a multi-modal and multi-task training dataset comprising input and output images along with annotated instructions. Following the InstructPix2Pix architecture, we apply instruction-tuning to a text-to-image diffusion model using our constructed dataset, steering its functionality from a generative model to an instruction-guided multi-task vision learner. 
 
 <details open>
 <summary>Major features</summary>
