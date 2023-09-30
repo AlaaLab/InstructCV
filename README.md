@@ -2,9 +2,7 @@
 
 Yulu Gan, Sungwoo Park, Alexander Schubert, Anthony Philippakis, Ahmed Alaa
 
-&#x1F31F; Official PyTorch implementation of Language Vision Interface. 
-
-The master branch works with **PyTorch 1.5+**.
+&#x1F31F; Official PyTorch implementation of **InstructCV**. The master branch works with **PyTorch 1.5+**.
 
 ## Overview
 We bulit a interface between language and vision tasks. We can use various language instructions to decide which vision task to do using one model, one loss function.
