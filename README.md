@@ -1,4 +1,6 @@
-<!-- # &#x1F309; Language vison interface -->
+## InstructCV: Instruction-Tuned Text-to-Image Diffusion Models as Vision Generalists
+
+Yulu Gan, Sungwoo Park, Alexander Schubert, Anthony Philippakis, Ahmed Alaa
 
 &#x1F31F; Official PyTorch implementation of Language Vision Interface. 
 
