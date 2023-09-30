@@ -2,7 +2,7 @@
 
 ## Play with your image
 
-You can put your favorite image and try to use language as instruction to do some vision tasks. Just have a try to see what will happen!
+You can put your favorite image and try to use language as instruction to do some vision tasks.
 
 **Step0.** Download the pre-trained weights we provided.
 Or you can download it manually from [Google Drive](https://drive.google.com/file/d/1pz9eheQRQfx8itLj3nSKXQylTuG8DtB_/view?usp=share_link) |
