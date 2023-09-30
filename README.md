@@ -29,6 +29,10 @@ git clone https://github.com/open-mmlab/mmdetection.git
 cd mmdetection
 pip install -v -e .
 ```
+## Get Started
+See [Preparing Datasets for InstructCV](DATASET.md).
+
+See [Getting Started with InstructCV](GETTING_STARTED.md) for detailed instructions on training and inference with InstructCV.
 
 ## Results
 <table>
@@ -68,12 +72,6 @@ pip install -v -e .
   </tr>
 </tbody>
 </table>
-
-## Get Started
-See [Preparing Datasets for InstructCV](DATASET.md).
-
-See [Getting Started with InstructCV](GETTING_STARTED.md) for detailed instructions on training and inference with InstructCV.
-
 
 ## Demo
 
