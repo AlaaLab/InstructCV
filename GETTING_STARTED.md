@@ -1,21 +1,17 @@
 &#x1F31F; Instructions for training. 
 
-## Play with your image
+## Inference with new images
 
-You can put your favorite image and try to use language as instruction to do some vision tasks.
+You can apply InstructCV to new images by following the steps below.
 
-**Step0.** Download the pre-trained weights we provided.
+**Step 1.** Download the pre-trained weights we provided.
 Or you can download it manually from [Google Drive](https://drive.google.com/file/d/1pz9eheQRQfx8itLj3nSKXQylTuG8DtB_/view?usp=share_link) |
 [BaiduNet Disk](https://pan.baidu.com/s/1iPuMJIWTHiDBRVeFpVXUPQ?pwd=3tjr&_at_=1679742406093) 
 ```shell
 bash scripts/download_pretain_weights.sh
 ```
 
-**Step1.** Put your image under a dictionary you created.
-
-**Step2.** Set up environments following instructions in next chapter.
-
-**Step3.** Inference.
+**Step 2.** Run the following command:
 
 ```shell
 python edit_cli.py --input <path_to_the_dictionary_you_created> --output <path_to_save> --edit <language_instructions>
@@ -32,7 +28,7 @@ python edit_cli.py --input imgs/ --output outputs/ --edit "segment the cat."
 [Training Log](https://drive.google.com/file/d/1pMeRfWvDXSW7k7ESQBliMkgGoWQi74FW/view?usp=share_link)
 
 ### Download pre-trained models
-We trained our model from the checkpoint provided by Stable Diffusion V1.5
+We trained our model using the checkpoint provided by Stable Diffusion V1.5
 ```shell
 #  Stable Diffusion V1.5
 bash scripts/download_checkpoints.sh
