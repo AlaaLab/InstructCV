@@ -2,7 +2,7 @@
 
 Yulu Gan, Sungwoo Park, Alexander Schubert, Anthony Philippakis and Ahmed Alaa
 
-[Paper](https://arxiv.or) | [HuggingFace 🤗 Demo](https://huggingface.co/spaces/yulu2/InstructCV)
+**[Paper](https://arxiv.or) | [HuggingFace 🤗 Demo](https://huggingface.co/spaces/yulu2/InstructCV)**
 
 &#x1F31F; Official PyTorch implementation of **InstructCV**. The master branch works with **PyTorch 1.5+**.
 
