@@ -79,11 +79,7 @@ See [Getting Started with InstructCV](GETTING_STARTED.md) for detailed instructi
 
 * Run the demo on Google Colab: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1YDI2kb6uPP1d1VsiarFDapufRtkYso4g)
 
-
-
-https://github.com/AlaaLab/InstructCV/assets/21158134/55113feb-8e9c-45f6-8bdd-dcc7c6dca2fe
-
-
+![InstructCV_compressed](https://github.com/AlaaLab/InstructCV/assets/21158134/bfb17f22-dbe5-486f-8625-b2928d005ec4)
 
 The pre-trained model for Stable Diffusion is subject to its original license terms from [Stable Diffusion](https://github.com/CompVis/stable-diffusion).
 
