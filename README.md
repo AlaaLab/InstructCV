@@ -80,6 +80,11 @@ See [Getting Started with InstructCV](GETTING_STARTED.md) for detailed instructi
 * Run the demo on Google Colab: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1YDI2kb6uPP1d1VsiarFDapufRtkYso4g)
 
 
+
+https://github.com/AlaaLab/InstructCV/assets/21158134/55113feb-8e9c-45f6-8bdd-dcc7c6dca2fe
+
+
+
 The pre-trained model for Stable Diffusion is subject to its original license terms from [Stable Diffusion](https://github.com/CompVis/stable-diffusion).
 
 * To run InstructCV's demo from the command line:
