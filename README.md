@@ -81,7 +81,7 @@ See [Getting Started with InstructCV](GETTING_STARTED.md) for detailed instructi
 
 <p align="center">
 
-https://github.com/AlaaLab/InstructCV/assets/21158134/41791d7b-a56a-47bf-8cee-8ac0074f777c
+https://github.com/AlaaLab/InstructCV/assets/21158134/0f8be1e1-1e59-4cc4-8c2c-1be529b9ac36
 
 </p>
 
