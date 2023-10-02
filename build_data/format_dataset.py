@@ -71,16 +71,6 @@ Pet_CLASSES = ('Abyssinian', 'american bulldog', 'american pit bull terrier', 'b
                'pomeranian', 'pug', 'Ragdoll', 'Russian Blue', 'saint bernard', 'samoyed', 'scottish terrier',#31
                'shiba inu', 'Siamese', 'Sphynx', 'staffordshire bull terrier', 'wheaten terrier', 'yorkshire terrier')#37
 
-# COLOR = ((0, 0, 0), (120, 120, 120), (180, 120, 120), (6, 230, 230), (80, 50, 50),
-#             (4, 200, 3), (120, 120, 80), (140, 140, 140), (204, 5, 255),
-#             (230, 230, 230), (4, 250, 7), (224, 5, 255), (235, 255, 7),
-#             (150, 5, 61), (120, 120, 70), (8, 255, 51), (255, 6, 82),
-#             (143, 255, 140), (204, 255, 4), (255, 51, 7), (204, 70, 3),
-#             (0, 102, 200), (61, 230, 250), (255, 6, 51), (11, 102, 255),
-#             (255, 7, 71), (255, 9, 224), (9, 7, 230), (220, 220, 220),
-#             (255, 9, 92), (112, 9, 255), (8, 255, 214), (7, 255, 224),
-#             (255, 184, 6), (10, 255, 71), (255, 41, 10),(255, 0, 0))
-
 COLOR   = ('red', 'green', 'blue', 'purple', 'white', 'black', 'AliceBlue', 'Aqua', 'Peru',#9
             'Brown', 'DarkGray', 'Gold', 'Violet', 'SlateBlue', 'Orange',#15
             'Maroon', 'LightSlateGray', 'Indigo','DarkKhaki', 'Coral','RosyBrown',#21
@@ -129,19 +119,6 @@ def get_seg_prompt(cname):
         assert "delete the empty line in seg prompts txt file."
     prompt = copy.deepcopy(prompt)
     prompt = prompt.replace("%", cname)
-    prompts['edit'] = prompt
-    return prompts
-
-
-def get_seg_ins_prompt():
-
-    prompts = {}
-    if len(ins_prompts) == 1:
-        flag = 0
-    else:
-        flag = random.randint(1,len(ins_prompts)-1)
-
-    prompt = ins_prompts[flag]
     prompts['edit'] = prompt
     return prompts
 
@@ -258,8 +235,8 @@ def get_class_img(img, color):
     
     return cls_img
 
-
-def generate_sample(img, img_id, out_img, prompt, task_type):
+@inject_args
+def generate_sample(img, img_id, out_img, prompt, task_type, args=None):
     '''
     Args img: input/original images
          out_img: add bbox for det; mask for seg; depth img for DE .. 
@@ -350,14 +327,12 @@ def proc_oxford_pets_binary_ifelse(oxford_pets_root, num_loop, tasks):
         for cls in clses:
             if cls == cls_name: #positive sample
                 
-                #randomly generate two colors
                 pos_c = random.choice(lcolor) #pos color
                 neg_c = random.choice(lcolor) #neg color
                 while pos_c == neg_c:
                     pos_c = random.choice(lcolor)
                     neg_c = random.choice(lcolor)
 
-                #generate outputs
                 output_img = get_class_img(img, pos_c)
                 prompt = get_cls_prompt(cls_name, pos_c, neg_c)
                 img_id = img_id + "_" + pos_c
@@ -383,11 +358,12 @@ def proc_oxford_pets_binary_ifelse(oxford_pets_root, num_loop, tasks):
         
     return seeds
     
-      
-def proc_oxford_pets_finegrained(oxford_pets_root, tasks):
+@inject_args
+def proc_oxford_pets_finegrained(oxford_pets_root, tasks, args=None):
 
     n = 0
     seeds = []
+    clses = {}
     
     for line in open(os.path.join(oxford_pets_root, 'annotations/trainval.txt')):
         line = line.strip()
@@ -422,48 +398,31 @@ def proc_oxford_pets_finegrained(oxford_pets_root, tasks):
             elif task_type == 'cls':
                 
                 for cls in clses:
-                    # pdb.set_trace()
                     if cls == cls_label:
-                        ## randomly set color
-                        # c = random.choice(lcolor)
                         
                         for i in range(len(lcolor)):
 
-                            # c = lcolor[i]
-                            # color = colors[c]
                             c = 'white'
-                        
-                            ## specific set color
-                            # color = pet_to_color[target_name] # {cat:red}
 
                             output_img = get_class_img(img, target_name, c, is_pos=True)
                             if output_img is None:
                                 assert "cls output image cannot be nonetype"
                                 
                             prompt = {'edit': 'show {} if contains {} else black'.format(c, target_name)}
-                            # prompt = {'edit':'classify this image'}
-                            # fixed prompt:
-                            # prompt = {'edit': 'show the corresponding color of this {}'.format(target_name)}
                             img_id2 = img_id + "_" + c
                             seed = generate_sample(img, img_id2, output_img, prompt, task_type + '_pos')
                             seeds.append(seed)
-                    
-                    # if cls == cls_label:
-                    #     continue
+
                     else:
-                        if random.random() > neg_sample_rate:  # 负采样率
+                        if random.random() > neg_sample_rate:
                             continue
                         nname = clses[cls]
-                        
-                        # c = random.choice(lcolor)
-                        # color = colors[c]
+
                         c='black'
-                        
-                        # color = pet_to_color[nname]
+
                         
                         output_img = get_class_img(img, nname, c, is_pos=False)
                         prompt = {'edit': 'show white if contains {} else black'.format(nname)}
-                        # prompt = {'edit':'classify this image'}
                         seed = generate_sample(img, img_id, output_img, prompt, task_type+'_neg_{}'.format(nname))
                         seeds.append(seed)
                     n += 1
@@ -484,10 +443,6 @@ def proc_oxford_pets_finegrained(oxford_pets_root, tasks):
                 seeds.append(seed)
 
                 output_path = os.path.join(args.save_root, img_id + '_det')
-                # bbox_info = {'bbox': bbox}
-                # bbox_file = open(os.path.join(output_path, 'bbox.json'), 'w')
-                # bbox_file.write(json.dumps(bbox_info))
-                # bbox_file.close()
 
         n +=1 
         if n % 100 == 0:
@@ -589,8 +544,8 @@ def preproc_voc(root):
 
     return img_info, clses, img_id_map
 
-
-def proc_coco(coco_root, tasks):
+@inject_args
+def proc_coco(coco_root, tasks, args=None):
     
     print('begin to process coco dataset...')
     
@@ -598,23 +553,7 @@ def proc_coco(coco_root, tasks):
     n               = 0
     img_info, clses = preproc_coco(coco_root)
     
-    #----------------split process----------------
-    image_list=[]
-    for image_id in img_info:
-        image_list.append(image_id)
-    image_list = sorted(image_list)
-    print("len(image_list)", len(image_list))
-    image_list = image_list[0:200]
-    # image_list = image_list[20000:40000]
-    # image_list = image_list[40000:60000]
-    # image_list = image_list[60000:80000]
-    # image_list = image_list[80000:100000]
-    # image_list = image_list[100000:len(image_list)]
-    for image_id in image_list:
-    #----------------split process----------------
-    
-    ## origin
-    # for image_id in img_info:#image_id:355677
+    for image_id in img_info:#image_id:355677
         
         for cid in img_info[image_id]:
             
@@ -641,7 +580,6 @@ def proc_coco(coco_root, tasks):
                     det_img, bbox = get_bbox_img(coco_root, img_id, bbox, dataset='MSCOCO')
                 
                     prompt  = get_bbox_prompt(cname)
-                    # prompt = {'edit': 'detect the {}'.format(cname)}
                     
                     # check if 3 channels
                     try:
@@ -669,10 +607,6 @@ def proc_coco(coco_root, tasks):
                         c2 = random.choice(lcolor)
                     color = colors[c1]
                     
-                    ##modified postive
-                    # c     = 'white'
-                    # color = (255,255,255)
-                    
                     for cls_name in ncls_perimg:
                         
                         cls_img = get_class_img(img, cls_name, color, is_pos=True)
@@ -685,24 +619,18 @@ def proc_coco(coco_root, tasks):
                     ## negative
                     for nname in CLASSES_COCO:
                         if nname in ncls_perimg:
-                            # print("it is a posible sample:{}".format(nname))
                             continue
                         
                         if random.random() > neg_sample_rate:
                             continue
                         
-                        # print("it is a negative sample:{}".format(nname))
-                        
-                        ##origin
                         c1 = random.choice(lcolor)
                         c2 = random.choice(lcolor)
                         while c1 == c2:
                             c1 = random.choice(lcolor)
                             c2 = random.choice(lcolor)
                         color = colors[c2]
-                        
-                        ##modified
-                        # color = (0,0,0)
+
                         
                         output_img = get_class_img(img, nname, color, is_pos=False)
 
@@ -737,7 +665,7 @@ def proc_nyuv2_all(nyuv2_root):
     seeds = []
     prompt = {}
     n = 0
-    train_txt_path = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/data/nyu_mdet/nyu_train.txt'
+    train_txt_path = './data/nyu_mdet/nyu_train.txt'
     
     with open(train_txt_path) as file:  
 
@@ -782,15 +710,15 @@ def proc_nyuv2(nyuv2_root):
     prompt              = {}
     n = 0
     
-    img_path            = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/data/nyuv2_labeled/nyu_images'
-    depth_path          = '/lustre/grp/gyqlab/lism/brt/language-vision-interface/data/nyuv2_labeled/nyu_depths'
+    img_path            = './data/nyuv2_labeled/nyu_images'
+    depth_path          = './data/nyuv2_labeled/nyu_depths'
     imgs                = os.listdir(img_path)
     
-    for img_n in imgs: #0.jpg
+    for img_n in imgs:
         
         line  = img_n.strip()
         word  = line.split('.')
-        img_id = word[0] #0
+        img_id = word[0]
     
         img_path_        = os.path.join(img_path, '%s.jpg' % img_id)
         depth_path_      = os.path.join(depth_path, '%s.png' % img_id)
@@ -861,10 +789,6 @@ def proc_ade20k(ade_root):
 
 def proc_imagenet(imagenet_root):
     
-    # IMAGENET_MAP = {"n04613696": "mongolian yurt yellow", "n01440764": "fish blue", 
-    #                 "n04476259": "Plate green", "n04606251": "shipwrecks red", 
-    #                 "n06359193": "website purple"}
-    
     IMAGENET_MAP = {"n04613696": "yurt yellow green", "n01440764": "fish blue red"}
     
     cls_num      = len(IMAGENET_MAP.keys())
@@ -931,13 +855,6 @@ def proc_adechan2016_sem(ade_root, cls_ade_dict):
     
     img_list = os.listdir(os.path.join(ade_root, "images/validation"))
     
-    #part
-    img_list = sorted(img_list)
-    print("len(image_list)", len(img_list))
-    img_list = img_list[0:2000]
-    # img_list = img_list[15000:len(img_list)]
-    #######
-    
     for img_name in img_list:
         
         img_path = os.path.join(ade_root, "images/validation", img_name)
@@ -949,7 +866,6 @@ def proc_adechan2016_sem(ade_root, cls_ade_dict):
         
         for cls in clses: # e.g., cls=1
             img = Image.open(img_path).convert('RGB') #original image
-            # seg_img = Image.new('RGB', img.size, (0,0,0))
             
             seg_img = Image.new('RGB',(img.size[0],img.size[1]), color=0)
             seg_img = np.array(seg_img)
@@ -960,7 +876,6 @@ def proc_adechan2016_sem(ade_root, cls_ade_dict):
                 seg_img[r[i],c[i],:] = (255,255,255)
 
             seg_img = Image.fromarray(seg_img).convert('RGB')
-            # pdb.set_trace()
             
             cls_name = cls_ade_dict[cls]
             cls_name_wospace = cls_name
@@ -971,7 +886,6 @@ def proc_adechan2016_sem(ade_root, cls_ade_dict):
                 continue
 
             prompt  = get_seg_prompt(cname=cls_name)
-            # prompt = {'edit': 'segment the {}'.format(cls_name)}
             
             # check if 3 channels
             try:
@@ -981,60 +895,10 @@ def proc_adechan2016_sem(ade_root, cls_ade_dict):
                 print("not 3 channels:", img_name)
                 
             seed = generate_sample(img, img_name.split(".")[0]+"_"+cls_name_wospace, seg_img, prompt, task_type="seg")
-            seeds.append(seed)
     
             n +=1 
             if n % 100 == 0:
                 print('About {} images processed!'.format(n))
-
-    return seeds
-
-
-def proc_adechan2016_ins(ade_root):
-    
-    print('begin to process ade20k instance seg training dataset...')
-    
-    seeds   = []
-    prompt  = {}
-    n       = 0
-    colors  = [(0,0,0)]
-
-    for i in range(255):
-        colors.append((random.randrange(1, 255, 1), random.randrange(1, 255, 1), random.randrange(1, 255, 1)))
-
-    colors = np.array(colors)
-    
-    img_list = os.listdir(os.path.join(ade_root, "images/training"))
-    
-    #part
-    img_list = sorted(img_list)
-    print("len(image_list)", len(img_list))
-    img_list = img_list[0:10000]
-    # img_list = img_list[10000:len(img_list)]
-    #######
-    
-    for img_name in img_list:
-        
-        img_path = os.path.join(ade_root, "images/training", img_name)
-        seg_path = os.path.join(ade_root, "annotations_instance/training", img_name.split(".")[0]+".png")
-        
-        # seg_img = np.array(Image.open(img_path))
-        seg_img = Image.open(img_path).convert('RGB')
-        im_label = Image.open(seg_path).convert('L')
-        w, h = im_label.size
-        im_label = np.array(im_label)
-        im_label = colors[im_label]
-        im_label = Image.fromarray(np.uint8(im_label)).convert('RGB')
-        # new_img = np.where(im_label == 0, seg_img[:,:], im_label[:,:])
-        # new_img = Image.fromarray(new_img.astype(np.uint8))
-        
-        prompt  = get_seg_ins_prompt()
-        
-        seed = generate_sample(seg_img, img_name.split(".")[0], im_label, prompt, task_type="ins_seg")
-
-        n +=1 
-        if n % 100 == 0:
-            print('About {} images processed!'.format(n))
 
     return seeds
 
@@ -1076,7 +940,7 @@ def proc_vocdataset(voc_root):
         img = Image.open(img_path).convert('RGB')
         label = Image.open(img_ins_path).convert('RGB')#also seg_path
         
-        prompt  = get_seg_ins_prompt()
+        prompt  = get_seg_prompt()
         
         seed = generate_sample(img, img_id, label, prompt, task_type="seg")
     return
@@ -1136,7 +1000,8 @@ def proc_fs(fs_root, split):
     
     return
 
-def proc_dataset(dataset, root, task, additional_args=None):
+@inject_args
+def proc_dataset(dataset, root, task, args=None):
     
     functions = {
         "coco": proc_coco,
@@ -1144,7 +1009,6 @@ def proc_dataset(dataset, root, task, additional_args=None):
         "oxford_pets_binary": proc_oxford_pets_binary_ifelse,
         "nyuv2": proc_nyuv2_all,
         "ade20k_sem": proc_adechan2016_sem,
-        "ade20k_ins": proc_adechan2016_ins,
         "imagenet": proc_imagenet,
         "voc": proc_vocdataset,
         "fs": proc_fs,
@@ -1155,21 +1019,32 @@ def proc_dataset(dataset, root, task, additional_args=None):
         raise ValueError(f"Unknown dataset: {dataset}")
     
     func = functions[dataset]
-    func(root, additional_args)
+    func(args, root, task)
     
-    
+
 def read_file(file_path, prompts):
     
     with open(file_path) as file:
         for num, item in enumerate(file):
             sen = item.strip()
             prompts[num] = sen
+    return prompts
 
+
+def inject_args(func):
+    def wrapper(*args, **kwargs):
+        kwargs['args'] = config
+        return func(*args, **kwargs)
+    return wrapper
+
+class Config:
+    def __init__(self, args):
+        self.args = args
 
 
 def main():
     
-    parser = ArgumentParser()
+    parser  = ArgumentParser()
     parser.add_argument("--dataset", default="coco", type=str)
     parser.add_argument("--save_root", default="./image_pairs", type=str)
     parser.add_argument("--data_root", default="", type=str)
@@ -1181,9 +1056,24 @@ def main():
     parser.add_argument("--voc_root", default='./data/VOCdevkit/VOC2012', type=str)
     parser.add_argument("--fs_root", default='./data/fewshot_data/fewshot_data', type=str)
     parser.add_argument("--nyuv2_root_nonoise", default='./data/nyu_data', type=str)
-    args = parser.parse_args()
+    args    = parser.parse_args()
     
-    cls_ade_dict, pet_to_color, seg_prompts, det_prompts, dep_est_prompts   = {}, {}, {}, {}, {}
+    global config, colors, lcolor, neg_sample_rate, cls_ade_dict, pet_to_color, seg_prompts, det_prompts, dep_est_prompts, cls_prompts
+    
+    config  = Config(args)
+    
+    neg_sample_rate                             = 1000
+    
+    colors                                      = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 
+                                                    'purple':(128,0,128), 'white':(255,255,255), 
+                                                    'Brown':(165,42,42), 'Gold':(255,215,0),'Beige':(245,245,220),
+                                                    'Violet':(238,130,238), 'Orange':(255,128,0),
+                                                    'Maroon':(128,0,0), 'Indigo':(75,0,130), 'Aqua': (0,255,255),
+                                                    'Coral':(255,127,80),'RosyBrown':(188,143,143),'Peru':(205, 133, 63)}
+    
+    lcolor                                      = list(colors.keys())
+    
+    cls_ade_dict, pet_to_color, seg_prompts, det_prompts, dep_est_prompts, cls_prompts   = {}, {}, {}, {}, {}, {}
     
     for i in range(len(CLASSES)):
         
@@ -1191,16 +1081,18 @@ def main():
 
     for i, pet_name in enumerate(Pet_CLASSES):
         c                                       = COLOR[i]
-        pet_to_color[pet_name]                  = c #{cat: red,...}
+        pet_to_color[pet_name]                  = c
 
     if os.path.exists(args.save_root)  == False:
         os.mkdir(args.save_root)
 
-    read_file("./build_data/txt/seg_prompts.txt", seg_prompts)
-    read_file("./build_data/txt/det_prompts.txt", det_prompts)
-    read_file("./data/dep_est_prompts.txt", dep_est_prompts)
+    seg_prompts                                 = read_file("./build_data/txt/seg_prompts.txt", seg_prompts)
+    det_prompts                                 = read_file("./build_data/txt/det_prompts.txt", det_prompts)
+    dep_est_prompts                             = read_file("./data/dep_est_prompts.txt", dep_est_prompts)
+    cls_prompts                                 = read_file("./data/cls_prompts.txt", cls_prompts)
     
     proc_dataset(args.dataset, getattr(args, f"{args.dataset}_root"), tasks = ['det'])
 
 if __name__ == "__main__":
+    
     main()

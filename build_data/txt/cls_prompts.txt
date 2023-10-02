@@ -1,0 +1,6 @@
+Show * if there exists a % in the figure.
+Display an * if a % is present in the figure.
+In case a % exists in the figure, display an *.
+If a % is present in the figure, indicate it with *.
+If there is a % in the figure, show it as *.
+Show an * if there is a % within the figure.
