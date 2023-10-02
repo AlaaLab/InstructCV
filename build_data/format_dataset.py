@@ -1135,39 +1135,39 @@ def proc_fs(fs_root, split):
         seed = generate_sample(img, img_id, label, prompt, task_type="seg")
     
     return
-        
+
+def proc_dataset(dataset, root, task, additional_args=None):
     
-def prompts_chat():
-    '''
-    Use ChatGPT to generate various prompts.
-    '''
-    # prompt_chat = []
-    flag = {} #key: path to prompts.json; value: prompt
-    root_img_pair = "image_pairs"
-    file_all = os.listdir(root_img_pair)
+    functions = {
+        "coco": proc_coco,
+        "oxford_pets_fine": proc_oxford_pets_finegrained,
+        "oxford_pets_binary": proc_oxford_pets_binary_ifelse,
+        "nyuv2": proc_nyuv2_all,
+        "ade20k_sem": proc_adechan2016_sem,
+        "ade20k_ins": proc_adechan2016_ins,
+        "imagenet": proc_imagenet,
+        "voc": proc_vocdataset,
+        "fs": proc_fs,
+        "nyuv2_nonoise": proc_nyuv2,
+    }
     
-    for file_n in file_all: # file_n: 0_depes
-        
-        if file_n == 'seeds.json':
-            continue
-        
-        prompt_path = os.path.join(root_img_pair, file_n, 'prompt.json')
-        
-        with open(prompt_path,'r',encoding = 'utf-8') as fp:
-            prompts = json.load(fp)
-            prompt = prompts["edit"]
-            flag[prompt_path] = prompt
-        fp.close()
+    if dataset not in functions:
+        raise ValueError(f"Unknown dataset: {dataset}")
     
-    num_prompts = len(flag)
+    func = functions[dataset]
+    func(root, additional_args)
     
-    prompt_chat = list(flag.values())
-    prompt_chat_loc = list(flag.keys())
     
-    return prompt_chat, prompt_chat_loc
+def read_file(file_path, prompts):
+    
+    with open(file_path) as file:
+        for num, item in enumerate(file):
+            sen = item.strip()
+            prompts[num] = sen
 
 
-if __name__ == "__main__":
+
+def main():
     
     parser = ArgumentParser()
     parser.add_argument("--dataset", default="coco", type=str)
@@ -1183,24 +1183,11 @@ if __name__ == "__main__":
     parser.add_argument("--nyuv2_root_nonoise", default='./data/nyu_data', type=str)
     args = parser.parse_args()
     
-    cls_ade_dict, pet_to_color, clses                          = {}, {}, {}
-    neg_sample_rate                                            = 1000 # for cls. 0 means no negtive sample
-    num_seg, num_det, num_dep_est, num_cls, num_ins            = 0, 0, 0, 0, 0
-    seg_prompts, det_prompts, dep_est_prompts, cls_prompts, ins_prompts   = {}, {}, {}, {}, {}
+    cls_ade_dict, pet_to_color, seg_prompts, det_prompts, dep_est_prompts   = {}, {}, {}, {}, {}
     
     for i in range(len(CLASSES)):
         
         cls_ade_dict[i]                         = CLASSES[i]
-    
-    colors                                      = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 
-                                                    'purple':(128,0,128), 'white':(255,255,255), 
-                                                    'Brown':(165,42,42), 'Gold':(255,215,0),'Beige':(245,245,220),
-                                                    'Violet':(238,130,238), 'Orange':(255,128,0),
-                                                    'Maroon':(128,0,0), 'Indigo':(75,0,130), 'Aqua': (0,255,255),
-                                                    'Coral':(255,127,80),'RosyBrown':(188,143,143),'Peru':(205, 133, 63)}
-    # colors                                      = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255)}
-    
-    lcolor                                      = list(colors.keys())
 
     for i, pet_name in enumerate(Pet_CLASSES):
         c                                       = COLOR[i]
@@ -1209,56 +1196,11 @@ if __name__ == "__main__":
     if os.path.exists(args.save_root)  == False:
         os.mkdir(args.save_root)
 
-    with open("./build_data/txt/seg_prompts.txt") as file:
-        for item_seg in file:
-            sen_seg = item_seg.strip()
-            seg_prompts[num_seg] = sen_seg
-            num_seg += 1
+    read_file("./build_data/txt/seg_prompts.txt", seg_prompts)
+    read_file("./build_data/txt/det_prompts.txt", det_prompts)
+    read_file("./data/dep_est_prompts.txt", dep_est_prompts)
     
-    with open("./build_data/txt/det_prompts.txt") as file:
-        for item_det in file:
-            sen_det = item_det.strip()
-            det_prompts[num_det] = sen_det
-            num_det += 1
-            
-    with open("./data/dep_est_prompts.txt") as file:
-        for item_dep_est in file:
-            sen_dep_est = item_dep_est.strip()
-            dep_est_prompts[num_dep_est] = sen_dep_est
-            num_dep_est += 1
-    
-    tasks = ['det']
-    
-    if fnmatch(args.dataset, "coco"):
-        proc_coco(args.coco_root, tasks)
-    
-    elif fnmatch(args.dataset, "oxford_pets_fine"):
-        proc_oxford_pets_finegrained(args.oxford_pets_root, tasks)
-        
-    elif fnmatch(args.dataset, "oxford_pets_binary"):
-        loop = 1
-        for num_loop in range(loop):
-            proc_oxford_pets_binary_ifelse(args.oxford_pets_root, num_loop, tasks)
+    proc_dataset(args.dataset, getattr(args, f"{args.dataset}_root"), tasks = ['det'])
 
-    elif fnmatch(args.dataset, "nyuv2"):
-        proc_nyuv2_all(args.nyuv2_root)
-    
-    elif fnmatch(args.dataset, "ade20k_sem"):
-        proc_adechan2016_sem(args.ade_root, cls_ade_dict)
-        
-    elif fnmatch(args.dataset, "ade20k_ins"):
-        proc_adechan2016_ins(args.ade_root)
-        
-    elif fnmatch(args.dataset, "imagenet"):
-        proc_imagenet(args.imagenet_root)
-    
-    elif fnmatch(args.dataset, "voc"):
-        proc_vocdataset(args.voc_root)
-    
-    elif fnmatch(args.dataset, "fs"):
-        proc_fs(args.fs_root, "test_part2.txt")
-    
-    elif fnmatch(args.dataset, "nyuv2_nonoise"):
-        proc_nyuv2(args.nyuv2_root_nonoise)
-
-
+if __name__ == "__main__":
+    main()
