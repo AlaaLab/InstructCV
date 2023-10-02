@@ -1,0 +1,42 @@
+Estimate the depth of this image.
+Approximate the depth of this image.
+Make an estimation of how deep the this image is.
+Provide a rough calculation of the image's depth.
+Give an approximate measurement of the image's depth.
+Make an informed guess of the depth of the image.
+Make an estimation of how deep the image goes.
+Create a monocular depth map.
+Plese Create a monocular depth map.
+Generate a depth map using a single camera perspective.
+Produce a depth map with a monocular setup.
+Construct a depth map using a lone camera view.
+Formulate a monocular-based depth map.
+Develop a depth map using only one camera input.
+Build a depth map utilizing a single camera viewpoint.
+Craft a monocular-generated depth map.
+Generate a depth map from a monocular source.
+Create a depth map using a solitary camera perspective.
+Produce a monocular-derived depth map.
+Determine the image's depth.
+Make an estimation of the depth in this image.
+Assess the depth present in this image.
+Calculate the depth of this image.
+Gauge the depth portrayed in this image.
+Evaluate the depth depicted in this image.
+Approximate the depth of this image.
+Measure the depth captured in this image.
+Determine the spatial depth of this image.
+Quantify the depth perception of this image.
+Estimate the depth of the image.
+Calculate the depth of the image.
+Specify the depth of the image.
+Determine the depth of the image.
+Make an educated guess about how deep the image is.
+Specify the depth of the image. How would you go about doing that?
+How much can you tell me about how deep this picture was.
+Find out about how deep an object was in the image taken.
+Produce a depth map using only one eye.
+Construct an angled monocular depth map.
+Make your own monocular depth map.
+Produce a depth map using only one eye.
+Create a monocular depth map.

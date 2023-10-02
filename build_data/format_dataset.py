@@ -1192,18 +1192,6 @@ if __name__ == "__main__":
         
         cls_ade_dict[i]                         = CLASSES[i]
     
-    # get colors for cls
-    # colors                                      = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 
-    #                                                 'purple':(128,0,128), 'white':(255,255,255), 'AliceBlue':(240,248,255), 'Aqua': (0,255,255), 'Peru':(205, 133, 63),
-    #                                                 'Brown':(165,42,42), 'DarkGray':(169,169,169), 'Gold':(255,215,0),
-    #                                                 'Violet':(238,130,238), 'SlateBlue':(230,230,250), 'Orange':(255,128,0),
-    #                                                 'Maroon':(128,0,0), 'LightSlateGray':(119,136,153), 'Indigo':(75,0,130),
-    #                                                 'DarkKhaki':(189,183,107), 'Coral':(255,127,80),'RosyBrown':(188,143,143),
-    #                                                 'LightSalmon':(255,160,122), 'Azure':(240,255,255),'Beige':(245,245,220),
-    #                                                 'CadetBlue':(95,158,160),'DarkBlue':(0,0,139),'Firebrick':(178,34,34),
-    #                                                 'Silver':(192,192,192),'YellowGreen':(154,205,50),'LightPink':(255,182,193),
-    #                                                 'Snow':(255,250,250),'Sienna':(160,82,45),'Salmon':(250,128,114),
-    #                                                 'PowderBlue':(176,224,230),'PeachPuff':(255,218,155),'DarkRed':(139,0,0)}
     colors                                      = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 
                                                     'purple':(128,0,128), 'white':(255,255,255), 
                                                     'Brown':(165,42,42), 'Gold':(255,215,0),'Beige':(245,245,220),
@@ -1220,101 +1208,24 @@ if __name__ == "__main__":
 
     if os.path.exists(args.save_root)  == False:
         os.mkdir(args.save_root)
-        
-        
-    
-    #generate prompts dict
-    
-    # with open("./data/seg_prompts.txt") as file:
-    #     for item_seg in file:
-    #         sen_seg = item_seg.strip()
-    #         if sen_seg == '':
-    #             continue
-    #         seg_prompts[num_seg] = sen_seg
-    #         num_seg += 1
-    #     seg_prompts_new = seg_prompts.copy()
-        
-    #     while len(seg_prompts_new.values()) <= 5000:
-            
-    #         for prompt in seg_prompts_new.values():
-    #             seg_prompts_tmp = seg_prompts_new.copy()
-    #             output = Rephrase(prompt).do()
-    #             for i in range(0,3):
-    #                 output_i = output[i].replace("percentage", "%")
-    #                 seg_prompts_tmp[num_seg] = output_i
-    #                 num_seg += 1
-                    
-    #         seg_prompts_new_ = {}
-    #         dict_key_ls = list(seg_prompts_tmp.keys())
-    #         random.shuffle(dict_key_ls)
-    #         for key in dict_key_ls:
-    #             seg_prompts_new_[key] = seg_prompts_tmp.get(key)
-    #         seg_prompts_new = seg_prompts_new_.copy()
-    
 
-    # json_file = open('dataset_creation/seg_prompt.json', 'w')
-    # json_file.write(json.dumps(seg_prompts_new))
-    # json_file.close()
-            
-    
-    # with open("./data/det_prompts.txt") as file:
-    #     for item_det in file:
-    #         sen_det = item_det.strip()
-    #         det_prompts[num_det] = sen_det
-    #         num_det += 1
-            
-    #     det_prompts_new = det_prompts.copy()
-        
-    #     while len(det_prompts_new.values()) <= 5000:
-            
-    #         for prompt in det_prompts_new.values():
-    #             det_prompts_tmp = det_prompts_new.copy()
-    #             output = Rephrase(prompt).do()
-    #             for i in range(0,3):
-    #                 output_i = output[i].replace("percentage", "%")
-    #                 det_prompts_tmp[num_det] = output_i
-    #                 num_det += 1
-                    
-    #         det_prompts_new_ = {}
-    #         dict_key_ls = list(det_prompts_tmp.keys())
-    #         random.shuffle(dict_key_ls)
-    #         for key in dict_key_ls:
-    #             det_prompts_new_[key] = det_prompts_tmp.get(key)
-    #         det_prompts_new = det_prompts_new_.copy()
-        
-    # json_file = open('dataset_creation/det_prompt.json', 'w')
-    # json_file.write(json.dumps(det_prompts_new))
-    # json_file.close()
-
-    with open("./data/seg_prompts_copy.txt") as file:
+    with open("./build_data/txt/seg_prompts.txt") as file:
         for item_seg in file:
             sen_seg = item_seg.strip()
             seg_prompts[num_seg] = sen_seg
             num_seg += 1
     
-    with open("./data/det_prompts_bak.txt") as file:
+    with open("./build_data/txt/det_prompts.txt") as file:
         for item_det in file:
             sen_det = item_det.strip()
             det_prompts[num_det] = sen_det
             num_det += 1
             
-    with open("./data/dep_est_prompts_rp.txt") as file:
+    with open("./data/dep_est_prompts.txt") as file:
         for item_dep_est in file:
             sen_dep_est = item_dep_est.strip()
             dep_est_prompts[num_dep_est] = sen_dep_est
             num_dep_est += 1
-            
-    with open("./data/cls_prompts.txt") as file:
-        for item_cls_est in file:
-            sen_cls_est = item_cls_est.strip()
-            cls_prompts[num_cls] = sen_cls_est
-            num_cls += 1
-    
-    with open("./data/seg_prompts_instance.txt") as file:
-        for item_seg_ins in file:
-            sen_seg_ins = item_seg_ins.strip()
-            ins_prompts[num_ins] = sen_seg_ins
-            num_ins += 1
     
     tasks = ['det']
     
