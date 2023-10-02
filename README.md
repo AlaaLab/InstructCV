@@ -80,7 +80,7 @@ See [Getting Started with InstructCV](GETTING_STARTED.md) for detailed instructi
 
 <p align="center">
 
-https://github.com/AlaaLab/InstructCV/assets/21158134/0f8be1e1-1e59-4cc4-8c2c-1be529b9ac36
+https://github.com/AlaaLab/InstructCV/assets/21158134/db6ec741-a8ee-4c92-b0c3-0723ef800ffd
 
 </p>
 
