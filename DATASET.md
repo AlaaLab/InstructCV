@@ -4,24 +4,13 @@
 # Prepare training datasets
 ## Structure
 ### Train
-```
-language_vision_interface
-├──scripts
-├──datasets
-├──data
-│   ├── image_pairs_train
-│   │   ├── Abyssianian_1_cls
-│   ├── image_pairs_evalation
-```
 
-### Evaluate
 ```
 language_vision_interface
 ├──scripts
 ├──datasets
 ├──data
 │   ├── image_pairs_train
-│   ├── image_pairs_evalation
 │   │   ├── Abyssianian_1_cls
 │   │   │   ├── Abyssianian_1_0
 │   │   │   ├── Abyssianian_1_1

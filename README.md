@@ -22,7 +22,7 @@ conda env create -f environment.yaml
 conda activate lvi
 #Step1 (optional) . You could ignore this step if you do not run the baselines.
 ## install tensorflow : https://www.tensorflow.org/install/pip
-pip3 install git+https://github.com/philferriere/cocoapi.git#subdirectory=PythonAPI 
+pip install git+https://github.com/philferriere/cocoapi.git#subdirectory=PythonAPI 
 pip install -U openmim
 mim install mmcv-full
 git clone https://github.com/open-mmlab/mmdetection.git
@@ -87,19 +87,6 @@ https://github.com/AlaaLab/InstructCV/assets/21158134/0f8be1e1-1e59-4cc4-8c2c-1b
 
 
 The pre-trained model for Stable Diffusion is subject to its original license terms from [Stable Diffusion](https://github.com/CompVis/stable-diffusion).
-
-* To run InstructCV's demo from the command line:
-
-    ```shell
-    python demo/app.py --input demo/examples/coco.jpg --output demo/coco_pred.jpg --edit "Please segment the dog."
-    ```
-    The output is saved in `demo/coco_pred.jpg`. For more detailed options for `demo/demo.py` see [Getting Started with InstructCV](GETTING_STARTED.md).
-    
-  
-* To run the [Gradio](https://github.com/gradio-app/gradio) demo locally:
-    ```shell
-    python demo/app.py
-    ```
 
 
 ## Acknowledgement
