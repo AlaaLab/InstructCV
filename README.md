@@ -97,10 +97,10 @@ This codebase is largely based on [CompVis/stable_diffusion](https://github.com/
 If you find our work useful in your research, please cite:
 
 ```BiBTeX
-@article{,
-  title={{}},
-  author={},
-  journal={},
+@article{gan2023instructcv,
+  title={InstructCV: Instruction-Tuned Text-to-Image Diffusion Models as Vision Generalists},
+  author={Gan, Yulu and Park, Sungwoo and Schubert, Alexander and Philippakis, Anthony and Alaa, Ahmed},
+  journal={arXiv preprint arXiv:2310.00390},
   year={2023}
 }
 ```
