@@ -7,7 +7,9 @@ Yulu Gan, Sungwoo Park, Alexander Schubert, Anthony Philippakis and Ahmed Alaa
 &#x1F31F; Official PyTorch implementation of **InstructCV**. The master branch works with **PyTorch 1.5+**.
 
 <p align="center">
+    
 https://github.com/AlaaLab/InstructCV/assets/21158134/db6ec741-a8ee-4c92-b0c3-0723ef800ffd
+
 </p>
 
 ## Overview
