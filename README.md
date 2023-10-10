@@ -47,7 +47,7 @@ See [Getting Started with InstructCV](GETTING_STARTED.md) for detailed instructi
   <tr>
     <th align="center"></th>
     <th align="center" style="text-align:center" colspan="2">Depth <br>Estimation <br>RMSE⬇</th>
-    <th align="center" style="text-align:center" colspan="2">Sementic Segmentation mIoU⬆</th>
+    <th align="center" style="text-align:center" colspan="2">Semantic Segmentation mIoU⬆</th>
     <th align="center" style="text-align:center" colspan="2">Classification <br>Acc⬆</th>
     <th align="center" style="text-align:center" colspan="2">Object Detection mAP⬆</th>
     <th align="center" style="text-align:center">Download</th>
