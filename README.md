@@ -2,7 +2,9 @@
 
 Yulu Gan, Sungwoo Park, Alexander Schubert, Anthony Philippakis and Ahmed Alaa
 
-**[Paper](https://arxiv.org/abs/2310.00390) | [HuggingFace 🤗 Demo](https://huggingface.co/spaces/alaa-lab/InstructCV)**
+**[Paper](https://arxiv.org/abs/2310.00390) | [HuggingFace 🤗 Demo](https://huggingface.co/spaces/alaa-lab/InstructCV)** | 
+[![Replicate](https://replicate.com/cjwbw/instructcv/badge)](https://replicate.com/cjwbw/instructcv) 
+
 
 &#x1F31F; Official PyTorch implementation of **InstructCV**. The master branch works with **PyTorch 1.5+**.
 
