@@ -8,7 +8,6 @@
 ```
 language_vision_interface
 ├──scripts
-├──datasets
 ├──data
 │   ├── image_pairs_train
 │   │   ├── Abyssianian_1_cls
@@ -23,6 +22,8 @@ language_vision_interface
 │   │   │   ├── American_bulldog_100_1
 │   │   ├── ...
 │   │   ├── Abyssianian_1_seg
+│   │   │   ├── Abyssianian_1_0
+│   │   │   ├── Abyssianian_1_1
 │   │   ├── Abyssianian_2_seg
 │   │   │   ├── Abyssianian_1_0
 │   │   │   ├── Abyssianian_2_1
@@ -33,9 +34,9 @@ language_vision_interface
 │   │   ├── ...
 │   │   ├── Abyssianian_1_det
 │   │   │   ├── Abyssianian_1_0
-│   │   │   ├── Abyssianian_2_1
+│   │   │   ├── Abyssianian_1_1
 │   │   ├── Abyssianian_2_det
-│   │   │   ├── Abyssianian_1_0
+│   │   │   ├── Abyssianian_2_0
 │   │   │   ├── Abyssianian_2_1
 │   │   ├── ...
 │   │   ├── American_bulldog_100_det
