@@ -113,6 +113,7 @@ dataset_creation/format_dataset_fixed_bak.py
 scripts/pixel2seq_inference_bak.sh
 scripts/slurm_inference_bak.sh
 scripts/slurm_train_bak.sh
+*.sh
 build_data2/
 
 

@@ -35,6 +35,7 @@ dependencies:
     - openai
     - gradio
     - seaborn
+    - natsort
     - k-diffusion
     - pycocotools
     - -e git+https://github.com/cocodataset/panopticapi.git
