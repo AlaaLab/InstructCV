@@ -925,37 +925,50 @@ def proc_LOL(root):
     
     return seeds
 
-def proc_SIDD(src_dir, tar_dir):
+def find_matching_files(folder, pattern1, pattern2):
 
-    noisy_dir = os.path.join(tar_dir, 'input')
-    clean_dir = os.path.join(tar_dir, 'groundtruth')
+    files1 = [f for f in os.listdir(folder) if pattern1 in f]
+    files2 = [f for f in os.listdir(folder) if pattern2 in f]
 
-    if os.path.exists(tar_dir):
-        os.system("rm -r {}".format(tar_dir))
+    matching_pairs = []
+    for f1 in files1:
+        print("f1:", f1)
+        number = f1.split('.')[0].split('_')[-1]
+        for f2 in files2:
+            print("f2:", f2)
+            if number == f2.split('.')[0].split('_')[-1]:
+                matching_pairs.append((f1, f2))
+                break
+    print("matching_pairs:", matching_pairs)
+    return matching_pairs, f1.split('.')[0]
 
-    os.makedirs(noisy_dir)
-    os.makedirs(clean_dir)
+def proc_SIDD(root):
+    
+    print('begin to process SIDD training dataset...')
+    
+    seeds                   = []
+    prompt                  = {}
 
-    files = natsorted(glob(os.path.join(src_dir, '*', '*.PNG')))
+    for folder in os.listdir(root):
+        full_folder_path = os.path.join(root, folder)
+        if os.path.isdir(full_folder_path):
+            pairs, img_id = find_matching_files(full_folder_path, "GT", "NOISY")
+            for gt, noise in pairs:
+                gt_path = os.path.join(full_folder_path, gt)
+                noise_path = os.path.join(full_folder_path, noise)
+                print("gt_path:", gt_path)
+                print("noise_path:", noise_path)
+                
+                prompt['edit']  = 'Remove the noise.'
+                
+                img                 = Image.open(noise_path).convert("RGB")
+                target_img          = Image.open(gt_path).convert("RGB")
 
-    noisy_files, clean_files = [], []
-    for file_ in files:
-        filename = os.path.split(file_)[-1]
-        if 'GT' in filename:
-            clean_files.append(file_)
-        if 'NOISY' in filename:
-            noisy_files.append(file_)
+                seeds = generate_sample(img, img_id, target_img, prompt, task_type="enhance")
+    
+    return seeds
 
-    def save_files(i):
-        noisy_file, clean_file = noisy_files[i], clean_files[i]
-        noisy_img = cv2.imread(noisy_file)
-        clean_img = cv2.imread(clean_file)
 
-        cv2.imwrite(os.path.join(noisy_dir, f'{i+1}_noisy.png'), noisy_img)
-        cv2.imwrite(os.path.join(clean_dir, f'{i+1}_clean.png'), clean_img)
-
-    num_cores = multiprocessing.cpu_count()
-    Parallel(n_jobs=num_cores)(delayed(save_files)(i) for i in range(len(noisy_files)))
     
 
 
@@ -1046,8 +1059,5 @@ if __name__ == "__main__":
         proc_LOL(args.LOL_root)
     
     elif fnmatch(args.dataset, "denoise"):
-        # preprocess data of .MAT
-        proc_SIDD(args.SIDD_root, "/om/user/yulu_gan/data/SIDD_img")
-        # build pairs of data
-        # proc_SIDD(args.SIDD_root)
+        proc_SIDD(args.SIDD_root)
     
