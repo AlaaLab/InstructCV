@@ -1,4 +1,4 @@
-## InstructCV: Instruction-Tuned Text-to-Image Diffusion Models as Vision Generalists
+## InstructCV: Instruction-Tuned Text-to-Image Diffusion Models as Vision Generalists (ICLR 2024)
 
 Yulu Gan, Sungwoo Park, Alexander Schubert, Anthony Philippakis and Ahmed Alaa
 
