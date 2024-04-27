@@ -121,5 +121,5 @@ Next, we are going to process these datasets to build our training data. You can
 python dataset_creation/format_dataset.py --save_root <path_to_save> --tasks <vision tasks> --data_root <path_to_dataset>
 # specific examples
 ## coco
-python dataset_creation/format_dataset.py --save_root './image_pairs' --tasks ['det'] --data_root './data/coco'
+python build_data/format_dataset_rp.py --save_root './image_pairs' --tasks ['det'] --data_root './data/coco'
 ```
